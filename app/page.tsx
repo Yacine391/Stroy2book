@@ -14,6 +14,7 @@ import AIGenerationStep from "@/components/ai-generation-step"
 export default function HomePage() {
   const [formData, setFormData] = useState({
     idea: "",
+    author: "",
     genre: "",
     targetAudience: "",
     length: "court",
@@ -79,6 +80,11 @@ export default function HomePage() {
       alert("Veuillez décrire votre idée d'ebook.")
       return
     }
+    
+    if (!formData.author.trim()) {
+      alert("Veuillez entrer le nom de l'auteur.")
+      return
+    }
 
     setCurrentStep("generating")
   }
@@ -92,6 +98,7 @@ export default function HomePage() {
     setCurrentStep("form")
     setFormData({
       idea: "",
+      author: "",
       genre: "",
       targetAudience: "",
       length: "court",
@@ -174,6 +181,24 @@ export default function HomePage() {
                   />
                   <p className="text-sm text-gray-500">
                     Plus vous donnez de détails, plus l'IA pourra créer un contenu personnalisé !
+                  </p>
+                </div>
+
+                {/* Author Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="author" className="text-lg font-medium">
+                    Nom de l'auteur *
+                  </Label>
+                  <input
+                    id="author"
+                    type="text"
+                    placeholder="Ex: Marie Dubois, Jean-Paul Martin, ou votre nom..."
+                    value={formData.author}
+                    onChange={(e) => handleInputChange("author", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Ce nom apparaîtra sur la couverture et dans tout l'ebook comme l'auteur officiel.
                   </p>
                 </div>
 

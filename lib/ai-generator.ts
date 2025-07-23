@@ -3,6 +3,7 @@
 
 interface FormData {
   idea: string
+  author: string
   genre: string
   targetAudience: string
   length: string
@@ -801,7 +802,7 @@ Et ensemble, ils se dirigèrent vers l'horizon, sachant que leur histoire était
     }
 
     const title = generateTitle(formData.idea, formData.genre)
-    const author = generateAuthor(formData.genre)
+    const author = formData.author.trim() || generateAuthor(formData.genre) // Utiliser l'auteur fourni ou générer si vide
     const content = generateAdvancedContent(formData.idea, formData.genre, formData.targetAudience, formData.length)
     
     return {

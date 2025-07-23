@@ -9,6 +9,7 @@ import { generateEbook } from "@/lib/ai-generator"
 interface AIGenerationStepProps {
   formData: {
     idea: string
+    author: string
     genre: string
     targetAudience: string
     length: string
