@@ -1,0 +1,15 @@
+{
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
+  },
+  "functions": {
+    "app/**/*.{tsx,ts,jsx,js}": {
+      "maxDuration": 30
+    }
+  }
+}
