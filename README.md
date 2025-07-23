@@ -39,7 +39,7 @@ cp .env.local.example .env.local
 Éditez `.env.local` et ajoutez votre clé API OpenAI :
 ```
 OPENAI_API_KEY=sk-your-openai-api-key-here
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3001
 ```
 
 4. **Lancer en développement**
@@ -47,7 +47,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 npm run dev
 ```
 
-L'application sera accessible sur [http://localhost:3000](http://localhost:3000)
+L'application sera accessible sur [http://localhost:3001](http://localhost:3001)
 
 ## 🌐 Déploiement en production
 
