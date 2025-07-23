@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Download, Eye } from "lucide-react"
 import EbookPreview from "@/components/ebook-preview"
+import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
 
 interface EbookGeneratorProps {
   formData: {
@@ -23,17 +24,27 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
   const handleDownload = async () => {
     setIsDownloading(true)
 
-    // Simulation du téléchargement
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // Générer le PDF avec le contenu réel
+      const pdfBlob = await generatePDF({
+        title: formData.title,
+        author: formData.author,
+        content: formData.content,
+        backgroundColor: formData.backgroundColor
+      })
 
-    // Ici, on intégrerait une vraie génération PDF
-    // Pour la démo, on simule le téléchargement
-    const link = document.createElement("a")
-    link.href = "#"
-    link.download = `${formData.title || "Mon-Ebook"}.pdf`
-    link.click()
-
-    setIsDownloading(false)
+      // Créer un nom de fichier propre
+      const filename = `${formData.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+      
+      // Télécharger le PDF
+      downloadPDF(pdfBlob, filename)
+      
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error)
+      alert('Erreur lors de la génération du PDF. Veuillez réessayer.')
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
