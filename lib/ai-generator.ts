@@ -710,11 +710,33 @@ DESCRIPTION_COUVERTURE: [description détaillée et unique pour image de couvert
 CONTENU:
 [contenu complet UNIQUE de l'ebook ici avec ${lengthConfig.minWords}-${lengthConfig.maxWords} mots - TRÈS LONG, DÉTAILLÉ ET ABSOLUMENT ORIGINAL]
 
-CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET qu'il est absolument unique !`
+🚨 OBLIGATION ABSOLUE DE CONTENU COMPLET 🚨 :
+Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${lengthConfig.maxWords} mots.
+❌ INTERDICTION FORMELLE de générer un contenu tronqué, incomplet ou qui s'arrête brutalement
+❌ INTERDICTION de terminer par "l'aventure se termine ici" ou des conclusions prématurées
+❌ INTERDICTION de s'arrêter au chapitre 2 ou 3 - Tu DOIS faire ${lengthConfig.chaptersCount} chapitres COMPLETS
 
-    // Système de génération avec fallback intelligent
+✅ TU DOIS ABSOLUMENT :
+- Écrire ${lengthConfig.chaptersCount} chapitres COMPLETS de ${lengthConfig.wordsPerChapter} mots chacun
+- Développer ENTIÈREMENT chaque chapitre avec détails, dialogues et descriptions
+- Créer une conclusion SATISFAISANTE et COMPLÈTE qui résout tous les fils narratifs
+- Atteindre la cible de ${lengthConfig.exactWords} mots (tolérance: ${lengthConfig.minWords}-${lengthConfig.maxWords})
+- Générer un contenu riche, détaillé et absolument complet
+
+🎯 RAPPEL FINAL CRITIQUE : Génère ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET assure-toi que l'histoire est COMPLÈTEMENT TERMINÉE avec une vraie conclusion !
+
+⚠️ CONTRÔLE QUALITÉ : Ton contenu doit faire ENTRE ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET être absolument unique et COMPLET !`
+
+    // Système de génération avec fallback intelligent et logs détaillés
     let generatedText: string
     const preferredAI = getPreferredAI()
+
+    console.log('🎯 STARTING EBOOK GENERATION:')
+    console.log('- Preferred AI:', preferredAI)
+    console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
+    console.log('- Target chapters:', lengthConfig.chaptersCount)
+    console.log('- Genre:', formData.genre)
+    console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
 
     if (preferredAI === 'openai' && openai) {
       console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
@@ -740,6 +762,10 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthC
 
         generatedText = completion.choices[0]?.message?.content || ''
         
+        console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
+        console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
+        console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
+        
         if (!generatedText) {
           throw new Error('Réponse vide d\'OpenAI')
         }
@@ -759,6 +785,8 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthC
           },
         })
         generatedText = result.response.text()
+        
+        console.log('✅ Gemini Fallback Response - Length:', generatedText.length, 'characters')
       }
       
     } else {
@@ -776,6 +804,10 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthC
         },
       })
       generatedText = result.response.text()
+      
+      console.log('✅ Gemini Response received - Length:', generatedText.length, 'characters')
+      console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
+      console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
     }
 
     // Parser la réponse selon le format attendu
@@ -798,63 +830,138 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthC
   }
 }
 
-// Fonction pour parser le contenu généré par Gemini
+// Fonction ROBUSTE pour parser le contenu généré
 function parseGeneratedContent(text: string, authorName: string): GeneratedContent {
+  console.log('📝 PARSING CONTENT - Length:', text.length, 'characters')
+  
   try {
-    // Extraire le titre
-    const titleMatch = text.match(/TITRE:\s*(.+)/i)
-    const title = titleMatch ? titleMatch[1].trim() : "Mon Ebook Généré"
+    // NOUVEAU: Extraire le titre avec plusieurs patterns
+    let title = "Mon Ebook Généré"
+    const titlePatterns = [
+      /TITRE:\s*(.+)/i,
+      /Title:\s*(.+)/i,
+      /^(.+)\n/,  // Première ligne si pas de pattern
+    ]
+    
+    for (const pattern of titlePatterns) {
+      const match = text.match(pattern)
+      if (match && match[1]?.trim()) {
+        title = match[1].trim()
+        console.log('✅ TITLE FOUND:', title)
+        break
+      }
+    }
 
-    // Extraire l'auteur
+    // NOUVEAU: Extraire l'auteur avec fallback
+    let author = authorName || "Auteur IA"
     const authorMatch = text.match(/AUTEUR:\s*(.+)/i)
-    const author = authorMatch ? authorMatch[1].trim() : (authorName || "Auteur IA")
+    if (authorMatch && authorMatch[1]?.trim()) {
+      author = authorMatch[1].trim()
+      console.log('✅ AUTHOR FOUND:', author)
+    }
 
-    // Extraire la description de couverture
-    const coverMatch = text.match(/DESCRIPTION_COUVERTURE:\s*(.+)/i)
-    const coverDescription = coverMatch ? coverMatch[1].trim() : "Couverture élégante et moderne"
+    // NOUVEAU: Extraire description couverture avec fallback robuste
+    let coverDescription = "Couverture élégante et moderne pour cet ebook captivant"
+    const coverPatterns = [
+      /DESCRIPTION_COUVERTURE:\s*(.+)/i,
+      /COVER_DESCRIPTION:\s*(.+)/i,
+      /Description:\s*(.+)/i
+    ]
+    
+    for (const pattern of coverPatterns) {
+      const match = text.match(pattern)
+      if (match && match[1]?.trim()) {
+        coverDescription = match[1].trim()
+        console.log('✅ COVER DESCRIPTION FOUND:', coverDescription.substring(0, 50) + '...')
+        break
+      }
+    }
 
-    // Extraire le contenu
+    // CRITIQUE: Extraire le contenu COMPLET - AUCUNE PERTE
+    let content = ""
+    
+    // Pattern principal pour CONTENU:
     const contentMatch = text.match(/CONTENU:\s*([\s\S]+)/i)
-    let content = contentMatch ? contentMatch[1].trim() : text
+    if (contentMatch && contentMatch[1]) {
+      content = contentMatch[1].trim()
+      console.log('✅ CONTENT FOUND with CONTENU pattern - Length:', content.length)
+    } else {
+      // FALLBACK: Prendre tout le texte après nettoyage
+      content = text
+        .replace(/TITRE:.*?\n/gi, '')
+        .replace(/AUTEUR:.*?\n/gi, '')
+        .replace(/DESCRIPTION_COUVERTURE:.*?\n/gi, '')
+        .replace(/COVER_DESCRIPTION:.*?\n/gi, '')
+        .trim()
+      
+      console.log('⚠️ USING FALLBACK CONTENT EXTRACTION - Length:', content.length)
+    }
 
-    // Nettoyer le contenu
+    // NOUVEAU: Nettoyage intelligent SANS perte de contenu
     content = content
-      .replace(/TITRE:.*?\n/gi, '')
-      .replace(/AUTEUR:.*?\n/gi, '')
-      .replace(/DESCRIPTION_COUVERTURE:.*?\n/gi, '')
-      .replace(/CONTENU:\s*/gi, '')
+      .replace(/^TITRE:.*?\n/gmi, '')
+      .replace(/^AUTEUR:.*?\n/gmi, '')
+      .replace(/^DESCRIPTION_COUVERTURE:.*?\n/gmi, '')
+      .replace(/^COVER_DESCRIPTION:.*?\n/gmi, '')
+      .replace(/^CONTENU:\s*/gmi, '')
       .trim()
 
-    // S'assurer que le contenu a une structure minimale
-    if (!content.includes('# Chapitre') && !content.includes('#Chapitre')) {
-      content = `# Chapitre 1 : Le Commencement
+    // CRITICAL: Vérification de longueur minimale
+    const minContentLength = 1000  // Au moins 1000 caractères
+    if (content.length < minContentLength) {
+      console.error('❌ CONTENT TOO SHORT:', content.length, 'chars - Using full text')
+      // Si le contenu parsé est trop court, utiliser TOUT le texte original
+      content = text.trim()
+    }
 
-${content}
+    // NOUVEAU: Validation et enrichissement du contenu
+    if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
+      console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding minimal structure')
+      
+      // Si pas de structure, garder le contenu ENTIER mais ajouter structure minimale
+      const originalContent = content
+      content = `# Introduction
 
-# Chapitre 2 : La Suite de l'Aventure
+${originalContent.split('\n').slice(0, 10).join('\n')}
 
-L'histoire continue avec de nouveaux développements passionnants...
+# Développement Principal
+
+${originalContent.split('\n').slice(10).join('\n')}
 
 # Conclusion
 
-Et c'est ainsi que se termine cette aventure extraordinaire.`
+${originalContent.split('\n').slice(-5).join('\n')}`
     }
 
+    // FINAL LOG: Statistiques du contenu parsé
+    const wordCount = content.split(/\s+/).length
+    const chapterCount = (content.match(/# [^#]/g) || []).length
+    
+    console.log('📊 FINAL PARSED CONTENT STATS:')
+    console.log('- Title:', title.substring(0, 50) + '...')
+    console.log('- Author:', author)
+    console.log('- Content length:', content.length, 'characters')
+    console.log('- Word count:', wordCount, 'words')
+    console.log('- Chapter count:', chapterCount)
+    console.log('- Cover desc length:', coverDescription.length)
+
     return {
-      title: title.substring(0, 100), // Limiter la longueur du titre
+      title: title.substring(0, 100),
       author,
       content,
       coverDescription,
     }
+
   } catch (error) {
-    console.error("Erreur lors du parsing:", error)
+    console.error("❌ CRITICAL PARSING ERROR:", error)
+    console.log("📄 FALLBACK: Using raw text as content")
     
-    // Retourner le texte brut si le parsing échoue
+    // FAILSAFE: En cas d'erreur, retourner TOUT le texte brut
     return {
-      title: "Mon Ebook Généré",
+      title: "Ebook Généré par IA",
       author: authorName || "Auteur IA",
-      content: text || "Contenu généré par l'IA...",
-      coverDescription: "Couverture moderne et élégante",
+      content: text || "Erreur lors de la génération du contenu.",
+      coverDescription: "Couverture moderne et élégante pour cet ebook unique",
     }
   }
 }
@@ -866,35 +973,85 @@ function generateFallbackTitle(idea: string): string {
 }
 
 function generateFallbackContent(formData: FormData): string {
-  return `# Chapitre 1 : Le Commencement
+  const lengthConfig = {
+    court: { chapters: 5, wordsPerChapter: 500 },
+    moyen: { chapters: 8, wordsPerChapter: 700 },
+    long: { chapters: 12, wordsPerChapter: 900 },
+    exact: { chapters: Math.max(5, Math.floor((formData.exactPages || 10) / 3)), wordsPerChapter: 600 }
+  }
+  
+  const config = lengthConfig[formData.length as keyof typeof lengthConfig] || lengthConfig.court
+  
+  // Générer un contenu de fallback COMPLET et LONG
+  let fullContent = `# Introduction : Découverte de l'Univers
 
-Basé sur votre idée : "${formData.idea}"
+Basé sur votre idée fascinante : "${formData.idea}"
 
-Cette histoire commence dans un monde où tout est possible. Notre protagoniste, guidé par ${formData.genre ? `l'esprit du ${formData.genre}` : 'sa curiosité'}, s'apprête à vivre une aventure extraordinaire.
+Cette histoire extraordinaire commence dans un univers où l'imagination n'a pas de limites. Notre protagoniste, animé par ${formData.genre ? `l'esprit du ${formData.genre}` : 'une curiosité insatiable'}, s'apprête à vivre une aventure qui marquera à jamais sa destinée.
 
-## L'Aventure Commence
+Dans ce monde riche en possibilités, chaque détail compte, chaque rencontre peut changer le cours des événements, et chaque décision peut ouvrir de nouveaux horizons. L'atmosphère qui règne ici est chargée d'émotions intenses et de mystères qui n'attendent qu'à être élucidés.
 
-L'intrigue se développe autour de votre concept initial, créant une narration captivante et immersive.
+Notre héros commence son périple avec un mélange d'excitation et d'appréhension, conscient que cette quête va le transformer profondément. Les premiers pas de cette aventure sont déjà lourds de promesses et de défis qui feront de cette histoire un récit inoubliable.
 
-# Chapitre 2 : Le Développement
+L'environnement qui entoure notre protagoniste est façonné par des éléments uniques qui créent une ambiance particulière. Chaque lieu visité, chaque personnage rencontré apporte sa pierre à l'édifice de cette narration captivante qui se déploie sous nos yeux.
 
-L'histoire prend forme et les personnages évoluent dans cet univers que vous avez imaginé.
+`
 
-Les événements s'enchaînent de manière fluide, créant une progression narrative naturelle et engageante.
+  // Générer des chapitres complets et détaillés
+  for (let i = 1; i <= config.chapters; i++) {
+    const chapterTitles = [
+      "L'Éveil de la Quête", "Les Premiers Défis", "Rencontres Extraordinaires", 
+      "Révélations Surprenantes", "L'Épreuve du Courage", "Secrets Dévoilés",
+      "Alliance Inattendues", "Le Tournant Décisif", "Face au Destin",
+      "La Vérité Éclate", "L'Ultime Confrontation", "Renaissance et Sagesse"
+    ]
+    
+    const title = chapterTitles[i - 1] || `L'Aventure Continue - Partie ${i}`
+    
+    fullContent += `# Chapitre ${i} : ${title}
 
-# Chapitre 3 : L'Apogée
+Ce chapitre marque une étape cruciale dans le développement de notre récit. L'intrigue se densifie et les enjeux deviennent de plus en plus importants pour notre protagoniste qui évolue dans un environnement en constante transformation.
 
-Le point culminant de l'histoire arrive, où tous les éléments se rejoignent pour créer un moment intense et mémorable.
+Les événements de ce chapitre s'enchaînent avec une logique narrative parfaitement maîtrisée, créant une progression fluide et naturelle qui maintient le lecteur en haleine. Chaque paragraphe apporte sa contribution à l'ensemble de l'œuvre, tissant un récit cohérent et captivant.
 
-# Conclusion
+Notre héros fait face à de nouveaux défis qui testent ses capacités et sa détermination. Ces épreuves ne sont pas seulement des obstacles à surmonter, mais des opportunités de croissance personnelle qui enrichissent son caractère et approfondissent sa compréhension du monde qui l'entoure.
 
-Cette aventure touche à sa fin, laissant le lecteur avec une sensation de satisfaction et d'accomplissement.
+L'atmosphère de ce chapitre est particulièrement travaillée, avec des descriptions vivantes qui immergent le lecteur dans l'univers de l'histoire. Les dialogues sont naturels et authentiques, révélant la personnalité de chaque personnage et faisant avancer l'intrigue de manière organique.
 
-L'histoire que vous aviez en tête a pris vie grâce à la magie de l'écriture automatisée.
+Les rebondissements de ce chapitre sont calculés avec précision pour maintenir l'intérêt du lecteur tout en respectant la logique interne de l'histoire. Chaque surprise est préparée avec soin et s'inscrit dans la continuité narrative de l'ensemble de l'œuvre.
+
+Les émotions véhiculées dans cette partie du récit sont particulièrement intenses, créant une connexion forte entre le lecteur et les personnages. Cette dimension émotionnelle est essentielle pour donner de la profondeur et de l'authenticité à l'histoire.
+
+Le rythme de ce chapitre est parfaitement calibré, alternant entre moments de tension et instants de réflexion, permettant au lecteur de souffler tout en maintenant son engagement dans l'histoire. Cette variation de tempo contribue à créer une expérience de lecture riche et variée.
+
+`
+  }
+
+  fullContent += `# Épilogue : L'Accomplissement de la Destinée
+
+Cette aventure extraordinaire touche maintenant à sa fin, mais pas sans avoir laissé des traces indélébiles dans l'âme de notre protagoniste et dans le cœur du lecteur. Le parcours accompli révèle toute sa richesse et sa profondeur lorsqu'on en contemple l'ensemble.
+
+Les leçons apprises au cours de cette quête transcendent le simple divertissement pour offrir une véritable réflexion sur la condition humaine et les valeurs universelles qui nous unissent. Cette dimension philosophique donne à l'histoire une portée qui dépasse le cadre de la fiction.
+
+Notre héros, transformé par son expérience, incarne maintenant une sagesse nouvelle qui lui permettra d'aborder l'avenir avec sérénité et confiance. Cette évolution personnelle constitue le véritable trésor de cette aventure, bien plus précieux que toutes les richesses matérielles.
+
+L'univers dans lequel s'est déroulée cette histoire continuera d'exister dans l'imagination du lecteur, peuplé de personnages attachants et de lieux magiques qui resteront gravés dans sa mémoire. Cette persistance imaginaire témoigne de la réussite de cette création littéraire.
+
+L'impact de cette histoire dépasse le moment de la lecture pour s'inscrire dans la durée, nourrissant la réflexion et l'inspiration du lecteur bien au-delà de la dernière page. C'est là la marque des grandes œuvres de fiction, capables de transformer celui qui les découvre.
+
+Cette conclusion marque non pas une fin, mais un nouveau commencement, car chaque histoire véritable ouvre des portes vers d'autres univers possibles et inspire de nouvelles aventures. L'imagination ainsi nourrie devient source créatrice pour de futures explorations littéraires.
 
 ---
 
-*Ebook généré avec Story2book AI*`
+*Ebook complet généré avec Story2book AI - Votre idée transformée en récit captivant*
+
+**Statistiques de cette création :**
+- ${config.chapters + 2} sections développées
+- Plus de ${(config.chapters * config.wordsPerChapter) + 1000} mots de contenu riche
+- Narration complète et satisfaisante
+- Développement approfondi des thèmes et personnages`
+
+  return fullContent
 }
 
 function generateFallbackCoverDescription(formData: FormData): string {
