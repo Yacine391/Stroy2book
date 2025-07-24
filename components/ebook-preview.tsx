@@ -50,12 +50,12 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
         <div className="relative">
           <Card className="w-[400px] h-[600px] shadow-2xl transform rotate-1 hover:rotate-0 transition-transform duration-300">
             <CardContent
-              className="p-8 h-full flex flex-col justify-center"
+              className="p-8 h-full flex flex-col"
               style={{ backgroundColor: formData.backgroundColor }}
             >
               {currentPage === 0 ? (
                 // Page de couverture
-                <div className="text-center space-y-6">
+                <div className="text-center space-y-6 flex flex-col justify-center h-full">
                   {coverImageUrl && (
                     <div className="flex justify-center mb-6">
                       <img
@@ -66,23 +66,25 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
                     </div>
                   )}
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight">{formData.title}</h1>
-                    {formData.author && <p className="text-xl text-gray-700 font-medium">par {formData.author}</p>}
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight break-words">{formData.title}</h1>
+                    {formData.author && <p className="text-xl text-gray-700 font-medium break-words">par {formData.author}</p>}
                   </div>
                   <div className="mt-auto">
                     <div className="w-16 h-0.5 bg-gray-400 mx-auto" />
                   </div>
                 </div>
               ) : (
-                // Pages de contenu
-                <div className="space-y-4">
+                // Pages de contenu avec scroll
+                <div className="space-y-4 h-full flex flex-col">
                   <div className="text-sm text-gray-500 text-center">Chapitre {currentPage}</div>
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-gray-800 leading-relaxed text-justify">
-                      {pages[currentPage - 1] || "Contenu de la page..."}
-                    </p>
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                    <div className="pr-2">
+                      <div className="text-gray-800 leading-relaxed text-justify whitespace-pre-wrap break-words">
+                        {pages[currentPage - 1] || "Contenu de la page..."}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-center text-sm text-gray-500 mt-auto">{currentPage}</div>
+                  <div className="text-center text-sm text-gray-500 mt-2">{currentPage}</div>
                 </div>
               )}
             </CardContent>
