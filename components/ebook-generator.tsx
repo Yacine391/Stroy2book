@@ -13,6 +13,8 @@ interface EbookGeneratorProps {
     author: string
     content: string
     backgroundColor: string
+    fontFamily: string
+    hasWatermark: boolean
     coverImage: File | null
   }
   onBack: () => void
@@ -30,7 +32,9 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
         title: formData.title,
         author: formData.author,
         content: formData.content,
-        backgroundColor: formData.backgroundColor
+        backgroundColor: formData.backgroundColor,
+        fontFamily: formData.fontFamily,
+        hasWatermark: formData.hasWatermark
       })
 
       // Créer un nom de fichier propre
@@ -101,7 +105,12 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
       </Card>
 
       {/* Preview */}
-      <EbookPreview formData={formData} />
+      <EbookPreview formData={{
+        ...formData,
+        fontFamily: formData.fontFamily,
+        hasWatermark: formData.hasWatermark,
+        coverDescription: "Image de garde générée automatiquement"
+      }} />
     </div>
   )
 }

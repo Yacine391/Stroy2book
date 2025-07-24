@@ -7,6 +7,8 @@ interface FormData {
   targetAudience: string
   length: string
   exactPages: number
+  fontFamily: string
+  hasWatermark: boolean
 }
 
 interface GeneratedContent {
@@ -249,32 +251,42 @@ ${getAudienceInstructions(audience)}`
         return `
 📈 INSTRUCTIONS SPÉCIFIQUES POUR LE DÉVELOPPEMENT PERSONNEL :
 - Tu es maintenant un EXPERT EN DÉVELOPPEMENT PERSONNEL et coach de vie
-- Crée un GUIDE PRATIQUE et ACTIONNABLE, PAS une fiction avec des personnages
+- INTERDICTION ABSOLUE : NE CRÉE JAMAIS DE FICTION, D'HISTOIRES OU DE PERSONNAGES INVENTÉS
+- Crée un GUIDE PRATIQUE et ACTIONNABLE - SEULEMENT DES CONSEILS RÉELS
 - Structure ton contenu en CHAPITRES THÉMATIQUES avec des exercices concrets
 - Utilise un ton MOTIVANT, BIENVEILLANT et EXPERT
 - Inclus des TECHNIQUES CONCRÈTES, des EXERCICES PRATIQUES et des ÉTAPES À SUIVRE
 - Ajoute des EXEMPLES RÉELS (sans noms) et des ÉTUDES DE CAS inspirantes
-- Évite ABSOLUMENT les histoires fictives avec des personnages inventés
-- Concentre-toi sur des CONSEILS PRATIQUES et des STRATÉGIES ÉPROUVÉES
+- JAMAIS d'histoires fictives, de dialogues inventés ou de scénarios imaginaires
+- Concentre-toi EXCLUSIVEMENT sur des CONSEILS PRATIQUES et des STRATÉGIES ÉPROUVÉES
 - Inclus des EXERCICES D'AUTO-RÉFLEXION et des questions pour le lecteur
 - Structure claire avec INTRODUCTION, DÉVELOPPEMENT PRATIQUE, et PLAN D'ACTION
 
+⚠️ RAPPEL CRITIQUE : C'EST UN GUIDE PRATIQUE, PAS UNE FICTION !
+
 🎯 FORMAT OBLIGATOIRE POUR DÉVELOPPEMENT PERSONNEL :
-- Introduction : Présentation du problème et de la solution
-- Chapitres thématiques avec conseils pratiques
-- Exercices concrets à la fin de chaque chapitre  
-- Exemples d'application et témoignages (anonymes)
-- Plan d'action final avec étapes à suivre
-- Conclusion motivante avec encouragements
+- Introduction : Présentation claire du sujet et des bénéfices
+- Chapitres thématiques avec conseils pratiques et méthodes
+- Exercices concrets et actionables à la fin de chaque chapitre  
+- Exemples d'application réels et témoignages anonymes
+- Plan d'action final avec étapes détaillées à suivre
+- Conclusion motivante avec encouragements et résumé des points clés
+
+STRUCTURE OBLIGATOIRE PRATIQUE :
+${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
+  `# Chapitre ${i + 1} : [Titre pratique et actionnable] (${lengthConfig.wordsPerChapter} mots de conseils pratiques)`
+).join('\n')}
 
 ${getAudienceInstructions(audience)}
 
-🌟 ÉLÉMENTS D'UNICITÉ POUR CE GUIDE (ID: ${unique.uniqueId}) :
-- APPROCHE UNIQUE : ${unique.style} pour présenter les conseils
-- ANGLE SPÉCIFIQUE : ${unique.atmosphere} dans le ton et la présentation
-- MÉTHODE DISTINCTIVE : ${unique.technique} pour structurer le contenu
-- ÉLÉMENT SIGNATURE : ${unique.twist} comme approche innovante
-- FOCUS PARTICULIER : ${unique.details} pour personnaliser les conseils`
+🌟 APPROCHE UNIQUE POUR CE GUIDE (ID: ${unique.uniqueId}) :
+- MÉTHODE DISTINCTIVE : ${unique.technique} pour structurer les conseils pratiques
+- ANGLE SPÉCIFIQUE : ${unique.atmosphere} dans le ton des conseils
+- APPROCHE PÉDAGOGIQUE : ${unique.style} pour présenter les stratégies
+- ÉLÉMENT SIGNATURE : ${unique.twist} comme approche méthodologique innovante
+- FOCUS PARTICULIER : ${unique.details} pour personnaliser les techniques
+
+⚠️ RAPPEL FINAL : ZÉRO FICTION - SEULEMENT DU CONTENU PRATIQUE ET ACTIONNABLE !`
       }
       
       if (genre === 'biographie') {
@@ -364,7 +376,13 @@ ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
-🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}
+${formData.genre === 'developpement-personnel' ? `
+⚠️ ATTENTION SPÉCIALE DÉVELOPPEMENT PERSONNEL ⚠️
+Tu vas créer un GUIDE PRATIQUE, PAS UNE FICTION !
+- INTERDICTION ABSOLUE de créer des personnages, dialogues ou histoires inventées
+- SEULEMENT des conseils pratiques, exercices et méthodes concrètes
+- Format : Introduction + Chapitres thématiques + Exercices + Plan d'action
+` : `🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}`}
 Créée le : ${uniqueElements.timeSignature}
 
 ${genreInstructions}

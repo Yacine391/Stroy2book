@@ -21,6 +21,8 @@ export default function HomePage() {
     length: "court",
     exactPages: 10,
     backgroundColor: "#ffffff",
+    fontFamily: "Arial",
+    hasWatermark: false,
     coverImage: null as File | null,
   })
   const [generatedContent, setGeneratedContent] = useState({
@@ -83,9 +85,20 @@ export default function HomePage() {
     { name: "Gris perle", value: "#e5e7eb" },
   ]
 
-  const handleInputChange = (field: string, value: string) => {
+  const fontFamilies = [
+    { name: "Arial (moderne et lisible)", value: "Arial" },
+    { name: "Helvetica (propre et professionnel)", value: "Helvetica" },
+    { name: "Times New Roman (classique et élégant)", value: "Times New Roman" },
+    { name: "Georgia (serif moderne)", value: "Georgia" },
+    { name: "Verdana (très lisible)", value: "Verdana" },
+    { name: "Trebuchet MS (contemporain)", value: "Trebuchet MS" },
+    { name: "Palatino (raffiné)", value: "Palatino" },
+    { name: "Garamond (littéraire)", value: "Garamond" },
+  ]
+
+  const handleInputChange = (field: string, value: string | boolean) => {
     if (field === "exactPages") {
-      const numValue = parseInt(value) || 10
+      const numValue = parseInt(value as string) || 10
       setFormData((prev) => ({ ...prev, [field]: Math.min(100, Math.max(5, numValue)) }))
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }))
@@ -135,6 +148,8 @@ export default function HomePage() {
       length: "court",
       exactPages: 10,
       backgroundColor: "#ffffff",
+      fontFamily: "Arial",
+      hasWatermark: false,
       coverImage: null,
     })
     setGeneratedContent({
@@ -206,7 +221,7 @@ export default function HomePage() {
                   </Label>
                   <Textarea
                     id="idea"
-                    placeholder="Ex: Une histoire d'amour entre deux astronautes sur Mars, ou un guide pour apprendre la cuisine française, ou l'aventure d'un chat qui découvre qu'il a des pouvoirs magiques..."
+                    placeholder="Ex: Crée une frise chronologique visuelle de l'histoire de l'humanité, Ecris un conte pour enfants avec une morale sur la générosité avec des illustrations style aquarelle, Fais-moi découvrir les coutumes traditionnelles du Maroc à travers un eBook interactif..."
                     value={formData.idea}
                     onChange={(e) => handleInputChange("idea", e.target.value)}
                     className="min-h-[120px] text-lg resize-y"
@@ -335,6 +350,51 @@ export default function HomePage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Font Family */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <span className="text-lg">🔤</span>
+                      <span>Police de caractère</span>
+                    </Label>
+                    <Select
+                      value={formData.fontFamily}
+                      onValueChange={(value) => handleInputChange("fontFamily", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fontFamilies.map((font) => (
+                          <SelectItem key={font.value} value={font.value}>
+                            <span style={{ fontFamily: font.value }}>{font.name}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Watermark */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <span className="text-lg">💧</span>
+                      <span>Filigrane</span>
+                    </Label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="watermark"
+                        checked={formData.hasWatermark}
+                        onChange={(e) => handleInputChange("hasWatermark", e.target.checked)}
+                        className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
+                      />
+                      <label htmlFor="watermark" className="text-sm text-gray-700">
+                        Ajouter un filigrane "Story2book AI" au PDF
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Cover Image Upload */}
                 <div className="space-y-2">
                   <Label className="flex items-center space-x-2">
@@ -388,6 +448,8 @@ export default function HomePage() {
               targetAudience: formData.targetAudience,
               length: formData.length,
               exactPages: formData.exactPages,
+              fontFamily: formData.fontFamily,
+              hasWatermark: formData.hasWatermark,
             }}
             onBack={resetForm}
             onRegenerate={handleRegenerate}
@@ -402,6 +464,8 @@ export default function HomePage() {
               author: generatedContent.author,
               content: generatedContent.content,
               backgroundColor: formData.backgroundColor,
+              fontFamily: formData.fontFamily,
+              hasWatermark: formData.hasWatermark,
               coverImage: formData.coverImage,
             }}
             onBack={() => setCurrentStep("preview")}

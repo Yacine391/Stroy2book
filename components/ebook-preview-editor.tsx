@@ -16,6 +16,8 @@ interface EbookPreviewEditorProps {
     author: string
     content: string
     backgroundColor: string
+    fontFamily: string
+    hasWatermark: boolean
     coverImage: File | null
     idea: string
     genre: string
@@ -270,7 +272,10 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
           author: editedContent.author,
           content: editedContent.content,
           backgroundColor: editedContent.backgroundColor,
+          fontFamily: formData.fontFamily,
+          hasWatermark: formData.hasWatermark,
           coverImage: formData.coverImage,
+          coverDescription: "Image de garde générée automatiquement",
         }}
       />
     </div>

@@ -9,7 +9,10 @@ interface EbookPreviewProps {
     author: string
     content: string
     backgroundColor: string
+    fontFamily: string
+    hasWatermark: boolean
     coverImage: File | null
+    coverDescription?: string
   }
 }
 
@@ -56,15 +59,24 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
               {currentPage === 0 ? (
                 // Page de couverture
                 <div className="text-center space-y-6 flex flex-col justify-center h-full">
-                  {coverImageUrl && (
-                    <div className="flex justify-center mb-6">
+                  <div className="flex justify-center mb-6">
+                    {coverImageUrl ? (
                       <img
-                        src={coverImageUrl || "/placeholder.svg"}
-                        alt="Couverture"
+                        src={coverImageUrl}
+                        alt="Couverture personnalisée"
                         className="max-w-48 max-h-48 object-cover rounded-lg shadow-md"
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="max-w-48 max-h-48 w-48 h-48 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg shadow-md flex items-center justify-center text-white text-center p-4">
+                        <div>
+                          <div className="text-4xl mb-2">📚</div>
+                          <div className="text-sm font-medium leading-tight">
+                            {formData.coverDescription || "Ebook généré par IA"}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight break-words">{formData.title}</h1>
                     {formData.author && <p className="text-xl text-gray-700 font-medium break-words">par {formData.author}</p>}

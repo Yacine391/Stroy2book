@@ -16,6 +16,8 @@ interface EbookData {
   author: string
   content: string
   backgroundColor: string
+  fontFamily: string
+  hasWatermark: boolean
   coverImage?: string
 }
 
@@ -34,14 +36,91 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const contentWidth = pageWidth - (margin * 2)
   let currentY = margin
 
-  // Fonction pour ajouter une nouvelle page si nécessaire
+  // Fonction pour convertir hex en RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 255, g: 255, b: 255 }
+  }
+
+  const bgColor = hexToRgb(ebookData.backgroundColor)
+
+  // Fonction pour mapper les polices (jsPDF supporte un nombre limité)
+  const getFontMapping = (fontFamily: string): string => {
+    const fontMap: { [key: string]: string } = {
+      'Arial': 'helvetica',
+      'Helvetica': 'helvetica',
+      'Times New Roman': 'times',
+      'Georgia': 'times',
+      'Verdana': 'helvetica',
+      'Trebuchet MS': 'helvetica',
+      'Palatino': 'times',
+      'Garamond': 'times'
+    }
+    return fontMap[fontFamily] || 'helvetica'
+  }
+
+  const selectedFont = getFontMapping(ebookData.fontFamily)
+
+  // Fonction pour ajouter une nouvelle page avec couleur de fond
   const checkAndAddNewPage = (neededHeight: number) => {
     if (currentY + neededHeight > pageHeight - margin) {
       pdf.addPage()
+      // Appliquer la couleur de fond à la nouvelle page
+      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      // Ajouter le filigrane si activé
+      if (ebookData.hasWatermark) {
+        addWatermark()
+      }
       currentY = margin
       return true
     }
     return false
+  }
+
+  // Fonction spéciale pour les titres de chapitres - s'assure qu'il y a de l'espace pour le contenu
+  const checkAndAddNewPageForChapter = (titleHeight: number) => {
+    const minSpaceAfterTitle = 40 // Espace minimum requis après un titre de chapitre
+    if (currentY + titleHeight + minSpaceAfterTitle > pageHeight - margin) {
+      pdf.addPage()
+      // Appliquer la couleur de fond à la nouvelle page
+      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      // Ajouter le filigrane si activé
+      if (ebookData.hasWatermark) {
+        addWatermark()
+      }
+      currentY = margin
+      return true
+    }
+    return false
+  }
+
+  // Fonction pour ajouter un filigrane
+  const addWatermark = () => {
+    // Sauvegarder les paramètres actuels
+    const originalFillColor = pdf.getFillColor()
+    
+    // Configurer le filigrane
+    pdf.setFont(selectedFont, 'normal')
+    pdf.setFontSize(48)
+    pdf.setTextColor(220, 220, 220) // Gris très clair
+    
+    // Calculer position centrale
+    const watermarkText = 'Story2book AI'
+    const textWidth = pdf.getTextWidth(watermarkText)
+    const x = (pageWidth - textWidth) / 2
+    const y = pageHeight / 2
+    
+    // Ajouter le texte en diagonale (simulation de rotation)
+    pdf.text(watermarkText, x, y)
+    
+    // Restaurer la couleur de remplissage
+    pdf.setFillColor(originalFillColor)
   }
 
   // Fonction pour diviser le texte en lignes
@@ -50,12 +129,17 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     return pdf.splitTextToSize(text, maxWidth)
   }
 
-  // Page de couverture
-  pdf.setFillColor(250, 250, 250) // Couleur de fond claire
+  // Page de couverture avec couleur personnalisée
+  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
   pdf.rect(0, 0, pageWidth, pageHeight, 'F')
 
+  // Ajouter le filigrane sur la couverture si activé
+  if (ebookData.hasWatermark) {
+    addWatermark()
+  }
+
   // Titre de la couverture
-  pdf.setFont('helvetica', 'bold')
+  pdf.setFont(selectedFont, 'bold')
   pdf.setFontSize(24)
   pdf.setTextColor(60, 60, 60)
   
@@ -70,7 +154,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   // Auteur
   if (ebookData.author) {
-    pdf.setFont('helvetica', 'normal')
+    pdf.setFont(selectedFont, 'normal')
     pdf.setFontSize(16)
     pdf.setTextColor(100, 100, 100)
     
@@ -81,7 +165,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   }
 
   // Logo/signature en bas
-  pdf.setFont('helvetica', 'italic')
+  pdf.setFont(selectedFont, 'italic')
   pdf.setFontSize(10)
   pdf.setTextColor(150, 150, 150)
   const signature = 'Généré par Story2book AI'
@@ -90,10 +174,16 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   // Nouvelle page pour le contenu
   pdf.addPage()
+  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+  pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+  // Ajouter le filigrane si activé
+  if (ebookData.hasWatermark) {
+    addWatermark()
+  }
   currentY = margin
 
   // Configuration pour le contenu
-  pdf.setFont('helvetica', 'normal')
+  pdf.setFont(selectedFont, 'normal')
   pdf.setFontSize(12)
   pdf.setTextColor(40, 40, 40)
 
@@ -110,9 +200,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     }
 
     if (line.startsWith('# ')) {
-      // Titre principal
-      checkAndAddNewPage(20)
-      pdf.setFont('helvetica', 'bold')
+      // Titre principal (chapitre)
+      checkAndAddNewPageForChapter(20)
+      pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(18)
       pdf.setTextColor(80, 80, 80)
       
@@ -126,9 +216,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       currentY += lines.length * 8 + 10
       
     } else if (line.startsWith('## ')) {
-      // Sous-titre (chapitre)
-      checkAndAddNewPage(18)
-      pdf.setFont('helvetica', 'bold')
+      // Sous-titre (section importante)
+      checkAndAddNewPageForChapter(18)
+      pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(14)
       pdf.setTextColor(60, 60, 60)
       
@@ -144,7 +234,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     } else if (line.startsWith('### ')) {
       // Sous-sous-titre
       checkAndAddNewPage(15)
-      pdf.setFont('helvetica', 'bold')
+      pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(12)
       pdf.setTextColor(80, 80, 80)
       
@@ -160,7 +250,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique
       checkAndAddNewPage(10)
-      pdf.setFont('helvetica', 'italic')
+      pdf.setFont(selectedFont, 'italic')
       pdf.setFontSize(11)
       pdf.setTextColor(100, 100, 100)
       
@@ -178,7 +268,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     } else if (line.startsWith('**') && line.endsWith('**')) {
       // Texte en gras
       checkAndAddNewPage(10)
-      pdf.setFont('helvetica', 'bold')
+      pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(12)
       pdf.setTextColor(60, 60, 60)
       
@@ -203,7 +293,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       
     } else if (line.length > 0) {
       // Paragraphe normal
-      pdf.setFont('helvetica', 'normal')
+      pdf.setFont(selectedFont, 'normal')
       pdf.setFontSize(11)
       pdf.setTextColor(50, 50, 50)
       
@@ -224,7 +314,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const totalPages = pdf.getNumberOfPages()
   for (let i = 2; i <= totalPages; i++) { // Commencer à la page 2 (après la couverture)
     pdf.setPage(i)
-    pdf.setFont('helvetica', 'normal')
+    pdf.setFont(selectedFont, 'normal')
     pdf.setFontSize(10)
     pdf.setTextColor(150, 150, 150)
     

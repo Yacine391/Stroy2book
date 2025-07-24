@@ -15,6 +15,8 @@ interface AIGenerationStepProps {
     length: string
     exactPages: number
     backgroundColor: string
+    fontFamily: string
+    hasWatermark: boolean
     coverImage: File | null
   }
   onComplete: (content: {
