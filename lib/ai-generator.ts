@@ -21,14 +21,42 @@ const genAI = new GoogleGenerativeAI(apiKey)
 
 export async function generateEbook(formData: FormData): Promise<GeneratedContent> {
   try {
-    // Construire le prompt en fonction des paramètres avec des longueurs beaucoup plus importantes
-    const lengthMap = {
-      court: "15-25 pages (environ 5000-8000 mots) - Chaque chapitre doit faire au minimum 800-1200 mots",
-      moyen: "35-50 pages (environ 12000-18000 mots) - Chaque chapitre doit faire au minimum 1500-2000 mots", 
-      long: "60-100 pages (environ 25000-35000 mots) - Chaque chapitre doit faire au minimum 2500-3500 mots",
+    // Calcul précis du nombre de mots basé sur des pages réelles
+    // Environ 250 mots par page est le standard des livres publiés
+    const wordsPerPage = 250
+    
+    const getExactLength = (length: string) => {
+      const lengthConfig = {
+        court: { pages: 20, minPages: 18, maxPages: 22 },     // 20 pages exactement
+        moyen: { pages: 40, minPages: 38, maxPages: 42 },     // 40 pages exactement  
+        long: { pages: 80, minPages: 78, maxPages: 82 },      // 80 pages exactement
+      }
+      
+      const config = lengthConfig[length as keyof typeof lengthConfig] || lengthConfig.court
+      const exactWords = config.pages * wordsPerPage
+      const minWords = config.minPages * wordsPerPage
+      const maxWords = config.maxPages * wordsPerPage
+      
+      return {
+        pages: config.pages,
+        exactWords,
+        minWords,
+        maxWords,
+        chaptersCount: Math.ceil(config.pages / 5), // Environ 5 pages par chapitre
+        wordsPerChapter: Math.ceil(exactWords / Math.ceil(config.pages / 5))
+      }
     }
 
-    const targetLength = lengthMap[formData.length as keyof typeof lengthMap] || lengthMap.court
+    const lengthConfig = getExactLength(formData.length)
+    
+    const targetLength = `EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots précisément)
+- Minimum absolu : ${lengthConfig.minWords} mots
+- Maximum autorisé : ${lengthConfig.maxWords} mots  
+- Nombre de chapitres requis : ${lengthConfig.chaptersCount}
+- Mots par chapitre : environ ${lengthConfig.wordsPerChapter} mots chacun
+
+IMPORTANT CRITIQUE : Vous DEVEZ atteindre exactement ${lengthConfig.exactWords} mots (±500 mots maximum). 
+C'est une exigence STRICTE et NON-NÉGOCIABLE.`
 
     // Instructions spécifiques selon le genre
     const getGenreSpecificInstructions = (genre: string, idea: string): string => {
@@ -47,17 +75,19 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
 - Ajoute des CONTEXTES géopolitiques, sociaux et culturels de l'époque
 - Mentionne les SOURCES PRIMAIRES et SECONDAIRES quand possible
 
-DÉVELOPPEMENT APPROFONDI REQUIS :
-- Chaque chapitre doit être extrêmement détaillé avec des descriptions complètes
+DÉVELOPPEMENT APPROFONDI REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
+- Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
 - Développe en profondeur les contextes sociaux, économiques et culturels
 - Inclus de nombreux exemples concrets et témoignages d'époque
 - Explique les nuances et complexités de chaque période
 - Ajoute des anecdotes historiques vérifiées pour enrichir le récit
+- Détaille les conséquences à court, moyen et long terme
+- Analyse les différents points de vue historiques sur les événements
 
-Exemple de structure pour l'histoire :
-# Chapitre 1 : Les Origines (dates précises)
-# Chapitre 2 : Les Événements Majeurs (dates précises) 
-# Chapitre 3 : Les Conséquences (dates précises)
+STRUCTURE OBLIGATOIRE :
+${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
+  `# Chapitre ${i + 1} : [Titre avec dates] (${lengthConfig.wordsPerChapter} mots requis)`
+).join('\n')}
 
 IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis.`
       }
@@ -73,7 +103,20 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
 - Développe en profondeur les émotions des personnages et leurs relations
 - Ajoute des sous-intrigues et des rebondissements pour enrichir l'histoire
 - Inclus des descriptions d'environnements riches et détaillées
-- Développe l'univers et le contexte de l'histoire avec de nombreux détails`
+- Développe l'univers et le contexte de l'histoire avec de nombreux détails
+
+DÉVELOPPEMENT REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
+- Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
+- Développe chaque scène avec un maximum de détails descriptifs
+- Ajoute des flashbacks et des backstories pour enrichir les personnages
+- Inclus des dialogues étendus et des monologues intérieurs
+- Détaille chaque action, émotion et pensée des personnages
+- Développe l'environnement et l'atmosphère de chaque scène
+
+STRUCTURE OBLIGATOIRE :
+${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
+  `# Chapitre ${i + 1} : [Titre captivant] (${lengthConfig.wordsPerChapter} mots requis)`
+).join('\n')}`
     }
 
     const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea)
@@ -83,55 +126,53 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
 IDÉE PRINCIPALE : "${formData.idea}"
 ${formData.genre ? `GENRE : ${formData.genre}` : ""}
 ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
-LONGUEUR SOUHAITÉE : ${targetLength}
+LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
 ${genreInstructions}
 
-EXIGENCES DE LONGUEUR STRICTES :
-- Génère un contenu TRÈS LONG et EXTRÊMEMENT DÉTAILLÉ
-- Chaque chapitre doit être substantiel et bien développé
-- N'hésite pas à ajouter de nombreux détails, descriptions et développements
-- Écris comme si tu rédigeais un vrai livre professionnel destiné à la publication
-- Développe chaque scène avec de nombreux paragraphes explicatifs
-- Ajoute des transitions détaillées entre chaque section
+⚠️ EXIGENCES DE LONGUEUR STRICTES ET NON-NÉGOCIABLES ⚠️ :
+- Tu DOIS générer EXACTEMENT ${lengthConfig.exactWords} mots (±500 mots maximum)
+- Chaque chapitre DOIT faire environ ${lengthConfig.wordsPerChapter} mots
+- Tu DOIS créer exactement ${lengthConfig.chaptersCount} chapitres
+- Si tu n'atteins pas le nombre de mots requis, CONTINUE à développer jusqu'à l'atteindre
+- N'arrête JAMAIS l'écriture tant que tu n'as pas atteint le nombre de mots cible
+- Compte tes mots régulièrement pour t'assurer de respecter l'objectif
+
+TECHNIQUES POUR ATTEINDRE LA LONGUEUR EXACTE :
+- Développe CHAQUE scène avec un maximum de détails
+- Ajoute des descriptions exhaustives des lieux, personnages, émotions
+- Inclus de nombreux dialogues étendus
+- Développe les pensées intérieures des personnages
+- Ajoute des transitions détaillées entre chaque scène
+- Explique les motivations profondes de chaque action
+- Décris les sensations physiques et émotionnelles en détail
 
 Génère un ebook complet et professionnel avec :
 
 1. UN TITRE ACCROCHEUR (maximum 60 caractères)
-2. LE CONTENU COMPLET DE L'EBOOK avec :
-   - Une introduction très engageante et immersive (au moins 3-4 paragraphes détaillés)
-   - Au moins 8-12 chapitres très bien structurés et extrêmement développés
+2. LE CONTENU COMPLET DE L'EBOOK AVEC EXACTEMENT ${lengthConfig.exactWords} MOTS :
+   - Une introduction très engageante et immersive (au moins 500 mots)
+   - Exactement ${lengthConfig.chaptersCount} chapitres de ${lengthConfig.wordsPerChapter} mots chacun
    ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes très détaillés' : '- Des dialogues naturels et des descriptions vivantes très développées'}
    ${formData.genre === 'historique' ? '- Des références et sources historiques avec explications complètes' : '- Des personnages attachants et très bien développés avec des backstories'}
    - Des transitions fluides et détaillées entre les chapitres
    ${formData.genre === 'historique' ? '- Une chronologie historique respectée avec de nombreux détails contextuels' : '- Une intrigue captivante avec de nombreux rebondissements et sous-intrigues'}
-   - Une conclusion très satisfaisante et émotionnelle (au moins 3-4 paragraphes)
+   - Une conclusion très satisfaisante et émotionnelle (au moins 500 mots)
    - Un style d'écriture riche et adapté au public cible
-   - De nombreuses descriptions d'environnements, d'émotions et d'actions
 3. UNE DESCRIPTION DE COUVERTURE (pour génération d'image)
 
-INSTRUCTIONS IMPORTANTES POUR LA LONGUEUR :
-- Écris entièrement en français
-- Adapte le vocabulaire et le style au public cible spécifié
-- Structure le texte avec des chapitres numérotés et titrés (format: # Chapitre X : Titre)
-- DÉVELOPPE CHAQUE CHAPITRE AVEC UN MAXIMUM DE DÉTAILS
-- Ajoute de nombreux paragraphes explicatifs pour chaque événement
-- Inclus des descriptions complètes des lieux, personnages et situations
-- N'hésite pas à être très verbeux et descriptif
-${formData.genre === 'historique' ? '- RESPECTE SCRUPULEUSEMENT LES FAITS HISTORIQUES - Pas de fiction mais développe énormément les contextes !' : '- Développe une vraie histoire très riche avec un début, un milieu et une fin très détaillés'}
-- Assure-toi que le contenu soit cohérent, captivant et TRÈS LONG du début à la fin
-
-RAPPEL CRITIQUE : Cet ebook doit être SUBSTANTIEL et TRÈS LONG. Ne te contente pas de résumés, développe chaque aspect en profondeur !
+🎯 RAPPEL CRITIQUE : Cet ebook doit faire EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots). 
+Ne te contente JAMAIS de moins ! Continue à développer jusqu'à atteindre cette longueur exacte !
 
 Format de réponse EXACT (respecte absolument ce format) :
 TITRE: [titre ici]
 AUTEUR: ${formData.author || "Auteur IA"}
 DESCRIPTION_COUVERTURE: [description détaillée pour image de couverture]
 CONTENU:
-[contenu complet de l'ebook ici avec chapitres formatés - TRÈS LONG ET DÉTAILLÉ]
+[contenu complet de l'ebook ici avec exactement ${lengthConfig.exactWords} mots - TRÈS LONG ET DÉTAILLÉ]
 
-IMPORTANT : Génère un contenu très substantiel et de qualité professionnelle qui respecte et dépasse largement la longueur demandée.`
+CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.exactWords} mots (±500). Si ce n'est pas le cas, continue à écrire !`
 
     // Utiliser le modèle Gemini
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })

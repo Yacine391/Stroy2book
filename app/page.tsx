@@ -51,9 +51,9 @@ export default function HomePage() {
   ]
 
   const lengths = [
-    { name: "Court (5-10 pages)", value: "court" },
-    { name: "Moyen (15-25 pages)", value: "moyen" },
-    { name: "Long (30-50 pages)", value: "long" },
+    { name: "Court (20 pages exactement)", value: "court" },
+    { name: "Moyen (40 pages exactement)", value: "moyen" },
+    { name: "Long (80 pages exactement)", value: "long" },
   ]
 
   const backgroundColors = [
