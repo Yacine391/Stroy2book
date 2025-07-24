@@ -19,8 +19,88 @@ interface GeneratedContent {
 const apiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
 const genAI = new GoogleGenerativeAI(apiKey)
 
+// Générateur d'éléments uniques pour chaque histoire
+const generateUniqueElements = () => {
+  const timestamp = Date.now()
+  const randomSeed = Math.floor(Math.random() * 1000000)
+  
+  // Éléments créatifs uniques
+  const uniqueElements = {
+    styleVariations: [
+      'style narratif classique avec de riches descriptions',
+      'approche moderne avec dialogues dynamiques', 
+      'narration immersive à la première personne',
+      'perspective omnisciente avec multiple points de vue',
+      'style cinématographique avec scènes détaillées',
+      'approche littéraire avec métaphores poétiques',
+      'narration rythmée avec suspense crescendo',
+      'style documentaire romancé très détaillé'
+    ],
+    
+    atmospheres: [
+      'mystérieuse et intrigante',
+      'lumineuse et optimiste',
+      'intense et dramatique', 
+      'mélancolique et contemplative',
+      'aventureuse et dynamique',
+      'romantique et passionnée',
+      'sombre et captivante',
+      'épique et grandiose'
+    ],
+    
+    narrativeTechniques: [
+      'flashbacks entrelacés avec le présent',
+      'récit chronologique linéaire détaillé',
+      'narration en spirale avec révélations progressives',
+      'histoire racontée à travers multiple témoignages',
+      'récit avec analepses et prolepses subtiles',
+      'narration polyphonique avec voix multiples',
+      'structure en parallèle avec convergence finale',
+      'récit enchâssé avec histoires dans l\'histoire'
+    ],
+    
+    creativeTwists: [
+      'révélation surprenante à mi-parcours',
+      'personnage mystérieux aux motivations cachées',
+      'élément inattendu qui change tout',
+      'secret de famille qui bouleverse l\'intrigue',
+      'coïncidence extraordinaire qui fait sens',
+      'retournement de situation spectaculaire',
+      'connexion inattendue entre événements',
+      'découverte qui remet tout en question'
+    ],
+    
+    uniqueDetails: [
+      'objets symboliques récurrents',
+      'traditions familiales spécifiques',
+      'lieux chargés d\'histoire personnelle',
+      'rituels quotidiens significatifs',
+      'souvenirs sensoriels marquants',
+      'habitudes particulières des personnages',
+      'expressions linguistiques uniques',
+      'références culturelles spécifiques'
+    ]
+  }
+  
+  // Sélection aléatoire d'éléments uniques basée sur timestamp et random
+  const selectedElements = {
+    style: uniqueElements.styleVariations[timestamp % uniqueElements.styleVariations.length],
+    atmosphere: uniqueElements.atmospheres[randomSeed % uniqueElements.atmospheres.length],
+    technique: uniqueElements.narrativeTechniques[(timestamp + randomSeed) % uniqueElements.narrativeTechniques.length],
+    twist: uniqueElements.creativeTwists[(timestamp * 3) % uniqueElements.creativeTwists.length],
+    details: uniqueElements.uniqueDetails[(randomSeed * 7) % uniqueElements.uniqueDetails.length],
+    uniqueId: `${timestamp}-${randomSeed}`,
+    timeSignature: new Date().toISOString()
+  }
+  
+  return selectedElements
+}
+
 export async function generateEbook(formData: FormData): Promise<GeneratedContent> {
   try {
+    // Générer des éléments uniques pour cette histoire spécifique
+    const uniqueElements = generateUniqueElements()
+    
     // Calcul précis du nombre de mots basé sur des pages réelles
     // Environ 250 mots par page est le standard des livres publiés
     const wordsPerPage = 250
@@ -58,8 +138,8 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
 IMPORTANT CRITIQUE : Vous DEVEZ atteindre exactement ${lengthConfig.exactWords} mots (±500 mots maximum). 
 C'est une exigence STRICTE et NON-NÉGOCIABLE.`
 
-    // Instructions spécifiques selon le genre
-    const getGenreSpecificInstructions = (genre: string, idea: string): string => {
+    // Instructions spécifiques selon le genre avec éléments d'unicité
+    const getGenreSpecificInstructions = (genre: string, idea: string, unique: any): string => {
       if (genre === 'historique') {
         return `
 INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
@@ -75,6 +155,13 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
 - Ajoute des CONTEXTES géopolitiques, sociaux et culturels de l'époque
 - Mentionne les SOURCES PRIMAIRES et SECONDAIRES quand possible
 
+🎨 ÉLÉMENTS D'UNICITÉ POUR CETTE HISTOIRE HISTORIQUE (ID: ${unique.uniqueId}) :
+- STYLE NARRATIF UNIQUE : Adopte un ${unique.style} pour cette histoire spécifique
+- ATMOSPHÈRE DISTINCTIVE : Crée une ambiance ${unique.atmosphere} tout au long du récit
+- TECHNIQUE NARRATIVE : Utilise une ${unique.technique} pour rendre cette histoire différente
+- ANGLE CRÉATIF : Intègre ${unique.twist} dans la présentation des faits historiques
+- DÉTAILS DISTINCTIFS : Mets l'accent sur ${unique.details} pour personnaliser ce récit
+
 DÉVELOPPEMENT APPROFONDI REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
 - Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
 - Développe en profondeur les contextes sociaux, économiques et culturels
@@ -83,13 +170,14 @@ DÉVELOPPEMENT APPROFONDI REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS 
 - Ajoute des anecdotes historiques vérifiées pour enrichir le récit
 - Détaille les conséquences à court, moyen et long terme
 - Analyse les différents points de vue historiques sur les événements
+- PERSPECTIVE UNIQUE : Adopte un angle narratif que personne d'autre n'aurait choisi
 
-STRUCTURE OBLIGATOIRE :
+STRUCTURE OBLIGATOIRE UNIQUE :
 ${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
-  `# Chapitre ${i + 1} : [Titre avec dates] (${lengthConfig.wordsPerChapter} mots requis)`
+  `# Chapitre ${i + 1} : [Titre unique avec dates] (${lengthConfig.wordsPerChapter} mots requis)`
 ).join('\n')}
 
-IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis.`
+IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis MAIS avec une approche narrative unique.`
       }
       
       return `
@@ -105,21 +193,47 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
 - Inclus des descriptions d'environnements riches et détaillées
 - Développe l'univers et le contexte de l'histoire avec de nombreux détails
 
+🌟 GARANTIE D'UNICITÉ ABSOLUE (ID: ${unique.uniqueId}) - JAMAIS RÉPÉTÉE :
+- STYLE NARRATIF UNIQUE : Adopte un ${unique.style} spécialement pour cette histoire
+- ATMOSPHÈRE DISTINCTIVE : Crée une ambiance ${unique.atmosphere} qui n'existera nulle part ailleurs
+- TECHNIQUE NARRATIVE UNIQUE : Utilise une ${unique.technique} pour cette histoire seulement
+- ÉLÉMENT CRÉATIF SIGNATURE : Intègre ${unique.twist} comme élément distinctif central
+- DÉTAILS PERSONNALISÉS : Développe ${unique.details} de manière unique et mémorable
+
+TECHNIQUES D'UNICITÉ OBLIGATOIRES :
+- Crée des NOMS DE PERSONNAGES absolument uniques et mémorables
+- Invente des LIEUX SPÉCIFIQUES avec géographie et histoire détaillées
+- Développe des TRADITIONS et COUTUMES originales pour ton univers
+- Ajoute des OBJETS SYMBOLIQUES qui n'existent que dans cette histoire
+- Crée des EXPRESSIONS et LANGAGES spécifiques aux personnages
+- Développe des CONFLITS INTERNES uniques pour chaque personnage
+- Invente des HABITUDES et RITUELS particuliers aux personnages
+- Ajoute des RÉFÉRENCES CULTURELLES originales et créatives
+
 DÉVELOPPEMENT REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
 - Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
-- Développe chaque scène avec un maximum de détails descriptifs
-- Ajoute des flashbacks et des backstories pour enrichir les personnages
-- Inclus des dialogues étendus et des monologues intérieurs
-- Détaille chaque action, émotion et pensée des personnages
-- Développe l'environnement et l'atmosphère de chaque scène
+- Développe chaque scène avec un maximum de détails descriptifs UNIQUES
+- Ajoute des flashbacks et des backstories ORIGINALES pour enrichir les personnages
+- Inclus des dialogues étendus avec des VOIX DISTINCTIVES pour chaque personnage
+- Détaille chaque action, émotion et pensée avec une PERSPECTIVE UNIQUE
+- Développe l'environnement et l'atmosphère avec des DÉTAILS JAMAIS VUS AILLEURS
+- Crée des INTERACTIONS SOCIALES originales et authentiques
+- Invente des PROBLÈMES et SOLUTIONS que personne d'autre n'aurait imaginés
 
-STRUCTURE OBLIGATOIRE :
+STRUCTURE OBLIGATOIRE CRÉATIVE :
 ${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
-  `# Chapitre ${i + 1} : [Titre captivant] (${lengthConfig.wordsPerChapter} mots requis)`
-).join('\n')}`
+  `# Chapitre ${i + 1} : [Titre créatif et unique] (${lengthConfig.wordsPerChapter} mots requis)`
+).join('\n')}
+
+⚠️ INTERDICTION ABSOLUE DE RÉPÉTITION :
+- Ne JAMAIS utiliser des trames narratives classiques ou clichés
+- Évite TOUS les stéréotypes de personnages ou de situations
+- Crée des RETOURNEMENTS imprévisibles et originaux
+- Invente des RÉSOLUTIONS créatives aux conflits
+- Développe des RELATIONS INTER-PERSONNELLES uniques et complexes`
     }
 
-    const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea)
+    const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, uniqueElements)
 
     const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
@@ -129,7 +243,25 @@ ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
+🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}
+Créée le : ${uniqueElements.timeSignature}
+
 ${genreInstructions}
+
+⚠️ EXIGENCES D'UNICITÉ ABSOLUE - JAMAIS RÉPÉTÉE ⚠️ :
+Cette histoire DOIT être absolument UNIQUE et ne JAMAIS ressembler à une autre histoire générée.
+
+TECHNIQUES D'ORIGINALITÉ OBLIGATOIRES :
+- Commence par un élément complètement INATTENDU lié à l'idée
+- Développe des PERSONNAGES avec des particularités physiques/mentales uniques
+- Crée un CONFLIT CENTRAL que personne d'autre n'aurait imaginé
+- Invente des LIEUX avec des caractéristiques géographiques/architecturales originales
+- Développe des SOUS-INTRIGUES surprenantes et interconnectées
+- Ajoute des ÉLÉMENTS SENSORIELS spécifiques (sons, odeurs, textures)
+- Crée des OBJETS ou SYMBOLES récurrents uniques à cette histoire
+- Développe un LANGAGE ou des EXPRESSIONS propres aux personnages
+- Invente des TRADITIONS ou RITUELS spécifiques à l'univers
+- Ajoute des DÉTAILS HISTORIQUES ou CULTURELLES originaux
 
 ⚠️ EXIGENCES DE LONGUEUR STRICTES ET NON-NÉGOCIABLES ⚠️ :
 - Tu DOIS générer EXACTEMENT ${lengthConfig.exactWords} mots (±500 mots maximum)
@@ -139,40 +271,39 @@ ${genreInstructions}
 - N'arrête JAMAIS l'écriture tant que tu n'as pas atteint le nombre de mots cible
 - Compte tes mots régulièrement pour t'assurer de respecter l'objectif
 
-TECHNIQUES POUR ATTEINDRE LA LONGUEUR EXACTE :
-- Développe CHAQUE scène avec un maximum de détails
-- Ajoute des descriptions exhaustives des lieux, personnages, émotions
-- Inclus de nombreux dialogues étendus
-- Développe les pensées intérieures des personnages
-- Ajoute des transitions détaillées entre chaque scène
-- Explique les motivations profondes de chaque action
-- Décris les sensations physiques et émotionnelles en détail
+TECHNIQUES POUR ATTEINDRE LA LONGUEUR EXACTE AVEC UNICITÉ :
+- Développe CHAQUE scène avec des détails sensoriels UNIQUES
+- Ajoute des descriptions exhaustives des lieux avec PARTICULARITÉS ORIGINALES
+- Inclus de nombreux dialogues avec VOIX DISTINCTIVES pour chaque personnage
+- Développe les pensées intérieures avec PERSPECTIVES UNIQUES
+- Ajoute des transitions détaillées avec ÉLÉMENTS CRÉATIFS
+- Explique les motivations avec PROFONDEUR PSYCHOLOGIQUE originale
+- Décris les sensations physiques et émotionnelles de MANIÈRE INÉDITE
 
 Génère un ebook complet et professionnel avec :
 
-1. UN TITRE ACCROCHEUR (maximum 60 caractères)
+1. UN TITRE ACCROCHEUR ET UNIQUE (maximum 60 caractères)
 2. LE CONTENU COMPLET DE L'EBOOK AVEC EXACTEMENT ${lengthConfig.exactWords} MOTS :
-   - Une introduction très engageante et immersive (au moins 500 mots)
+   - Une introduction très engageante et UNIQUE (au moins 500 mots)
    - Exactement ${lengthConfig.chaptersCount} chapitres de ${lengthConfig.wordsPerChapter} mots chacun
-   ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes très détaillés' : '- Des dialogues naturels et des descriptions vivantes très développées'}
-   ${formData.genre === 'historique' ? '- Des références et sources historiques avec explications complètes' : '- Des personnages attachants et très bien développés avec des backstories'}
-   - Des transitions fluides et détaillées entre les chapitres
-   ${formData.genre === 'historique' ? '- Une chronologie historique respectée avec de nombreux détails contextuels' : '- Une intrigue captivante avec de nombreux rebondissements et sous-intrigues'}
-   - Une conclusion très satisfaisante et émotionnelle (au moins 500 mots)
-   - Un style d'écriture riche et adapté au public cible
-3. UNE DESCRIPTION DE COUVERTURE (pour génération d'image)
+   ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes très détaillés MAIS présentés de manière unique' : '- Des dialogues naturels et des descriptions vivantes ABSOLUMENT ORIGINALES'}
+   ${formData.genre === 'historique' ? '- Des références et sources historiques avec explications complètes et perspective unique' : '- Des personnages attachants et très bien développés avec des traits JAMAIS VUS AILLEURS'}
+   - Des transitions fluides et détaillées entre les chapitres avec CRÉATIVITÉ
+   ${formData.genre === 'historique' ? '- Une chronologie historique respectée avec de nombreux détails contextuels UNIQUES' : '- Une intrigue captivante avec de nombreux rebondissements IMPRÉVISIBLES'}
+   - Une conclusion très satisfaisante et émotionnelle ORIGINALE (au moins 500 mots)
+   - Un style d'écriture riche et adapté au public cible avec SIGNATURE UNIQUE
+3. UNE DESCRIPTION DE COUVERTURE UNIQUE (pour génération d'image)
 
-🎯 RAPPEL CRITIQUE : Cet ebook doit faire EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots). 
-Ne te contente JAMAIS de moins ! Continue à développer jusqu'à atteindre cette longueur exacte !
+🎯 RAPPEL CRITIQUE : Cet ebook doit faire EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots) ET être absolument UNIQUE - jamais identique à une autre histoire !
 
 Format de réponse EXACT (respecte absolument ce format) :
-TITRE: [titre ici]
+TITRE: [titre unique et accrocheur ici]
 AUTEUR: ${formData.author || "Auteur IA"}
-DESCRIPTION_COUVERTURE: [description détaillée pour image de couverture]
+DESCRIPTION_COUVERTURE: [description détaillée et unique pour image de couverture]
 CONTENU:
-[contenu complet de l'ebook ici avec exactement ${lengthConfig.exactWords} mots - TRÈS LONG ET DÉTAILLÉ]
+[contenu complet UNIQUE de l'ebook ici avec exactement ${lengthConfig.exactWords} mots - TRÈS LONG, DÉTAILLÉ ET ABSOLUMENT ORIGINAL]
 
-CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.exactWords} mots (±500). Si ce n'est pas le cas, continue à écrire !`
+CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.exactWords} mots (±500) ET qu'il est absolument unique !`
 
     // Utiliser le modèle Gemini
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
@@ -181,7 +312,7 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: formData.genre === 'historique' ? 0.3 : 0.9, // Moins de créativité pour l'histoire factuelle
+        temperature: formData.genre === 'historique' ? 0.7 : 1.2, // Plus de créativité pour l'unicité (même pour historique)
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 32768, // Augmenté significativement pour du contenu plus long
@@ -193,6 +324,9 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.
 
     // Parser la réponse selon le format attendu
     const parsed = parseGeneratedContent(generatedText, formData.author)
+    
+    // Ajouter la signature d'unicité dans les métadonnées (optionnel)
+    parsed.content = `${parsed.content}\n\n<!-- Signature d'unicité: ${uniqueElements.uniqueId} | Créé: ${uniqueElements.timeSignature} -->`
     
     return parsed
 
