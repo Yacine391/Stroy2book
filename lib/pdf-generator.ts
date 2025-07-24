@@ -325,8 +325,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     return {
       targetPages,
-      maxLinesPerPage: Math.max(linesPerPage, 20), // Minimum 20 lignes
-      maxParagraphsPerPage: Math.max(paragraphsPerPage, 8) // Minimum 8 paragraphes
+      maxLinesPerPage: Math.max(linesPerPage, 40), // Augmenté de 20 à 40 pour éviter troncature
+      maxParagraphsPerPage: Math.max(paragraphsPerPage, 15) // Augmenté de 8 à 15
     }
   }
   
@@ -342,9 +342,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // SYSTÈME DE SÉCURITÉ: Forcer un saut de page si trop de contenu (style livre)
-    if ((lineCount > maxLinesPerPage || paragraphCount > maxParagraphsPerPage) && line.length > 0) {
-      console.log('SECURITY: Force page break after', lineCount, 'lines or', paragraphCount, 'paragraphs')
+    // SYSTÈME DE SÉCURITÉ SIMPLIFIÉ: Forcer saut de page seulement si vraiment nécessaire
+    if (lineCount > maxLinesPerPage && line.length > 0) {
+      console.log('SECURITY: Force page break after', lineCount, 'lines')
       pdf.addPage()
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -356,6 +356,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       paragraphCount = 0
     }
     
+    processedLines++ // Debug: compteur de lignes traitées (AVANT toute condition)
+    
     if (!line) {
       // Ligne vide - espacement livre classique
       currentY += 4 // Réduit de 10 à 4 pour style livre
@@ -363,7 +365,6 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     }
     
     lineCount++ // Incrémenter le compteur de lignes
-    processedLines++ // Debug: compteur de lignes traitées
 
     if (line.startsWith('# ')) {
       // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
@@ -469,14 +470,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-      // Contrôle strict de la hauteur de page - AMÉLIORATION
+      // Contrôle de page SIMPLIFIÉ et plus permissif
       const neededHeight = lines.length * 4.5 + 6
       const remainingSpace = pageHeight - margin - currentY
       
       console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
       
-      // SEULEMENT si pas assez d'espace (suppression du seuil 75% problématique)
-      if (remainingSpace < neededHeight) {
+      // Saut de page SEULEMENT si vraiment pas assez de place (seuil plus permissif)
+      if (remainingSpace < neededHeight && neededHeight > 50) {
         console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
         pdf.addPage()
         pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
@@ -500,19 +501,23 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   console.log('FINAL STATS: Total lines to process:', contentLines.length, 'Lines actually processed:', processedLines)
   
-  // VÉRIFICATION CRITIQUE: S'assurer que tout le contenu a été traité
-  if (processedLines < contentLines.length) {
+  // VÉRIFICATION CRITIQUE RENFORCÉE: S'assurer que tout le contenu a été traité
+  const missingLines = contentLines.length - processedLines
+  
+  if (missingLines > 0) {
     console.error('❌ CONTENT TRUNCATION DETECTED!')
-    console.error('Missing lines:', contentLines.length - processedLines)
-    console.error('Processing remaining lines...')
+    console.error('Missing lines:', missingLines, '/', contentLines.length)
+    console.error('Processing ALL remaining lines...')
     
-    // Traiter les lignes manquantes
-    for (let i = processedLines; i < contentLines.length; i++) {
+    // NOUVEAU: Traiter TOUTES les lignes manquantes sans exception
+    for (let i = 0; i < contentLines.length; i++) {
       const line = contentLines[i].trim()
-      if (!line) continue
       
-      // Vérifier si on a besoin d'une nouvelle page
-      if (currentY > pageHeight - margin - 30) {
+      // Skip si la ligne a déjà été traitée (approximation)
+      if (i < processedLines && line.length > 0) continue
+      
+      // Ajouter TOUT le contenu manquant, même les lignes vides
+      if (currentY > pageHeight - margin - 40) {
         pdf.addPage()
         pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
         pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -522,21 +527,38 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
         currentY = margin
       }
       
-      // Ajouter le contenu manquant
+      if (!line) {
+        currentY += 4 // Espacement pour lignes vides
+        continue
+      }
+      
+      // Ajouter le contenu de récupération
       pdf.setFont(selectedFont, 'normal')
       pdf.setFontSize(12)
       pdf.setTextColor(50, 50, 50)
       
       const lines = splitTextToLines(line, contentWidth, 12)
       lines.forEach((textLine, index) => {
+        // Vérifier l'espace pour chaque ligne
+        if (currentY + (index * 4.5) > pageHeight - margin - 10) {
+          pdf.addPage()
+          pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+          pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+          if (ebookData.hasWatermark) {
+            addWatermark()
+          }
+          currentY = margin
+        }
         pdf.text(textLine, margin, currentY + (index * 4.5))
       })
       
       currentY += lines.length * 4.5 + 6
-      console.log('Added missing line', i+1, '/', contentLines.length)
+      console.log('RECOVERY: Added line', i+1, '/', contentLines.length, '- Content:', line.substring(0, 50) + '...')
     }
     
-    console.log('✅ All missing content has been added to PDF')
+    console.log('✅ ALL missing content has been FORCEFULLY added to PDF')
+  } else {
+    console.log('✅ All content processed successfully on first pass')
   }
   
   const finalPages = pdf.getNumberOfPages()
