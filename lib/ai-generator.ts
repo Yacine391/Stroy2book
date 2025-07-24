@@ -107,9 +107,9 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
     
     const getExactLength = (length: string) => {
       const lengthConfig = {
-        court: { pages: 20, minPages: 18, maxPages: 22 },     // 20 pages exactement
-        moyen: { pages: 40, minPages: 38, maxPages: 42 },     // 40 pages exactement  
-        long: { pages: 80, minPages: 78, maxPages: 82 },      // 80 pages exactement
+        court: { pages: 10, minPages: 5, maxPages: 15 },      // 5-15 pages (cible 10)
+        moyen: { pages: 27, minPages: 20, maxPages: 35 },     // 20-35 pages (cible 27)  
+        long: { pages: 47, minPages: 35, maxPages: 60 },      // 35-60 pages (cible 47)
       }
       
       const config = lengthConfig[length as keyof typeof lengthConfig] || lengthConfig.court
@@ -129,14 +129,12 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
 
     const lengthConfig = getExactLength(formData.length)
     
-    const targetLength = `EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots précisément)
-- Minimum absolu : ${lengthConfig.minWords} mots
-- Maximum autorisé : ${lengthConfig.maxWords} mots  
+    const targetLength = `ENTRE ${lengthConfig.minPages} ET ${lengthConfig.maxPages} PAGES (${lengthConfig.minWords}-${lengthConfig.maxWords} mots)
+- Cible optimale : ${lengthConfig.pages} pages (${lengthConfig.exactWords} mots)
 - Nombre de chapitres requis : ${lengthConfig.chaptersCount}
 - Mots par chapitre : environ ${lengthConfig.wordsPerChapter} mots chacun
 
-IMPORTANT CRITIQUE : Vous DEVEZ atteindre exactement ${lengthConfig.exactWords} mots (±500 mots maximum). 
-C'est une exigence STRICTE et NON-NÉGOCIABLE.`
+IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWords} mots. L'objectif est ${lengthConfig.exactWords} mots.`
 
     // Instructions spécifiques selon le genre avec éléments d'unicité
     const getGenreSpecificInstructions = (genre: string, idea: string, unique: any): string => {
@@ -162,7 +160,7 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
 - ANGLE CRÉATIF : Intègre ${unique.twist} dans la présentation des faits historiques
 - DÉTAILS DISTINCTIFS : Mets l'accent sur ${unique.details} pour personnaliser ce récit
 
-DÉVELOPPEMENT APPROFONDI REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
+DÉVELOPPEMENT APPROFONDI REQUIS POUR ATTEINDRE ${lengthConfig.minWords}-${lengthConfig.maxWords} MOTS :
 - Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
 - Développe en profondeur les contextes sociaux, économiques et culturels
 - Inclus de nombreux exemples concrets et témoignages d'époque
@@ -210,7 +208,7 @@ TECHNIQUES D'UNICITÉ OBLIGATOIRES :
 - Invente des HABITUDES et RITUELS particuliers aux personnages
 - Ajoute des RÉFÉRENCES CULTURELLES originales et créatives
 
-DÉVELOPPEMENT REQUIS POUR ATTEINDRE ${lengthConfig.exactWords} MOTS :
+DÉVELOPPEMENT REQUIS POUR ATTEINDRE ${lengthConfig.minWords}-${lengthConfig.maxWords} MOTS :
 - Chaque chapitre doit faire EXACTEMENT environ ${lengthConfig.wordsPerChapter} mots
 - Développe chaque scène avec un maximum de détails descriptifs UNIQUES
 - Ajoute des flashbacks et des backstories ORIGINALES pour enrichir les personnages
@@ -263,13 +261,13 @@ TECHNIQUES D'ORIGINALITÉ OBLIGATOIRES :
 - Invente des TRADITIONS ou RITUELS spécifiques à l'univers
 - Ajoute des DÉTAILS HISTORIQUES ou CULTURELLES originaux
 
-⚠️ EXIGENCES DE LONGUEUR STRICTES ET NON-NÉGOCIABLES ⚠️ :
-- Tu DOIS générer EXACTEMENT ${lengthConfig.exactWords} mots (±500 mots maximum)
+⚠️ EXIGENCES DE LONGUEUR ⚠️ :
+- Tu DOIS générer ENTRE ${lengthConfig.minWords} et ${lengthConfig.maxWords} mots
+- Cible optimale : ${lengthConfig.exactWords} mots
 - Chaque chapitre DOIT faire environ ${lengthConfig.wordsPerChapter} mots
 - Tu DOIS créer exactement ${lengthConfig.chaptersCount} chapitres
-- Si tu n'atteins pas le nombre de mots requis, CONTINUE à développer jusqu'à l'atteindre
-- N'arrête JAMAIS l'écriture tant que tu n'as pas atteint le nombre de mots cible
-- Compte tes mots régulièrement pour t'assurer de respecter l'objectif
+- Vise la cible optimale mais reste dans la fourchette autorisée
+- Développe suffisamment pour créer un contenu riche et substantiel
 
 TECHNIQUES POUR ATTEINDRE LA LONGUEUR EXACTE AVEC UNICITÉ :
 - Développe CHAQUE scène avec des détails sensoriels UNIQUES
@@ -283,7 +281,7 @@ TECHNIQUES POUR ATTEINDRE LA LONGUEUR EXACTE AVEC UNICITÉ :
 Génère un ebook complet et professionnel avec :
 
 1. UN TITRE ACCROCHEUR ET UNIQUE (maximum 60 caractères)
-2. LE CONTENU COMPLET DE L'EBOOK AVEC EXACTEMENT ${lengthConfig.exactWords} MOTS :
+2. LE CONTENU COMPLET DE L'EBOOK AVEC ${lengthConfig.minWords}-${lengthConfig.maxWords} MOTS :
    - Une introduction très engageante et UNIQUE (au moins 500 mots)
    - Exactement ${lengthConfig.chaptersCount} chapitres de ${lengthConfig.wordsPerChapter} mots chacun
    ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes très détaillés MAIS présentés de manière unique' : '- Des dialogues naturels et des descriptions vivantes ABSOLUMENT ORIGINALES'}
@@ -294,16 +292,16 @@ Génère un ebook complet et professionnel avec :
    - Un style d'écriture riche et adapté au public cible avec SIGNATURE UNIQUE
 3. UNE DESCRIPTION DE COUVERTURE UNIQUE (pour génération d'image)
 
-🎯 RAPPEL CRITIQUE : Cet ebook doit faire EXACTEMENT ${lengthConfig.pages} PAGES (${lengthConfig.exactWords} mots) ET être absolument UNIQUE - jamais identique à une autre histoire !
+🎯 RAPPEL CRITIQUE : Cet ebook doit faire ENTRE ${lengthConfig.minPages}-${lengthConfig.maxPages} PAGES (${lengthConfig.minWords}-${lengthConfig.maxWords} mots) ET être absolument UNIQUE - jamais identique à une autre histoire !
 
 Format de réponse EXACT (respecte absolument ce format) :
 TITRE: [titre unique et accrocheur ici]
 AUTEUR: ${formData.author || "Auteur IA"}
 DESCRIPTION_COUVERTURE: [description détaillée et unique pour image de couverture]
 CONTENU:
-[contenu complet UNIQUE de l'ebook ici avec exactement ${lengthConfig.exactWords} mots - TRÈS LONG, DÉTAILLÉ ET ABSOLUMENT ORIGINAL]
+[contenu complet UNIQUE de l'ebook ici avec ${lengthConfig.minWords}-${lengthConfig.maxWords} mots - TRÈS LONG, DÉTAILLÉ ET ABSOLUMENT ORIGINAL]
 
-CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien ${lengthConfig.exactWords} mots (±500) ET qu'il est absolument unique !`
+CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET qu'il est absolument unique !`
 
     // Utiliser le modèle Gemini
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
