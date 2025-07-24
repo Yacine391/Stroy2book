@@ -19,6 +19,7 @@ export default function HomePage() {
     genre: "",
     targetAudience: "",
     length: "court",
+    exactPages: 10,
     backgroundColor: "#ffffff",
     coverImage: null as File | null,
   })
@@ -55,6 +56,7 @@ export default function HomePage() {
     { name: "Court (5-15 pages)", value: "court" },
     { name: "Moyen (20-35 pages)", value: "moyen" },
     { name: "Long (35-60 pages)", value: "long" },
+    { name: "Nombre exact de pages (max 100)", value: "exact" },
   ]
 
   const backgroundColors = [
@@ -82,7 +84,12 @@ export default function HomePage() {
   ]
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    if (field === "exactPages") {
+      const numValue = parseInt(value) || 10
+      setFormData((prev) => ({ ...prev, [field]: Math.min(100, Math.max(5, numValue)) }))
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }))
+    }
   }
 
   const handleImageUpload = (file: File | null) => {
@@ -126,6 +133,7 @@ export default function HomePage() {
       genre: "",
       targetAudience: "",
       length: "court",
+      exactPages: 10,
       backgroundColor: "#ffffff",
       coverImage: null,
     })
@@ -281,6 +289,23 @@ export default function HomePage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {formData.length === "exact" && (
+                      <div className="mt-2">
+                        <Label htmlFor="exactPages" className="text-sm">
+                          Nombre exact de pages (5-100)
+                        </Label>
+                        <input
+                          id="exactPages"
+                          type="number"
+                          min="5"
+                          max="100"
+                          value={formData.exactPages}
+                          onChange={(e) => handleInputChange("exactPages", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mt-1"
+                          placeholder="Ex: 25"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Background Color */}
@@ -362,6 +387,7 @@ export default function HomePage() {
               genre: formData.genre,
               targetAudience: formData.targetAudience,
               length: formData.length,
+              exactPages: formData.exactPages,
             }}
             onBack={resetForm}
             onRegenerate={handleRegenerate}

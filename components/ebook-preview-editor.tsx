@@ -21,6 +21,7 @@ interface EbookPreviewEditorProps {
     genre: string
     targetAudience: string
     length: string
+    exactPages: number
   }
   onBack: () => void
   onRegenerate: (newIdea: string) => void

@@ -6,6 +6,7 @@ interface FormData {
   genre: string
   targetAudience: string
   length: string
+  exactPages: number
 }
 
 interface GeneratedContent {
@@ -105,11 +106,12 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
     // Environ 250 mots par page est le standard des livres publiés
     const wordsPerPage = 250
     
-    const getExactLength = (length: string) => {
+    const getExactLength = (length: string, exactPages: number) => {
       const lengthConfig = {
         court: { pages: 10, minPages: 5, maxPages: 15 },      // 5-15 pages (cible 10)
         moyen: { pages: 27, minPages: 20, maxPages: 35 },     // 20-35 pages (cible 27)  
         long: { pages: 47, minPages: 35, maxPages: 60 },      // 35-60 pages (cible 47)
+        exact: { pages: exactPages, minPages: exactPages, maxPages: exactPages }, // Pages exactes
       }
       
       const config = lengthConfig[length as keyof typeof lengthConfig] || lengthConfig.court
@@ -127,7 +129,7 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
       }
     }
 
-    const lengthConfig = getExactLength(formData.length)
+    const lengthConfig = getExactLength(formData.length, formData.exactPages)
     
     const targetLength = `ENTRE ${lengthConfig.minPages} ET ${lengthConfig.maxPages} PAGES (${lengthConfig.minWords}-${lengthConfig.maxWords} mots)
 - Cible optimale : ${lengthConfig.pages} pages (${lengthConfig.exactWords} mots)

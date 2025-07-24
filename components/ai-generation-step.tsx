@@ -13,6 +13,7 @@ interface AIGenerationStepProps {
     genre: string
     targetAudience: string
     length: string
+    exactPages: number
     backgroundColor: string
     coverImage: File | null
   }
