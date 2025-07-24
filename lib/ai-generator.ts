@@ -154,8 +154,60 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
 
 IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWords} mots. L'objectif est ${lengthConfig.exactWords} mots.`
 
+    // Classification des genres pour éviter la confusion fiction/non-fiction
+    const getGenreCategory = (genre: string): 'fiction' | 'non-fiction' => {
+      const fictionGenres = ['roman', 'science-fiction', 'fantasy', 'thriller', 'romance', 'aventure', 'mystere']
+      const nonFictionGenres = ['historique', 'biographie', 'developpement-personnel']
+      
+      if (fictionGenres.includes(genre)) return 'fiction'
+      if (nonFictionGenres.includes(genre)) return 'non-fiction'
+      return 'fiction' // Par défaut
+    }
+
     // Instructions spécifiques selon le genre avec éléments d'unicité
     const getGenreSpecificInstructions = (genre: string, idea: string, audience: string, unique: any): string => {
+      const category = getGenreCategory(genre)
+
+      // Instructions globales selon la catégorie
+      const getCategoryInstructions = (): string => {
+        if (category === 'non-fiction') {
+          return `
+🚫 INTERDICTION ABSOLUE DE FICTION - CONTENU FACTUEL UNIQUEMENT 🚫
+
+⚠️ RÈGLES STRICTES POUR CONTENU NON-FICTIONNEL :
+- AUCUN personnage inventé ou prénom fictif
+- AUCUNE histoire imaginaire ou scénario inventé
+- AUCUN dialogue fictif entre personnes
+- SEULEMENT des FAITS, ANALYSES, CONSEILS et INFORMATIONS RÉELLES
+- Format : Guide, Manuel, Analyse, Documentation, Étude
+- Ton : Informatif, Éducatif, Professionnel, Objectif
+
+✅ AUTORISÉ : Exemples anonymes, études de cas réels, témoignages sans noms
+❌ INTERDIT : "Marie découvrit que...", "Jean se demandait si...", etc.
+
+STRUCTURE OBLIGATOIRE NON-FICTION :
+- Introduction factuelle
+- Développement par thèmes/époques/méthodes
+- Exemples concrets et vérifiables
+- Conclusion informative`
+        } else {
+          return `
+📚 CRÉATION FICTIONNELLE AUTORISÉE 📚
+
+✅ Pour ce genre de FICTION, tu peux créer :
+- Personnages avec des prénoms et développement
+- Dialogues et interactions
+- Intrigues et scénarios imaginaires
+- Descriptions narratives immersives
+- Développement d'univers fictif
+
+STRUCTURE NARRATIVE CLASSIQUE :
+- Mise en place des personnages et contexte
+- Développement de l'intrigue
+- Points culminants et rebondissements
+- Résolution satisfaisante`
+        }
+      }
       
       // Instructions spécifiques selon l'audience
       const getAudienceInstructions = (audience: string): string => {
@@ -219,18 +271,33 @@ IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWo
 
       if (genre === 'historique') {
         return `
-INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
-- Tu es maintenant un HISTORIEN EXPERT qui doit présenter des FAITS HISTORIQUES RÉELS
-- Base-toi UNIQUEMENT sur des événements, personnages et dates historiques AUTHENTIQUES
-- Cite des DATES PRÉCISES, des LIEUX RÉELS, des PERSONNAGES HISTORIQUES AVÉRÉS
-- Inclus des SOURCES et des RÉFÉRENCES historiques quand c'est pertinent
-- Respecte la CHRONOLOGIE HISTORIQUE exacte
-- Mentionne les CAUSES et CONSÉQUENCES réelles des événements
-- Évite toute FICTION ou INVENTION - tout doit être historiquement vérifié
-- Structure chronologique avec des périodes historiques clairement définies
-- Inclus des DATES importantes dans les titres de chapitres
-- Ajoute des CONTEXTES géopolitiques, sociaux et culturels de l'époque
-- Mentionne les SOURCES PRIMAIRES et SECONDAIRES quand possible
+${getCategoryInstructions()}
+
+📜 INSTRUCTIONS RENFORCÉES POUR LE GENRE HISTORIQUE :
+- Tu es maintenant un HISTORIEN EXPERT qui présente des FAITS HISTORIQUES RÉELS
+- ABSOLUMENT AUCUN personnage fictif ou prénom inventé
+- Base-toi UNIQUEMENT sur des événements, dates et personnages historiques AUTHENTIQUES
+- Cite des DATES PRÉCISES, LIEUX RÉELS, PERSONNAGES HISTORIQUES AVÉRÉS
+- JAMAIS de dialogues inventés ou de scènes fictives
+- Format : Chronologie, Analyse historique, Documentation factuelle
+- Ton : Académique, Informatif, Objectif
+
+⚠️ EXEMPLES INTERDITS :
+❌ "Jean, un paysan du Moyen Âge, se leva un matin..."
+❌ "Marie, une noble de l'époque, pensait que..."
+❌ Dialogues inventés entre personnages
+
+✅ EXEMPLES AUTORISÉS :
+✅ "Les paysans du Moyen Âge vivaient dans des conditions..."
+✅ "La noblesse de l'époque était caractérisée par..."
+✅ Citations historiques documentées avec sources
+
+STRUCTURE HISTORIQUE OBLIGATOIRE :
+- Contexte et période historique
+- Événements chronologiques avec dates
+- Analyses des causes et conséquences
+- Impact sur la société et l'époque
+- Sources et références documentaires
 
 🎨 ÉLÉMENTS D'UNICITÉ POUR CETTE HISTOIRE HISTORIQUE (ID: ${unique.uniqueId}) :
 - STYLE NARRATIF UNIQUE : Adopte un ${unique.style} pour cette histoire spécifique
@@ -303,15 +370,32 @@ ${getAudienceInstructions(audience)}
       
       if (genre === 'biographie') {
         return `
-📖 INSTRUCTIONS SPÉCIFIQUES POUR LA BIOGRAPHIE :
-- Tu es maintenant un BIOGRAPHE EXPERT qui présente des FAITS RÉELS
-- Base-toi UNIQUEMENT sur des événements, dates et faits vérifiables
-- Structure CHRONOLOGIQUE avec périodes importantes de la vie
-- Inclus des DATES PRÉCISES, LIEUX RÉELS, et CONTEXTE HISTORIQUE
-- Cite des SOURCES et références quand c'est pertinent
-- Évite toute FICTION ou invention - tout doit être vérifié
-- Analyse l'IMPACT et l'héritage de la personne
-- Inclus des ANECDOTES AUTHENTIQUES et témoignages
+${getCategoryInstructions()}
+
+👤 INSTRUCTIONS RENFORCÉES POUR LA BIOGRAPHIE :
+- Tu es maintenant un BIOGRAPHE EXPERT qui présente des FAITS RÉELS VÉRIFIABLES
+- ABSOLUMENT AUCUNE invention de scènes ou dialogues fictifs
+- Base-toi UNIQUEMENT sur événements documentés et dates authentiques
+- JAMAIS d'imagination ou de reconstruction fictive de conversations
+- Format : Chronologie factuelle, Analyse objective, Documentation historique
+- Ton : Informatif, Respectueux, Professionnel, Basé sur les sources
+
+⚠️ EXEMPLES INTERDITS EN BIOGRAPHIE :
+❌ "Marie Curie se leva ce matin-là en pensant..."
+❌ "Einstein dit à sa femme : 'Je pense que...'"
+❌ Scènes intimistes inventées ou dialogues reconstitués
+
+✅ EXEMPLES AUTORISÉS EN BIOGRAPHIE :
+✅ "Marie Curie a obtenu son premier Prix Nobel en 1903"
+✅ "Selon les témoignages de l'époque, Einstein était connu pour..."
+✅ "Les correspondances révèlent que..."
+
+STRUCTURE BIOGRAPHIQUE OBLIGATOIRE :
+- Naissance et contexte familial
+- Formation et jeunesse documentées
+- Carrière et réalisations principales
+- Impact et héritage vérifiable
+- Sources et témoignages authentiques
 
 ${getAudienceInstructions(audience)}
 
@@ -323,8 +407,84 @@ ${getAudienceInstructions(audience)}
 - FOCUS : ${unique.details} pour enrichir le récit`
       }
       
+      // Instructions spécifiques par genre fictionnel
+      if (category === 'fiction') {
+        const fictionInstructions = {
+          'science-fiction': `
+🚀 INSTRUCTIONS POUR SCIENCE-FICTION :
+- Crée un univers futuriste cohérent avec technologies avancées
+- Développe des concepts scientifiques crédibles (voyages spatiaux, IA, etc.)
+- Personnages : Scientifiques, explorateurs, robots, aliens avec prénoms futuristes
+- Intrigue : Exploration spatiale, découvertes technologiques, conflits galactiques
+- Ton : Aventureux, visionnaire, technologique`,
+
+          'fantasy': `
+🧙 INSTRUCTIONS POUR FANTASY :
+- Crée un monde magique avec créatures fantastiques et systèmes de magie
+- Personnages : Magiciens, guerriers, elfes, nains avec prénoms épiques
+- Intrigue : Quêtes héroïques, batailles entre bien et mal, découvertes magiques
+- Univers : Royaumes enchantés, forêts mystiques, châteaux, créatures légendaires
+- Ton : Épique, merveilleux, aventureux`,
+
+          'thriller': `
+🔍 INSTRUCTIONS POUR THRILLER :
+- Crée une intrigue haletante avec suspense constant et rebondissements
+- Personnages : Détectives, criminels, victimes avec prénoms réalistes
+- Intrigue : Enquêtes, poursuites, mystères à résoudre, danger permanent
+- Atmosphère : Tension, mystère, urgence, révélations choc
+- Ton : Intense, palpitant, sombre`,
+
+          'romance': `
+💕 INSTRUCTIONS POUR ROMANCE :
+- Développe une histoire d'amour émouvante avec obstacles et passion
+- Personnages : Héros et héroïne avec prénoms attractifs et personnalités fortes
+- Intrigue : Rencontre, séduction, obstacles, réconciliation, amour triomphant
+- Émotions : Passion, jalousie, tendresse, conflits amoureux
+- Ton : Romantique, émotionnel, passionné`,
+
+          'aventure': `
+⚔️ INSTRUCTIONS POUR AVENTURE :
+- Crée une quête épique avec défis, voyages et découvertes
+- Personnages : Héros courageux, compagnons fidèles avec prénoms mémorables
+- Intrigue : Voyages périlleux, trésors cachés, ennemis redoutables
+- Action : Combats, évasions, explorations, défis physiques
+- Ton : Dynamique, courageux, exaltant`,
+
+          'mystere': `
+🕵️ INSTRUCTIONS POUR MYSTÈRE :
+- Développe une énigme complexe avec indices et fausses pistes
+- Personnages : Enquêteurs, suspects, témoins avec prénoms intrigants
+- Intrigue : Crime à élucider, indices à découvrir, coupable à démasquer
+- Atmosphère : Suspense, secrets, révélations progressives
+- Ton : Mystérieux, captivant, intellectuel`,
+
+          'roman': `
+📚 INSTRUCTIONS POUR ROMAN :
+- Crée une histoire humaine profonde avec développement psychologique
+- Personnages : Protagonistes complexes avec prénoms authentiques
+- Intrigue : Relations humaines, conflits intérieurs, évolution des personnages
+- Thèmes : Amour, famille, société, destin, croissance personnelle
+- Ton : Littéraire, nuancé, émouvant`
+        }
+
+        return `
+${getCategoryInstructions()}
+
+${fictionInstructions[genre as keyof typeof fictionInstructions] || fictionInstructions['roman']}
+
+✅ CRÉATION NARRATIVE OBLIGATOIRE :
+- Développe des personnages avec PRÉNOMS et personnalités uniques
+- Crée des DIALOGUES naturels et expressifs
+- Construis une INTRIGUE captivante avec début/milieu/fin
+- Ajoute des DESCRIPTIONS immersives d'environnements
+- Développe les ÉMOTIONS et relations entre personnages`
+
+      }
+
       return `
-INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
+${getCategoryInstructions()}
+
+INSTRUCTIONS GÉNÉRIQUES POUR LE GENRE ${genre.toUpperCase()} :
 - Crée un contenu original, créatif et extrêmement développé
 - Développe une vraie histoire avec un début, un milieu et une fin très détaillés
 - Assure-toi que l'histoire soit cohérente et captivante du début à la fin
