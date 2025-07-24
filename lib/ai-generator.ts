@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import OpenAI from 'openai'
 
 interface FormData {
   idea: string
@@ -18,9 +19,20 @@ interface GeneratedContent {
   coverDescription: string
 }
 
-// Initialiser Google Gemini avec la clé API
-const apiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
-const genAI = new GoogleGenerativeAI(apiKey)
+// Initialiser les APIs IA avec système de fallback
+const openaiApiKey = process.env.OPENAI_API_KEY
+const googleApiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
+
+const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
+const genAI = new GoogleGenerativeAI(googleApiKey)
+
+// Fonction pour détecter quelle API utiliser
+const getPreferredAI = () => {
+  if (openaiApiKey && openai) {
+    return 'openai'
+  }
+  return 'google'
+}
 
 // Générateur d'éléments uniques pour chaque histoire
 const generateUniqueElements = () => {
@@ -444,22 +456,71 @@ CONTENU:
 
 CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET qu'il est absolument unique !`
 
-    // Utiliser le modèle Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Système de génération avec fallback intelligent
+    let generatedText: string
+    const preferredAI = getPreferredAI()
 
-    // Générer le contenu avec Gemini avec plus de tokens pour du contenu plus long
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: formData.genre === 'historique' ? 0.7 : 1.2, // Plus de créativité pour l'unicité (même pour historique)
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 32768, // Augmenté significativement pour du contenu plus long
-      },
-    })
+    if (preferredAI === 'openai' && openai) {
+      console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
+      
+      try {
+        const completion = await openai.chat.completions.create({
+          model: process.env.OPENAI_MODEL || 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: 'Tu es un écrivain professionnel français expert en création d\'ebooks. Tu génères du contenu de haute qualité, précis et engageant.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: formData.genre === 'historique' ? 0.7 : 1.0,
+          max_tokens: 16384, // OpenAI limite plus stricte
+          presence_penalty: 0.1,
+          frequency_penalty: 0.1,
+        })
 
-    const response = result.response
-    const generatedText = response.text()
+        generatedText = completion.choices[0]?.message?.content || ''
+        
+        if (!generatedText) {
+          throw new Error('Réponse vide d\'OpenAI')
+        }
+        
+      } catch (openaiError) {
+        console.warn('⚠️ Erreur OpenAI, fallback vers Google:', openaiError)
+        
+        // Fallback vers Google Gemini
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: formData.genre === 'historique' ? 0.7 : 1.2,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 32768,
+          },
+        })
+        generatedText = result.response.text()
+      }
+      
+    } else {
+      console.log('🔄 Utilisation de Google Gemini (API de base)')
+      
+      // Utiliser Google Gemini
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: formData.genre === 'historique' ? 0.7 : 1.2,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 32768,
+        },
+      })
+      generatedText = result.response.text()
+    }
 
     // Parser la réponse selon le format attendu
     const parsed = parseGeneratedContent(generatedText, formData.author)
