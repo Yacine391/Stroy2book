@@ -779,8 +779,7 @@ CONTRÔLE FINAL OBLIGATOIRE : Vérifie que ton contenu fait bien entre ${lengthC
     // Parser la réponse selon le format attendu
     const parsed = parseGeneratedContent(generatedText, formData.author)
     
-    // Ajouter la signature d'unicité dans les métadonnées (optionnel)
-    parsed.content = `${parsed.content}\n\n<!-- Signature d'unicité: ${uniqueElements.uniqueId} | Créé: ${uniqueElements.timeSignature} -->`
+    // Note: Signature d'unicité supprimée pour un contenu plus propre
     
     return parsed
 

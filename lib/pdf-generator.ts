@@ -24,6 +24,8 @@ interface EbookData {
 // Fonction de nettoyage du contenu
 const cleanContent = (content: string): string => {
   return content
+    // Supprimer les signatures d'unicité HTML
+    .replace(/<!--\s*Signature d'unicité:.*?-->/gi, '')
     // Supprimer les mentions de nombre de mots entre parenthèses
     .replace(/\(\d+\s*mots?\)/gi, '')
     // Supprimer les astérisques autour des titres
@@ -103,7 +105,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   // Fonction spéciale pour les titres de chapitres - s'assure qu'il y a de l'espace pour le contenu
   const checkAndAddNewPageForChapter = (titleHeight: number) => {
-    const minSpaceAfterTitle = 40 // Espace minimum requis après un titre de chapitre
+    const minSpaceAfterTitle = 60 // Augmenté de 40 à 60 - Plus d'espace requis après un titre
     if (currentY + titleHeight + minSpaceAfterTitle > pageHeight - margin) {
       pdf.addPage()
       // Appliquer la couleur de fond à la nouvelle page
@@ -202,9 +204,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   }
   currentY = margin
 
-  // Configuration pour le contenu
+  // Configuration pour le contenu - Taille de police plus grande et meilleure lisibilité
   pdf.setFont(selectedFont, 'normal')
-  pdf.setFontSize(12)
+  pdf.setFontSize(13) // Augmenté de 12 à 13
   pdf.setTextColor(40, 40, 40)
 
   // Traitement du contenu markdown nettoyé
@@ -215,58 +217,58 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     const line = contentLines[i].trim()
     
     if (!line) {
-      // Ligne vide - ajouter un espacement
-      currentY += 6
+      // Ligne vide - ajouter un espacement plus généreux
+      currentY += 10 // Augmenté de 6 à 10
       continue
     }
 
     if (line.startsWith('# ')) {
-      // Titre principal (chapitre)
-      checkAndAddNewPageForChapter(20)
+      // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
+      checkAndAddNewPageForChapter(30) // Augmenté de 20 à 30
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(18)
+      pdf.setFontSize(20) // Augmenté de 18 à 20
       pdf.setTextColor(80, 80, 80)
       
       const titleText = line.substring(2)
-      const lines = splitTextToLines(titleText, contentWidth, 18)
+      const lines = splitTextToLines(titleText, contentWidth, 20)
       
       lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 8))
+        pdf.text(textLine, margin, currentY + (index * 10)) // Augmenté de 8 à 10
       })
       
-      currentY += lines.length * 8 + 10
+      currentY += lines.length * 10 + 15 // Augmenté de 8+10 à 10+15
       
     } else if (line.startsWith('## ')) {
-      // Sous-titre (section importante)
-      checkAndAddNewPageForChapter(18)
+      // Sous-titre (section importante) - Amélioration espacement
+      checkAndAddNewPageForChapter(25) // Augmenté de 18 à 25
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(14)
+      pdf.setFontSize(16) // Augmenté de 14 à 16
       pdf.setTextColor(60, 60, 60)
       
       const chapterText = line.substring(3)
-      const lines = splitTextToLines(chapterText, contentWidth, 14)
+      const lines = splitTextToLines(chapterText, contentWidth, 16)
       
       lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 6))
+        pdf.text(textLine, margin, currentY + (index * 8)) // Augmenté de 6 à 8
       })
       
-      currentY += lines.length * 6 + 8
+      currentY += lines.length * 8 + 12 // Augmenté de 6+8 à 8+12
       
     } else if (line.startsWith('### ')) {
-      // Sous-sous-titre
-      checkAndAddNewPage(15)
+      // Sous-sous-titre - Amélioration lisibilité
+      checkAndAddNewPage(20) // Augmenté de 15 à 20
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(12)
+      pdf.setFontSize(14) // Augmenté de 12 à 14
       pdf.setTextColor(80, 80, 80)
       
       const subTitleText = line.substring(4)
-      const lines = splitTextToLines(subTitleText, contentWidth, 12)
+      const lines = splitTextToLines(subTitleText, contentWidth, 14)
       
       lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 5))
+        pdf.text(textLine, margin, currentY + (index * 7)) // Augmenté de 5 à 7
       })
       
-      currentY += lines.length * 5 + 6
+      currentY += lines.length * 7 + 10 // Augmenté de 5+6 à 7+10
       
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique
@@ -313,21 +315,21 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       currentY += 10
       
     } else if (line.length > 0) {
-      // Paragraphe normal
+      // Paragraphe normal - Amélioration lisibilité et espacement
       pdf.setFont(selectedFont, 'normal')
-      pdf.setFontSize(11)
+      pdf.setFontSize(12) // Augmenté de 11 à 12
       pdf.setTextColor(50, 50, 50)
       
-      const lines = splitTextToLines(line, contentWidth, 11)
+      const lines = splitTextToLines(line, contentWidth, 12)
       
-      // Vérifier si on a besoin d'une nouvelle page
-      checkAndAddNewPage(lines.length * 5 + 5)
+      // Vérifier si on a besoin d'une nouvelle page avec plus d'espace
+      checkAndAddNewPage(lines.length * 7 + 8) // Augmenté de 5+5 à 7+8
       
       lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 5))
+        pdf.text(textLine, margin, currentY + (index * 6)) // Augmenté de 5 à 6
       })
       
-      currentY += lines.length * 5 + 8
+      currentY += lines.length * 6 + 12 // Augmenté de 5+8 à 6+12
     }
   }
 
