@@ -157,7 +157,7 @@ IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWo
     // Classification des genres pour éviter la confusion fiction/non-fiction
     const getGenreCategory = (genre: string): 'fiction' | 'non-fiction' => {
       const fictionGenres = ['roman', 'science-fiction', 'fantasy', 'thriller', 'romance', 'aventure', 'mystere']
-      const nonFictionGenres = ['historique', 'biographie', 'developpement-personnel']
+      const nonFictionGenres = ['historique', 'biographie', 'developpement-personnel', 'sport-sante', 'autres']
       
       if (fictionGenres.includes(genre)) return 'fiction'
       if (nonFictionGenres.includes(genre)) return 'non-fiction'
@@ -405,6 +405,100 @@ ${getAudienceInstructions(audience)}
 - STRUCTURE : ${unique.technique} pour organiser les événements
 - ANGLE UNIQUE : ${unique.twist} comme fil conducteur
 - FOCUS : ${unique.details} pour enrichir le récit`
+      }
+
+      if (genre === 'sport-sante') {
+        return `
+${getCategoryInstructions()}
+
+🏃‍♂️ INSTRUCTIONS RENFORCÉES POUR SPORT ET SANTÉ :
+- Tu es maintenant un EXPERT EN SPORT ET SANTÉ qui présente des informations médicales et sportives FIABLES
+- ABSOLUMENT AUCUN personnage fictif ou histoire inventée
+- Base-toi UNIQUEMENT sur des faits scientifiques, études médicales et recommandations d'experts
+- JAMAIS de témoignages fictifs ou scénarios imaginaires
+- Format : Guide pratique, Manuel d'exercices, Conseils nutritionnels, Information médicale
+- Ton : Professionnel, Informatif, Sécuritaire, Basé sur la science
+
+⚠️ EXEMPLES INTERDITS EN SPORT ET SANTÉ :
+❌ "Marc, un sportif de 25 ans, découvrit que..."
+❌ "Sarah dit à son coach : 'Je me sens fatiguée...'"
+❌ Histoires personnelles inventées ou dialogues fictifs
+
+✅ EXEMPLES AUTORISÉS EN SPORT ET SANTÉ :
+✅ "Les exercices cardiovasculaires permettent d'améliorer..."
+✅ "Selon les études scientifiques, une alimentation équilibrée..."
+✅ "Les professionnels de santé recommandent..."
+✅ "Les recherches démontrent que l'activité physique..."
+
+STRUCTURE SPORT ET SANTÉ OBLIGATOIRE :
+- Introduction scientifique au sujet
+- Bénéfices prouvés et recommandations d'experts
+- Méthodes et techniques concrètes
+- Conseils pratiques et programmes d'action
+- Précautions et contre-indications
+- Sources scientifiques et références médicales
+
+DOMAINES D'EXPERTISE AUTORISÉS :
+- Exercices physiques et programmes d'entraînement
+- Nutrition et conseils alimentaires
+- Prévention santé et bien-être
+- Techniques de récupération et relaxation
+- Informations médicales générales (non diagnostiques)
+
+⚠️ AVERTISSEMENT OBLIGATOIRE : Inclure systématiquement "Consultez un professionnel de santé avant tout changement majeur"
+
+${getAudienceInstructions(audience)}
+
+🌟 APPROCHE UNIQUE POUR CE GUIDE SPORT-SANTÉ (ID: ${unique.uniqueId}) :
+- MÉTHODE DISTINCTIVE : ${unique.technique} pour structurer les conseils sportifs
+- ANGLE SPÉCIFIQUE : ${unique.atmosphere} dans l'approche santé
+- APPROCHE PÉDAGOGIQUE : ${unique.style} pour présenter l'information médicale
+- ÉLÉMENT SIGNATURE : ${unique.twist} comme approche innovante
+- FOCUS PARTICULIER : ${unique.details} pour personnaliser les recommandations`
+      }
+
+      if (genre === 'autres') {
+        return `
+${getCategoryInstructions()}
+
+🎨 INSTRUCTIONS POUR GENRE "AUTRES" :
+- Tu vas créer un contenu ADAPTATIF selon l'idée proposée par l'utilisateur
+- Analyse l'idée pour déterminer automatiquement le format le plus approprié
+- INTERDICTION de personnages fictifs SAUF si l'idée demande explicitement de la fiction
+- Privilégie toujours le format INFORMATIF et ÉDUCATIF quand c'est possible
+- Format adaptatif : Guide, Manuel, Analyse, Tutoriel, ou Fiction selon l'idée
+
+🔍 ANALYSE AUTOMATIQUE DE L'IDÉE :
+- Si l'idée concerne des FAITS, CONSEILS, APPRENTISSAGE → Format NON-FICTION
+- Si l'idée demande une HISTOIRE, AVENTURE, PERSONNAGES → Format FICTION
+- Si l'idée est ambiguë → Privilégier le format ÉDUCATIF
+
+⚠️ RÈGLES POUR CONTENU "AUTRES" :
+❌ Ne jamais inventer de personnages si l'idée ne le demande pas explicitement
+❌ Pas de fiction gratuite pour des sujets sérieux
+✅ Adapter le ton et le style au sujet proposé
+✅ Créer le format le plus utile pour l'utilisateur
+
+EXEMPLES D'ADAPTATION :
+- "Guide de cuisine" → Format manuel pratique sans personnages
+- "Histoire de pirates" → Format fiction avec personnages et aventures
+- "Apprendre le jardinage" → Format guide éducatif factuel
+- "Conte pour enfants" → Format fiction créative avec personnages
+
+STRUCTURE ADAPTATIVE :
+- Analyse de l'idée utilisateur
+- Choix du format le plus approprié
+- Développement selon les règles du format choisi
+- Contenu optimisé pour l'objectif de l'utilisateur
+
+${getAudienceInstructions(audience)}
+
+🌟 APPROCHE UNIQUE POUR CE CONTENU "AUTRES" (ID: ${unique.uniqueId}) :
+- ANALYSE INTELLIGENTE : ${unique.technique} pour déterminer le meilleur format
+- ADAPTATION : ${unique.atmosphere} selon le sujet proposé
+- STYLE FLEXIBLE : ${unique.style} adapté au contenu
+- APPROCHE CRÉATIVE : ${unique.twist} comme élément distinctif
+- PERSONNALISATION : ${unique.details} pour enrichir selon le thème`
       }
       
       // Instructions spécifiques par genre fictionnel

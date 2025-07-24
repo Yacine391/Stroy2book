@@ -44,6 +44,8 @@ export default function HomePage() {
     { name: "Historique", value: "historique" },
     { name: "Biographie", value: "biographie" },
     { name: "Développement personnel", value: "developpement-personnel" },
+    { name: "Sport et Santé", value: "sport-sante" },
+    { name: "Autres", value: "autres" },
   ]
 
   const audiences = [
