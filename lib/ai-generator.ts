@@ -30,6 +30,43 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
 
     const targetLength = lengthMap[formData.length as keyof typeof lengthMap] || lengthMap.court
 
+    // Instructions spécifiques selon le genre
+    const getGenreSpecificInstructions = (genre: string, idea: string): string => {
+      if (genre === 'historique') {
+        return `
+INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
+- Tu es maintenant un HISTORIEN EXPERT qui doit présenter des FAITS HISTORIQUES RÉELS
+- Base-toi UNIQUEMENT sur des événements, personnages et dates historiques AUTHENTIQUES
+- Cite des DATES PRÉCISES, des LIEUX RÉELS, des PERSONNAGES HISTORIQUES AVÉRÉS
+- Inclus des SOURCES et des RÉFÉRENCES historiques quand c'est pertinent
+- Respecte la CHRONOLOGIE HISTORIQUE exacte
+- Mentionne les CAUSES et CONSÉQUENCES réelles des événements
+- Évite toute FICTION ou INVENTION - tout doit être historiquement vérifié
+- Structure chronologique avec des périodes historiques clairement définies
+- Inclus des DATES importantes dans les titres de chapitres
+- Ajoute des CONTEXTES géopolitiques, sociaux et culturels de l'époque
+- Mentionne les SOURCES PRIMAIRES et SECONDAIRES quand possible
+
+Exemple de structure pour l'histoire :
+# Chapitre 1 : Les Origines (dates précises)
+# Chapitre 2 : Les Événements Majeurs (dates précises) 
+# Chapitre 3 : Les Conséquences (dates précises)
+
+IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis.`
+      }
+      
+      return `
+INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
+- Crée un contenu original, créatif et engageant
+- Développe une vraie histoire avec un début, un milieu et une fin
+- Assure-toi que l'histoire soit cohérente et captivante du début à la fin
+- Inclus des descriptions détaillées pour immerger le lecteur
+- Crée des personnages avec des noms, des personnalités et des motivations claires
+- Utilise des dialogues pour rendre l'histoire vivante`
+    }
+
+    const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea)
+
     const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
 IDÉE PRINCIPALE : "${formData.idea}"
@@ -38,16 +75,18 @@ ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR SOUHAITÉE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
+${genreInstructions}
+
 Génère un ebook complet et professionnel avec :
 
 1. UN TITRE ACCROCHEUR (maximum 60 caractères)
 2. LE CONTENU COMPLET DE L'EBOOK avec :
    - Une introduction engageante et immersive
    - Au moins 5-8 chapitres bien structurés et développés
-   - Des dialogues naturels et des descriptions vivantes
-   - Des personnages attachants et bien développés
+   ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes' : '- Des dialogues naturels et des descriptions vivantes'}
+   ${formData.genre === 'historique' ? '- Des références et sources historiques' : '- Des personnages attachants et bien développés'}
    - Des transitions fluides entre les chapitres
-   - Une intrigue captivante avec des rebondissements
+   ${formData.genre === 'historique' ? '- Une chronologie historique respectée' : '- Une intrigue captivante avec des rebondissements'}
    - Une conclusion satisfaisante et émotionnelle
    - Un style d'écriture adapté au public cible
 3. UNE DESCRIPTION DE COUVERTURE (pour génération d'image)
@@ -55,13 +94,9 @@ Génère un ebook complet et professionnel avec :
 INSTRUCTIONS IMPORTANTES :
 - Écris entièrement en français
 - Adapte le vocabulaire et le style au public cible spécifié
-- Crée un contenu original, créatif et engageant
 - Structure le texte avec des chapitres numérotés et titrés (format: # Chapitre X : Titre)
-- Développe une vraie histoire avec un début, un milieu et une fin
-- Assure-toi que l'histoire soit cohérente et captivante du début à la fin
-- Inclus des descriptions détaillées pour immerger le lecteur
-- Crée des personnages avec des noms, des personnalités et des motivations claires
-- Utilise des dialogues pour rendre l'histoire vivante
+${formData.genre === 'historique' ? '- RESPECTE SCRUPULEUSEMENT LES FAITS HISTORIQUES - Pas de fiction !' : '- Développe une vraie histoire avec un début, un milieu et une fin'}
+- Assure-toi que le contenu soit cohérent et captivant du début à la fin
 
 Format de réponse EXACT (respecte absolument ce format) :
 TITRE: [titre ici]
@@ -79,7 +114,7 @@ IMPORTANT : Génère un contenu substantiel et de qualité professionnelle qui c
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.9,
+        temperature: formData.genre === 'historique' ? 0.3 : 0.9, // Moins de créativité pour l'histoire factuelle
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
