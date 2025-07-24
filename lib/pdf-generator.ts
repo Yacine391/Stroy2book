@@ -226,19 +226,73 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   // Traitement du contenu markdown nettoyé
   const cleanedContent = cleanContent(ebookData.content)
-  const contentLines = cleanedContent.split('\n')
   
-  console.log('Processing content lines:', contentLines.length)
+  // NOUVELLE STRATÉGIE: Diviser les paragraphes trop longs pour forcer la pagination
+  const preprocessContent = (content: string): string[] => {
+    const lines = content.split('\n')
+    const processedLines: string[] = []
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+      
+      // Si c'est un titre ou une ligne courte, garder tel quel
+      if (trimmedLine.startsWith('#') || trimmedLine.length < 200) {
+        processedLines.push(trimmedLine)
+        continue
+      }
+      
+      // Si c'est un paragraphe long, le diviser en segments plus courts
+      if (trimmedLine.length > 200) {
+        const sentences = trimmedLine.split(/[.!?]+/)
+        let currentParagraph = ''
+        
+        for (let i = 0; i < sentences.length; i++) {
+          const sentence = sentences[i].trim()
+          if (!sentence) continue
+          
+          // Ajouter la ponctuation si ce n'est pas la dernière phrase
+          const punctuation = i < sentences.length - 1 ? '. ' : ''
+          const sentenceWithPunct = sentence + punctuation
+          
+          // Si ajouter cette phrase rendrait le paragraphe trop long
+          if (currentParagraph.length + sentenceWithPunct.length > 300) {
+            if (currentParagraph) {
+              processedLines.push(currentParagraph.trim())
+              processedLines.push('') // Ligne vide pour espacer
+            }
+            currentParagraph = sentenceWithPunct
+          } else {
+            currentParagraph += sentenceWithPunct
+          }
+        }
+        
+        // Ajouter le dernier paragraphe s'il existe
+        if (currentParagraph.trim()) {
+          processedLines.push(currentParagraph.trim())
+        }
+      } else {
+        processedLines.push(trimmedLine)
+      }
+    }
+    
+    return processedLines
+  }
+  
+  const contentLines = preprocessContent(cleanedContent)
+  
+  console.log('Processing content lines after preprocessing:', contentLines.length)
   let lineCount = 0 // Compteur pour forcer les sauts de page
-  const maxLinesPerPage = 25 // Réduit à 25 lignes maximum par page
+  const maxLinesPerPage = 20 // Encore plus strict : max 20 lignes par page
   let contentHeight = 0 // Hauteur du contenu accumulé
+  let paragraphCount = 0 // Compteur de paragraphes
+  const maxParagraphsPerPage = 8 // Maximum 8 paragraphes par page
   
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // Forcer un saut de page si trop de lignes traitées
-    if (lineCount > maxLinesPerPage && line.length > 0) {
-      console.log('Force page break after', lineCount, 'lines')
+    // SYSTÈME DE SÉCURITÉ: Forcer un saut de page si trop de contenu
+    if ((lineCount > maxLinesPerPage || paragraphCount > maxParagraphsPerPage) && line.length > 0) {
+      console.log('SECURITY: Force page break after', lineCount, 'lines or', paragraphCount, 'paragraphs')
       pdf.addPage()
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -247,6 +301,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       }
       currentY = margin
       lineCount = 0
+      paragraphCount = 0
     }
     
     if (!line) {
@@ -385,7 +440,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       })
       
       currentY += lines.length * 6 + 12 // Augmenté de 5+8 à 6+12
-      console.log('After paragraph, currentY:', currentY)
+      paragraphCount++ // Incrémenter le compteur de paragraphes
+      console.log('After paragraph, currentY:', currentY, 'paragraphCount:', paragraphCount)
     }
   }
 
