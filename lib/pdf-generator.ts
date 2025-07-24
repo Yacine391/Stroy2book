@@ -281,16 +281,20 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const contentLines = preprocessContent(cleanedContent)
   
   console.log('Processing content lines after preprocessing:', contentLines.length)
+  console.log('Original content length:', ebookData.content.length, 'characters')
+  console.log('Cleaned content length:', cleanedContent.length, 'characters')
+  
   let lineCount = 0 // Compteur pour forcer les sauts de page
-  const maxLinesPerPage = 20 // Encore plus strict : max 20 lignes par page
+  const maxLinesPerPage = 35 // Style livre: plus de lignes par page
   let contentHeight = 0 // Hauteur du contenu accumulé
   let paragraphCount = 0 // Compteur de paragraphes
-  const maxParagraphsPerPage = 8 // Maximum 8 paragraphes par page
+  const maxParagraphsPerPage = 15 // Style livre: plus de paragraphes par page
+  let processedLines = 0 // Compteur pour debug
   
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // SYSTÈME DE SÉCURITÉ: Forcer un saut de page si trop de contenu
+    // SYSTÈME DE SÉCURITÉ: Forcer un saut de page si trop de contenu (style livre)
     if ((lineCount > maxLinesPerPage || paragraphCount > maxParagraphsPerPage) && line.length > 0) {
       console.log('SECURITY: Force page break after', lineCount, 'lines or', paragraphCount, 'paragraphs')
       pdf.addPage()
@@ -305,12 +309,13 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     }
     
     if (!line) {
-      // Ligne vide - ajouter un espacement plus généreux
-      currentY += 10 // Augmenté de 6 à 10
+      // Ligne vide - espacement livre classique
+      currentY += 4 // Réduit de 10 à 4 pour style livre
       continue
     }
     
     lineCount++ // Incrémenter le compteur de lignes
+    processedLines++ // Debug: compteur de lignes traitées
 
     if (line.startsWith('# ')) {
       // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
@@ -328,7 +333,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
         pdf.text(textLine, margin, currentY + (index * 10)) // Augmenté de 8 à 10
       })
       
-      currentY += lines.length * 10 + 15 // Augmenté de 8+10 à 10+15
+      currentY += lines.length * 8 + 12 // Réduit pour style livre: 8+12
       console.log('Added chapter title, currentY now:', currentY)
       
     } else if (line.startsWith('## ')) {
@@ -345,7 +350,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
         pdf.text(textLine, margin, currentY + (index * 8)) // Augmenté de 6 à 8
       })
       
-      currentY += lines.length * 8 + 12 // Augmenté de 6+8 à 8+12
+      currentY += lines.length * 6 + 8 // Style livre: 6+8
       
     } else if (line.startsWith('### ')) {
       // Sous-sous-titre - Amélioration lisibilité
@@ -361,7 +366,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
         pdf.text(textLine, margin, currentY + (index * 7)) // Augmenté de 5 à 7
       })
       
-      currentY += lines.length * 7 + 10 // Augmenté de 5+6 à 7+10
+      currentY += lines.length * 5 + 6 // Style livre: 5+6
       
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique
@@ -416,8 +421,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-      // Contrôle strict de la hauteur de page - Plus agressif
-      const neededHeight = lines.length * 6 + 12
+      // Contrôle strict de la hauteur de page - Style livre
+      const neededHeight = lines.length * 4.5 + 6
       const remainingSpace = pageHeight - margin - currentY
       
       console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
@@ -436,14 +441,17 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       }
       
       lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 6)) // Augmenté de 5 à 6
+        pdf.text(textLine, margin, currentY + (index * 4.5)) // Style livre: interligne 4.5pt
       })
       
-      currentY += lines.length * 6 + 12 // Augmenté de 5+8 à 6+12
+      currentY += lines.length * 4 + 6 // Style livre classique: 4+6
       paragraphCount++ // Incrémenter le compteur de paragraphes
       console.log('After paragraph, currentY:', currentY, 'paragraphCount:', paragraphCount)
     }
   }
+
+  console.log('FINAL STATS: Total lines to process:', contentLines.length, 'Lines actually processed:', processedLines)
+  console.log('Final PDF has', pdf.getNumberOfPages(), 'pages')
 
   // Ajouter les numéros de page
   const totalPages = pdf.getNumberOfPages()

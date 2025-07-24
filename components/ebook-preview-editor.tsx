@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Download, Edit3, Save, X, Palette, RefreshCw } from "lucide-react"
-import EbookPreview from "./ebook-preview"
+import AnimatedBookPreview from "./animated-book-preview"
 
 interface EbookPreviewEditorProps {
   formData: {
@@ -265,8 +265,8 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
         </CardContent>
       </Card>
 
-      {/* Aperçu de l'ebook */}
-      <EbookPreview 
+      {/* Aperçu de l'ebook avec animation */}
+      <AnimatedBookPreview 
         formData={{
           title: editedContent.title,
           author: editedContent.author,
