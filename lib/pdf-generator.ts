@@ -50,12 +50,15 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     format: 'a4'
   })
 
-  // Configuration de base
+  // Configuration de base avec debugging amélioré
   const pageWidth = pdf.internal.pageSize.getWidth()
   const pageHeight = pdf.internal.pageSize.getHeight()
   const margin = 20
   const contentWidth = pageWidth - (margin * 2)
   let currentY = margin
+
+  // Debug: Afficher les dimensions (A4 = 210x297mm)
+  console.log('PDF Dimensions:', { pageWidth, pageHeight, margin, contentWidth })
 
   // Fonction pour convertir hex en RGB
   const hexToRgb = (hex: string) => {
@@ -86,9 +89,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   const selectedFont = getFontMapping(ebookData.fontFamily)
 
-  // Fonction pour ajouter une nouvelle page avec couleur de fond
+  // Fonction pour ajouter une nouvelle page avec couleur de fond - AMÉLIORÉE
   const checkAndAddNewPage = (neededHeight: number) => {
-    if (currentY + neededHeight > pageHeight - margin) {
+    const availableSpace = pageHeight - margin - currentY
+    console.log('Checking page:', { currentY, neededHeight, availableSpace, pageHeight })
+    
+    // Seuil plus conservateur pour forcer les sauts de page
+    if (availableSpace < neededHeight || currentY > pageHeight - margin - 50) {
+      console.log('Adding new page - current:', currentY, 'needed:', neededHeight)
       pdf.addPage()
       // Appliquer la couleur de fond à la nouvelle page
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
@@ -103,10 +111,17 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     return false
   }
 
-  // Fonction spéciale pour les titres de chapitres - s'assure qu'il y a de l'espace pour le contenu
+  // Fonction spéciale pour les titres de chapitres - AMÉLIORÉE
   const checkAndAddNewPageForChapter = (titleHeight: number) => {
-    const minSpaceAfterTitle = 60 // Augmenté de 40 à 60 - Plus d'espace requis après un titre
-    if (currentY + titleHeight + minSpaceAfterTitle > pageHeight - margin) {
+    const minSpaceAfterTitle = 80 // Augmenté à 80 pour plus d'espace
+    const totalNeeded = titleHeight + minSpaceAfterTitle
+    const availableSpace = pageHeight - margin - currentY
+    
+    console.log('Checking chapter page:', { currentY, titleHeight, minSpaceAfterTitle, totalNeeded, availableSpace })
+    
+    // Plus agressif pour les chapitres
+    if (availableSpace < totalNeeded || currentY > pageHeight - margin - 100) {
+      console.log('Adding new page for chapter')
       pdf.addPage()
       // Appliquer la couleur de fond à la nouvelle page
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
@@ -213,18 +228,40 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const cleanedContent = cleanContent(ebookData.content)
   const contentLines = cleanedContent.split('\n')
   
+  console.log('Processing content lines:', contentLines.length)
+  let lineCount = 0 // Compteur pour forcer les sauts de page
+  const maxLinesPerPage = 25 // Réduit à 25 lignes maximum par page
+  let contentHeight = 0 // Hauteur du contenu accumulé
+  
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
+    
+    // Forcer un saut de page si trop de lignes traitées
+    if (lineCount > maxLinesPerPage && line.length > 0) {
+      console.log('Force page break after', lineCount, 'lines')
+      pdf.addPage()
+      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      if (ebookData.hasWatermark) {
+        addWatermark()
+      }
+      currentY = margin
+      lineCount = 0
+    }
     
     if (!line) {
       // Ligne vide - ajouter un espacement plus généreux
       currentY += 10 // Augmenté de 6 à 10
       continue
     }
+    
+    lineCount++ // Incrémenter le compteur de lignes
 
     if (line.startsWith('# ')) {
       // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
       checkAndAddNewPageForChapter(30) // Augmenté de 20 à 30
+      lineCount = 0 // Réinitialiser le compteur pour nouveau chapitre
+      
       pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(20) // Augmenté de 18 à 20
       pdf.setTextColor(80, 80, 80)
@@ -237,6 +274,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       })
       
       currentY += lines.length * 10 + 15 // Augmenté de 8+10 à 10+15
+      console.log('Added chapter title, currentY now:', currentY)
       
     } else if (line.startsWith('## ')) {
       // Sous-titre (section importante) - Amélioration espacement
@@ -321,15 +359,33 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       pdf.setTextColor(50, 50, 50)
       
       const lines = splitTextToLines(line, contentWidth, 12)
+      console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-      // Vérifier si on a besoin d'une nouvelle page avec plus d'espace
-      checkAndAddNewPage(lines.length * 7 + 8) // Augmenté de 5+5 à 7+8
+      // Contrôle strict de la hauteur de page - Plus agressif
+      const neededHeight = lines.length * 6 + 12
+      const remainingSpace = pageHeight - margin - currentY
+      
+      console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
+      
+      // Si pas assez d'espace OU si on est déjà trop bas sur la page
+      if (remainingSpace < neededHeight || currentY > pageHeight * 0.75) {
+        console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
+        pdf.addPage()
+        pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+        if (ebookData.hasWatermark) {
+          addWatermark()
+        }
+        currentY = margin
+        lineCount = 0
+      }
       
       lines.forEach((textLine, index) => {
         pdf.text(textLine, margin, currentY + (index * 6)) // Augmenté de 5 à 6
       })
       
       currentY += lines.length * 6 + 12 // Augmenté de 5+8 à 6+12
+      console.log('After paragraph, currentY:', currentY)
     }
   }
 
