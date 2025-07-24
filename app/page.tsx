@@ -10,6 +10,7 @@ import { BookOpen, Palette, Upload, Sparkles, Wand2, Brain } from "lucide-react"
 import EbookGenerator from "@/components/ebook-generator"
 import ImageUpload from "@/components/image-upload"
 import AIGenerationStep from "@/components/ai-generation-step"
+import EbookPreviewEditor from "@/components/ebook-preview-editor"
 
 export default function HomePage() {
   const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ export default function HomePage() {
     content: "",
     coverDescription: "",
   })
-  const [currentStep, setCurrentStep] = useState<"form" | "generating" | "preview">("form")
+  const [currentStep, setCurrentStep] = useState<"form" | "generating" | "preview" | "download">("form")
 
   const genres = [
     { name: "Roman", value: "roman" },
@@ -59,12 +60,25 @@ export default function HomePage() {
   const backgroundColors = [
     { name: "Blanc", value: "#ffffff" },
     { name: "Crème", value: "#fefdf8" },
-    { name: "Bleu clair", value: "#f0f9ff" },
-    { name: "Vert clair", value: "#f0fdf4" },
-    { name: "Rose clair", value: "#fdf2f8" },
-    { name: "Violet clair", value: "#faf5ff" },
-    { name: "Jaune clair", value: "#fffbeb" },
-    { name: "Gris clair", value: "#f9fafb" },
+    { name: "Bleu clair", value: "#dbeafe" },
+    { name: "Bleu pastel", value: "#bfdbfe" },
+    { name: "Vert clair", value: "#dcfce7" },
+    { name: "Vert pastel", value: "#bbf7d0" },
+    { name: "Rose clair", value: "#fce7f3" },
+    { name: "Rose pastel", value: "#fbcfe8" },
+    { name: "Violet clair", value: "#f3e8ff" },
+    { name: "Violet pastel", value: "#e9d5ff" },
+    { name: "Jaune clair", value: "#fef3c7" },
+    { name: "Jaune pastel", value: "#fde68a" },
+    { name: "Orange clair", value: "#fed7aa" },
+    { name: "Orange pastel", value: "#fdba74" },
+    { name: "Rouge clair", value: "#fecaca" },
+    { name: "Indigo clair", value: "#c7d2fe" },
+    { name: "Cyan clair", value: "#a5f3fc" },
+    { name: "Emeraude clair", value: "#a7f3d0" },
+    { name: "Lime clair", value: "#d9f99d" },
+    { name: "Gris clair", value: "#f3f4f6" },
+    { name: "Gris perle", value: "#e5e7eb" },
   ]
 
   const handleInputChange = (field: string, value: string) => {
@@ -92,6 +106,16 @@ export default function HomePage() {
   const handleGenerationComplete = (content: typeof generatedContent) => {
     setGeneratedContent(content)
     setCurrentStep("preview")
+  }
+
+  const handleRegenerate = async (newIdea: string) => {
+    // Mettre à jour l'idée et relancer la génération
+    setFormData(prev => ({ ...prev, idea: newIdea }))
+    setCurrentStep("generating")
+  }
+
+  const handleGoToDownload = () => {
+    setCurrentStep("download")
   }
 
   const resetForm = () => {
@@ -327,6 +351,25 @@ export default function HomePage() {
         )}
 
         {currentStep === "preview" && (
+          <EbookPreviewEditor
+            formData={{
+              title: generatedContent.title,
+              author: generatedContent.author,
+              content: generatedContent.content,
+              backgroundColor: formData.backgroundColor,
+              coverImage: formData.coverImage,
+              idea: formData.idea,
+              genre: formData.genre,
+              targetAudience: formData.targetAudience,
+              length: formData.length,
+            }}
+            onBack={resetForm}
+            onRegenerate={handleRegenerate}
+            onDownload={handleGoToDownload}
+          />
+        )}
+
+        {currentStep === "download" && (
           <EbookGenerator
             formData={{
               title: generatedContent.title,
@@ -335,7 +378,7 @@ export default function HomePage() {
               backgroundColor: formData.backgroundColor,
               coverImage: formData.coverImage,
             }}
-            onBack={resetForm}
+            onBack={() => setCurrentStep("preview")}
           />
         )}
       </main>

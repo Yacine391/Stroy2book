@@ -137,7 +137,68 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
 IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWords} mots. L'objectif est ${lengthConfig.exactWords} mots.`
 
     // Instructions spécifiques selon le genre avec éléments d'unicité
-    const getGenreSpecificInstructions = (genre: string, idea: string, unique: any): string => {
+    const getGenreSpecificInstructions = (genre: string, idea: string, audience: string, unique: any): string => {
+      
+      // Instructions spécifiques selon l'audience
+      const getAudienceInstructions = (audience: string): string => {
+        switch (audience) {
+          case 'enfants':
+            return `
+📚 ADAPTATION POUR ENFANTS (6-12 ans) :
+- Utilise un VOCABULAIRE SIMPLE et ACCESSIBLE
+- Phrases COURTES et structures CLAIRES
+- ÉVITE les concepts complexes ou abstraits
+- Inclus des ÉLÉMENTS LUDIQUES et éducatifs
+- Tons OPTIMISTE et ENCOURAGEANT
+- ILLUSTRATIONS verbales colorées et imaginatives
+- Évite les sujets sombres ou effrayants
+- Privilégie l'APPRENTISSAGE par le jeu et l'aventure`
+          
+          case 'adolescents':
+            return `
+🎯 ADAPTATION POUR ADOLESCENTS (13-17 ans) :
+- Utilise un LANGAGE MODERNE et DYNAMIQUE
+- Aborde des DÉFIS et QUESTIONNEMENTS propres à l'âge
+- Inclus des RÉFÉRENCES ACTUELLES et tendances
+- Ton ÉNERGIQUE et MOTIVANT
+- Traite de DÉCOUVERTE DE SOI et d'identité
+- Évite le ton moralisateur, privilégie l'INSPIRATION
+- Inclus des EXEMPLES CONCRETS et situations réelles
+- Encourage l'AUTONOMIE et la prise de décision`
+          
+          case 'jeunes-adultes':
+            return `
+🚀 ADAPTATION POUR JEUNES ADULTES (18-25 ans) :
+- Aborde les TRANSITIONS et nouveaux défis de l'âge adulte
+- Traite de CARRIÈRE, relations, et indépendance
+- Ton INSPIRANT et PRATIQUE
+- Inclus des STRATÉGIES CONCRÈTES et actionables
+- Évoque les DÉFIS MODERNES (technologie, réseaux sociaux, etc.)
+- Encourage l'AMBITION et la réalisation de soi
+- Style ACCESSIBLE mais SOPHISTIQUÉ`
+          
+          case 'adultes':
+            return `
+💼 ADAPTATION POUR ADULTES (25+ ans) :
+- Approche PROFESSIONNELLE et EXPERTE
+- Traite de sujets COMPLEXES avec nuance
+- Inclus des ÉTUDES DE CAS et exemples concrets
+- Ton AUTORITAIRE mais accessible
+- Aborde les défis de la VIE PROFESSIONNELLE et personnelle
+- Références à l'EXPÉRIENCE et la maturité
+- Stratégies AVANCÉES et concepts approfondis`
+          
+          default:
+            return `
+🌍 ADAPTATION TOUT PUBLIC :
+- Langage UNIVERSEL et INCLUSIF
+- Évite les références trop spécifiques à un âge
+- Ton BIENVEILLANT et ACCESSIBLE
+- Exemples VARIÉS couvrant différentes situations de vie
+- Approche ÉQUILIBRÉE entre simplicité et profondeur`
+        }
+      }
+
       if (genre === 'historique') {
         return `
 INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
@@ -175,7 +236,63 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
   `# Chapitre ${i + 1} : [Titre unique avec dates] (${lengthConfig.wordsPerChapter} mots requis)`
 ).join('\n')}
 
-IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis MAIS avec une approche narrative unique.`
+IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement spécifique, respecte scrupuleusement les faits historiques établis MAIS avec une approche narrative unique.
+
+${getAudienceInstructions(audience)}`
+      }
+      
+      if (genre === 'developpement-personnel') {
+        return `
+📈 INSTRUCTIONS SPÉCIFIQUES POUR LE DÉVELOPPEMENT PERSONNEL :
+- Tu es maintenant un EXPERT EN DÉVELOPPEMENT PERSONNEL et coach de vie
+- Crée un GUIDE PRATIQUE et ACTIONNABLE, PAS une fiction avec des personnages
+- Structure ton contenu en CHAPITRES THÉMATIQUES avec des exercices concrets
+- Utilise un ton MOTIVANT, BIENVEILLANT et EXPERT
+- Inclus des TECHNIQUES CONCRÈTES, des EXERCICES PRATIQUES et des ÉTAPES À SUIVRE
+- Ajoute des EXEMPLES RÉELS (sans noms) et des ÉTUDES DE CAS inspirantes
+- Évite ABSOLUMENT les histoires fictives avec des personnages inventés
+- Concentre-toi sur des CONSEILS PRATIQUES et des STRATÉGIES ÉPROUVÉES
+- Inclus des EXERCICES D'AUTO-RÉFLEXION et des questions pour le lecteur
+- Structure claire avec INTRODUCTION, DÉVELOPPEMENT PRATIQUE, et PLAN D'ACTION
+
+🎯 FORMAT OBLIGATOIRE POUR DÉVELOPPEMENT PERSONNEL :
+- Introduction : Présentation du problème et de la solution
+- Chapitres thématiques avec conseils pratiques
+- Exercices concrets à la fin de chaque chapitre  
+- Exemples d'application et témoignages (anonymes)
+- Plan d'action final avec étapes à suivre
+- Conclusion motivante avec encouragements
+
+${getAudienceInstructions(audience)}
+
+🌟 ÉLÉMENTS D'UNICITÉ POUR CE GUIDE (ID: ${unique.uniqueId}) :
+- APPROCHE UNIQUE : ${unique.style} pour présenter les conseils
+- ANGLE SPÉCIFIQUE : ${unique.atmosphere} dans le ton et la présentation
+- MÉTHODE DISTINCTIVE : ${unique.technique} pour structurer le contenu
+- ÉLÉMENT SIGNATURE : ${unique.twist} comme approche innovante
+- FOCUS PARTICULIER : ${unique.details} pour personnaliser les conseils`
+      }
+      
+      if (genre === 'biographie') {
+        return `
+📖 INSTRUCTIONS SPÉCIFIQUES POUR LA BIOGRAPHIE :
+- Tu es maintenant un BIOGRAPHE EXPERT qui présente des FAITS RÉELS
+- Base-toi UNIQUEMENT sur des événements, dates et faits vérifiables
+- Structure CHRONOLOGIQUE avec périodes importantes de la vie
+- Inclus des DATES PRÉCISES, LIEUX RÉELS, et CONTEXTE HISTORIQUE
+- Cite des SOURCES et références quand c'est pertinent
+- Évite toute FICTION ou invention - tout doit être vérifié
+- Analyse l'IMPACT et l'héritage de la personne
+- Inclus des ANECDOTES AUTHENTIQUES et témoignages
+
+${getAudienceInstructions(audience)}
+
+🌟 ÉLÉMENTS D'UNICITÉ POUR CETTE BIOGRAPHIE (ID: ${unique.uniqueId}) :
+- STYLE NARRATIF : ${unique.style} pour raconter la vie
+- PERSPECTIVE : ${unique.atmosphere} dans l'approche biographique
+- STRUCTURE : ${unique.technique} pour organiser les événements
+- ANGLE UNIQUE : ${unique.twist} comme fil conducteur
+- FOCUS : ${unique.details} pour enrichir le récit`
       }
       
       return `
@@ -197,6 +314,8 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
 - TECHNIQUE NARRATIVE UNIQUE : Utilise une ${unique.technique} pour cette histoire seulement
 - ÉLÉMENT CRÉATIF SIGNATURE : Intègre ${unique.twist} comme élément distinctif central
 - DÉTAILS PERSONNALISÉS : Développe ${unique.details} de manière unique et mémorable
+
+${getAudienceInstructions(audience)}
 
 TECHNIQUES D'UNICITÉ OBLIGATOIRES :
 - Crée des NOMS DE PERSONNAGES absolument uniques et mémorables
@@ -231,7 +350,7 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
 - Développe des RELATIONS INTER-PERSONNELLES uniques et complexes`
     }
 
-    const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, uniqueElements)
+    const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, formData.targetAudience, uniqueElements)
 
     const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
