@@ -28,9 +28,29 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
     }
   }, [formData.coverImage])
 
-  // Diviser le contenu en pages (simulation) - Ajusté pour des contenus plus longs
+  // Fonction de nettoyage du contenu
+  const cleanContent = (content: string): string => {
+    return content
+      // Supprimer les mentions de nombre de mots entre parenthèses
+      .replace(/\(\d+\s*mots?\)/gi, '')
+      // Supprimer les astérisques autour des titres
+      .replace(/\*\*(.*?)\*\*/g, '$1')
+      // Supprimer les astérisques simples
+      .replace(/\*(.*?)\*/g, '$1')
+      // Supprimer les dièses de markdown mais garder les espaces pour la hiérarchie
+      .replace(/^#{1,6}\s*/gm, '')
+      // Nettoyer les espaces multiples
+      .replace(/\s+/g, ' ')
+      // Nettoyer les espaces en début/fin de ligne
+      .replace(/^\s+|\s+$/gm, '')
+      // Supprimer les lignes vides multiples
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+  }
+
+  // Diviser le contenu nettoyé en pages (simulation) - Ajusté pour des contenus plus longs
   const wordsPerPage = 200 // Réduit pour une meilleure lisibilité avec le scroll
-  const words = formData.content.split(" ")
+  const cleanedContent = cleanContent(formData.content)
+  const words = cleanedContent.split(" ")
   const pages = []
 
   for (let i = 0; i < words.length; i += wordsPerPage) {
@@ -78,7 +98,7 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
                     )}
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight break-words">{formData.title}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight break-words">{cleanContent(formData.title)}</h1>
                     {formData.author && <p className="text-xl text-gray-700 font-medium break-words">par {formData.author}</p>}
                   </div>
                   <div className="mt-auto">

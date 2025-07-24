@@ -21,6 +21,25 @@ interface EbookData {
   coverImage?: string
 }
 
+// Fonction de nettoyage du contenu
+const cleanContent = (content: string): string => {
+  return content
+    // Supprimer les mentions de nombre de mots entre parenthèses
+    .replace(/\(\d+\s*mots?\)/gi, '')
+    // Supprimer les astérisques autour des titres
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    // Supprimer les astérisques simples
+    .replace(/\*(.*?)\*/g, '$1')
+    // Supprimer les dièses de markdown mais garder les espaces pour la hiérarchie
+    .replace(/^#{1,6}\s*/gm, '')
+    // Nettoyer les espaces multiples
+    .replace(/\s+/g, ' ')
+    // Nettoyer les espaces en début/fin de ligne
+    .replace(/^\s+|\s+$/gm, '')
+    // Supprimer les lignes vides multiples
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+}
+
 export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   // Créer un nouveau document PDF
   const pdf = new jsPDF({
@@ -143,7 +162,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   pdf.setFontSize(24)
   pdf.setTextColor(60, 60, 60)
   
-  const titleLines = splitTextToLines(ebookData.title, contentWidth - 20, 24)
+  const cleanedTitle = cleanContent(ebookData.title)
+  const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 24)
   let titleY = pageHeight / 3
   
   titleLines.forEach((line, index) => {
@@ -187,8 +207,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   pdf.setFontSize(12)
   pdf.setTextColor(40, 40, 40)
 
-  // Traitement du contenu markdown
-  const contentLines = ebookData.content.split('\n')
+  // Traitement du contenu markdown nettoyé
+  const cleanedContent = cleanContent(ebookData.content)
+  const contentLines = cleanedContent.split('\n')
   
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
