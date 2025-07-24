@@ -21,7 +21,7 @@ interface GeneratedContent {
 
 // Initialiser les APIs IA avec système de fallback
 const openaiApiKey = process.env.OPENAI_API_KEY
-const googleApiKey = process.env.GOOGLE_AI_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
+const googleApiKey = process.env.GOOGLE_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
 
 const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
 const genAI = new GoogleGenerativeAI(googleApiKey)
@@ -29,8 +29,10 @@ const genAI = new GoogleGenerativeAI(googleApiKey)
 // Fonction pour détecter quelle API utiliser
 const getPreferredAI = () => {
   if (openaiApiKey && openai) {
+    console.log('🚀 Using OpenAI GPT-4 (Premium API)')
     return 'openai'
   }
+  console.log('🔄 Using Google Gemini (Fallback API)')
   return 'google'
 }
 
