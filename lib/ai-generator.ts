@@ -121,6 +121,8 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
       
       return {
         pages: config.pages,
+        minPages: config.minPages,
+        maxPages: config.maxPages,
         exactWords,
         minWords,
         maxWords,
