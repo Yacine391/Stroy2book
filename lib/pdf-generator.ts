@@ -19,6 +19,8 @@ interface EbookData {
   fontFamily: string
   hasWatermark: boolean
   coverImage?: string
+  exactPages?: number
+  length?: string
 }
 
 // Fonction de nettoyage du contenu
@@ -284,11 +286,57 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   console.log('Original content length:', ebookData.content.length, 'characters')
   console.log('Cleaned content length:', cleanedContent.length, 'characters')
   
+  // CALCUL INTELLIGENT DU NOMBRE DE PAGES
+  const getOptimalPagination = () => {
+    const totalLines = contentLines.length
+    const wordsCount = cleanedContent.split(/\s+/).length
+    
+    let targetPages = 0
+    
+    // Déterminer le nombre de pages cible
+    if (ebookData.exactPages && ebookData.exactPages > 0) {
+      targetPages = ebookData.exactPages
+      console.log('Using exact pages:', targetPages)
+    } else if (ebookData.length) {
+      // Estimation basée sur la longueur
+      switch(ebookData.length) {
+        case 'court': targetPages = Math.max(8, Math.min(15, Math.ceil(wordsCount / 400))); break
+        case 'moyen': targetPages = Math.max(15, Math.min(35, Math.ceil(wordsCount / 350))); break  
+        case 'long': targetPages = Math.max(35, Math.min(60, Math.ceil(wordsCount / 300))); break
+        default: targetPages = Math.ceil(wordsCount / 350)
+      }
+      console.log('Estimated pages for', ebookData.length, ':', targetPages)
+    } else {
+      targetPages = Math.ceil(wordsCount / 350) // Par défaut
+      console.log('Default pages calculation:', targetPages)
+    }
+    
+    // Calculer l'espacement optimal pour atteindre le nombre de pages
+    const linesPerPage = Math.ceil(totalLines / Math.max(targetPages - 1, 1)) // -1 pour la couverture
+    const paragraphsPerPage = Math.ceil(linesPerPage / 3) // Estimation 3 lignes par paragraphe
+    
+    console.log('PAGINATION TARGET:', {
+      targetPages,
+      totalLines,
+      wordsCount,
+      linesPerPage,
+      paragraphsPerPage
+    })
+    
+    return {
+      targetPages,
+      maxLinesPerPage: Math.max(linesPerPage, 20), // Minimum 20 lignes
+      maxParagraphsPerPage: Math.max(paragraphsPerPage, 8) // Minimum 8 paragraphes
+    }
+  }
+  
+  const pagination = getOptimalPagination()
+  
   let lineCount = 0 // Compteur pour forcer les sauts de page
-  const maxLinesPerPage = 35 // Style livre: plus de lignes par page
+  const maxLinesPerPage = pagination.maxLinesPerPage
   let contentHeight = 0 // Hauteur du contenu accumulé
   let paragraphCount = 0 // Compteur de paragraphes
-  const maxParagraphsPerPage = 15 // Style livre: plus de paragraphes par page
+  const maxParagraphsPerPage = pagination.maxParagraphsPerPage
   let processedLines = 0 // Compteur pour debug
   
   for (let i = 0; i < contentLines.length; i++) {
@@ -421,14 +469,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-      // Contrôle strict de la hauteur de page - Style livre
+      // Contrôle strict de la hauteur de page - AMÉLIORATION
       const neededHeight = lines.length * 4.5 + 6
       const remainingSpace = pageHeight - margin - currentY
       
       console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
       
-      // Si pas assez d'espace OU si on est déjà trop bas sur la page
-      if (remainingSpace < neededHeight || currentY > pageHeight * 0.75) {
+      // SEULEMENT si pas assez d'espace (suppression du seuil 75% problématique)
+      if (remainingSpace < neededHeight) {
         console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
         pdf.addPage()
         pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
@@ -451,7 +499,51 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   }
 
   console.log('FINAL STATS: Total lines to process:', contentLines.length, 'Lines actually processed:', processedLines)
-  console.log('Final PDF has', pdf.getNumberOfPages(), 'pages')
+  
+  // VÉRIFICATION CRITIQUE: S'assurer que tout le contenu a été traité
+  if (processedLines < contentLines.length) {
+    console.error('❌ CONTENT TRUNCATION DETECTED!')
+    console.error('Missing lines:', contentLines.length - processedLines)
+    console.error('Processing remaining lines...')
+    
+    // Traiter les lignes manquantes
+    for (let i = processedLines; i < contentLines.length; i++) {
+      const line = contentLines[i].trim()
+      if (!line) continue
+      
+      // Vérifier si on a besoin d'une nouvelle page
+      if (currentY > pageHeight - margin - 30) {
+        pdf.addPage()
+        pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+        if (ebookData.hasWatermark) {
+          addWatermark()
+        }
+        currentY = margin
+      }
+      
+      // Ajouter le contenu manquant
+      pdf.setFont(selectedFont, 'normal')
+      pdf.setFontSize(12)
+      pdf.setTextColor(50, 50, 50)
+      
+      const lines = splitTextToLines(line, contentWidth, 12)
+      lines.forEach((textLine, index) => {
+        pdf.text(textLine, margin, currentY + (index * 4.5))
+      })
+      
+      currentY += lines.length * 4.5 + 6
+      console.log('Added missing line', i+1, '/', contentLines.length)
+    }
+    
+    console.log('✅ All missing content has been added to PDF')
+  }
+  
+  const finalPages = pdf.getNumberOfPages()
+  console.log('PDF GENERATION COMPLETE:')
+  console.log('- Target pages:', pagination.targetPages)  
+  console.log('- Actual pages:', finalPages)
+  console.log('- Content fully included:', processedLines >= contentLines.length ? '✅' : '❌')
 
   // Ajouter les numéros de page
   const totalPages = pdf.getNumberOfPages()

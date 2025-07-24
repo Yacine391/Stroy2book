@@ -16,6 +16,8 @@ interface EbookGeneratorProps {
     fontFamily: string
     hasWatermark: boolean
     coverImage: File | null
+    exactPages: number
+    length: string
   }
   onBack: () => void
 }
@@ -27,14 +29,16 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
     setIsDownloading(true)
 
     try {
-      // Générer le PDF avec le contenu réel
+      // Générer le PDF avec le contenu réel ET paramètres de longueur
       const pdfBlob = await generatePDF({
         title: formData.title,
         author: formData.author,
         content: formData.content,
         backgroundColor: formData.backgroundColor,
         fontFamily: formData.fontFamily,
-        hasWatermark: formData.hasWatermark
+        hasWatermark: formData.hasWatermark,
+        exactPages: formData.exactPages,
+        length: formData.length
       })
 
       // Créer un nom de fichier propre

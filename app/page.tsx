@@ -469,6 +469,8 @@ export default function HomePage() {
               fontFamily: formData.fontFamily,
               hasWatermark: formData.hasWatermark,
               coverImage: formData.coverImage,
+              exactPages: formData.exactPages,
+              length: formData.length,
             }}
             onBack={() => setCurrentStep("preview")}
           />
