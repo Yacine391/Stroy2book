@@ -25,8 +25,8 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
     }
   }, [formData.coverImage])
 
-  // Diviser le contenu en pages (simulation)
-  const wordsPerPage = 300
+  // Diviser le contenu en pages (simulation) - Ajusté pour des contenus plus longs
+  const wordsPerPage = 200 // Réduit pour une meilleure lisibilité avec le scroll
   const words = formData.content.split(" ")
   const pages = []
 

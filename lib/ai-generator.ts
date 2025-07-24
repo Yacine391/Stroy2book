@@ -21,11 +21,11 @@ const genAI = new GoogleGenerativeAI(apiKey)
 
 export async function generateEbook(formData: FormData): Promise<GeneratedContent> {
   try {
-    // Construire le prompt en fonction des paramètres
+    // Construire le prompt en fonction des paramètres avec des longueurs beaucoup plus importantes
     const lengthMap = {
-      court: "5-10 pages (environ 2000-3000 mots)",
-      moyen: "15-25 pages (environ 5000-7000 mots)",
-      long: "30-50 pages (environ 10000-15000 mots)",
+      court: "15-25 pages (environ 5000-8000 mots) - Chaque chapitre doit faire au minimum 800-1200 mots",
+      moyen: "35-50 pages (environ 12000-18000 mots) - Chaque chapitre doit faire au minimum 1500-2000 mots", 
+      long: "60-100 pages (environ 25000-35000 mots) - Chaque chapitre doit faire au minimum 2500-3500 mots",
     }
 
     const targetLength = lengthMap[formData.length as keyof typeof lengthMap] || lengthMap.court
@@ -47,6 +47,13 @@ INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE HISTORIQUE :
 - Ajoute des CONTEXTES géopolitiques, sociaux et culturels de l'époque
 - Mentionne les SOURCES PRIMAIRES et SECONDAIRES quand possible
 
+DÉVELOPPEMENT APPROFONDI REQUIS :
+- Chaque chapitre doit être extrêmement détaillé avec des descriptions complètes
+- Développe en profondeur les contextes sociaux, économiques et culturels
+- Inclus de nombreux exemples concrets et témoignages d'époque
+- Explique les nuances et complexités de chaque période
+- Ajoute des anecdotes historiques vérifiées pour enrichir le récit
+
 Exemple de structure pour l'histoire :
 # Chapitre 1 : Les Origines (dates précises)
 # Chapitre 2 : Les Événements Majeurs (dates précises) 
@@ -57,12 +64,16 @@ IMPORTANT : Si c'est l'histoire d'un pays, d'une personne ou d'un événement sp
       
       return `
 INSTRUCTIONS SPÉCIFIQUES POUR LE GENRE ${genre.toUpperCase()} :
-- Crée un contenu original, créatif et engageant
-- Développe une vraie histoire avec un début, un milieu et une fin
+- Crée un contenu original, créatif et extrêmement développé
+- Développe une vraie histoire avec un début, un milieu et une fin très détaillés
 - Assure-toi que l'histoire soit cohérente et captivante du début à la fin
-- Inclus des descriptions détaillées pour immerger le lecteur
-- Crée des personnages avec des noms, des personnalités et des motivations claires
-- Utilise des dialogues pour rendre l'histoire vivante`
+- Inclus des descriptions détaillées et immersives pour chaque scène
+- Crée des personnages avec des noms, des personnalités et des motivations complexes et bien développées
+- Utilise de nombreux dialogues naturels et expressifs pour rendre l'histoire vivante
+- Développe en profondeur les émotions des personnages et leurs relations
+- Ajoute des sous-intrigues et des rebondissements pour enrichir l'histoire
+- Inclus des descriptions d'environnements riches et détaillées
+- Développe l'univers et le contexte de l'histoire avec de nombreux détails`
     }
 
     const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea)
@@ -77,47 +88,62 @@ AUTEUR : ${formData.author || "Auteur IA"}
 
 ${genreInstructions}
 
+EXIGENCES DE LONGUEUR STRICTES :
+- Génère un contenu TRÈS LONG et EXTRÊMEMENT DÉTAILLÉ
+- Chaque chapitre doit être substantiel et bien développé
+- N'hésite pas à ajouter de nombreux détails, descriptions et développements
+- Écris comme si tu rédigeais un vrai livre professionnel destiné à la publication
+- Développe chaque scène avec de nombreux paragraphes explicatifs
+- Ajoute des transitions détaillées entre chaque section
+
 Génère un ebook complet et professionnel avec :
 
 1. UN TITRE ACCROCHEUR (maximum 60 caractères)
 2. LE CONTENU COMPLET DE L'EBOOK avec :
-   - Une introduction engageante et immersive
-   - Au moins 5-8 chapitres bien structurés et développés
-   ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes' : '- Des dialogues naturels et des descriptions vivantes'}
-   ${formData.genre === 'historique' ? '- Des références et sources historiques' : '- Des personnages attachants et bien développés'}
-   - Des transitions fluides entre les chapitres
-   ${formData.genre === 'historique' ? '- Une chronologie historique respectée' : '- Une intrigue captivante avec des rebondissements'}
-   - Une conclusion satisfaisante et émotionnelle
-   - Un style d'écriture adapté au public cible
+   - Une introduction très engageante et immersive (au moins 3-4 paragraphes détaillés)
+   - Au moins 8-12 chapitres très bien structurés et extrêmement développés
+   ${formData.genre === 'historique' ? '- Des faits historiques précis avec dates et contextes très détaillés' : '- Des dialogues naturels et des descriptions vivantes très développées'}
+   ${formData.genre === 'historique' ? '- Des références et sources historiques avec explications complètes' : '- Des personnages attachants et très bien développés avec des backstories'}
+   - Des transitions fluides et détaillées entre les chapitres
+   ${formData.genre === 'historique' ? '- Une chronologie historique respectée avec de nombreux détails contextuels' : '- Une intrigue captivante avec de nombreux rebondissements et sous-intrigues'}
+   - Une conclusion très satisfaisante et émotionnelle (au moins 3-4 paragraphes)
+   - Un style d'écriture riche et adapté au public cible
+   - De nombreuses descriptions d'environnements, d'émotions et d'actions
 3. UNE DESCRIPTION DE COUVERTURE (pour génération d'image)
 
-INSTRUCTIONS IMPORTANTES :
+INSTRUCTIONS IMPORTANTES POUR LA LONGUEUR :
 - Écris entièrement en français
 - Adapte le vocabulaire et le style au public cible spécifié
 - Structure le texte avec des chapitres numérotés et titrés (format: # Chapitre X : Titre)
-${formData.genre === 'historique' ? '- RESPECTE SCRUPULEUSEMENT LES FAITS HISTORIQUES - Pas de fiction !' : '- Développe une vraie histoire avec un début, un milieu et une fin'}
-- Assure-toi que le contenu soit cohérent et captivant du début à la fin
+- DÉVELOPPE CHAQUE CHAPITRE AVEC UN MAXIMUM DE DÉTAILS
+- Ajoute de nombreux paragraphes explicatifs pour chaque événement
+- Inclus des descriptions complètes des lieux, personnages et situations
+- N'hésite pas à être très verbeux et descriptif
+${formData.genre === 'historique' ? '- RESPECTE SCRUPULEUSEMENT LES FAITS HISTORIQUES - Pas de fiction mais développe énormément les contextes !' : '- Développe une vraie histoire très riche avec un début, un milieu et une fin très détaillés'}
+- Assure-toi que le contenu soit cohérent, captivant et TRÈS LONG du début à la fin
+
+RAPPEL CRITIQUE : Cet ebook doit être SUBSTANTIEL et TRÈS LONG. Ne te contente pas de résumés, développe chaque aspect en profondeur !
 
 Format de réponse EXACT (respecte absolument ce format) :
 TITRE: [titre ici]
 AUTEUR: ${formData.author || "Auteur IA"}
 DESCRIPTION_COUVERTURE: [description détaillée pour image de couverture]
 CONTENU:
-[contenu complet de l'ebook ici avec chapitres formatés]
+[contenu complet de l'ebook ici avec chapitres formatés - TRÈS LONG ET DÉTAILLÉ]
 
-IMPORTANT : Génère un contenu substantiel et de qualité professionnelle qui correspond à la longueur demandée.`
+IMPORTANT : Génère un contenu très substantiel et de qualité professionnelle qui respecte et dépasse largement la longueur demandée.`
 
     // Utiliser le modèle Gemini
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
-    // Générer le contenu avec Gemini
+    // Générer le contenu avec Gemini avec plus de tokens pour du contenu plus long
     const result = await model.generateContent({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: formData.genre === 'historique' ? 0.3 : 0.9, // Moins de créativité pour l'histoire factuelle
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 32768, // Augmenté significativement pour du contenu plus long
       },
     })
 
