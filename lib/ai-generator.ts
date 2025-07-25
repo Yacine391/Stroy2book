@@ -728,7 +728,7 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 ⚠️ CONTRÔLE QUALITÉ : Ton contenu doit faire ENTRE ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET être absolument unique et COMPLET !`
 
     // Système de génération avec fallback intelligent et logs détaillés
-    let generatedText: string
+    let generatedText: string = ""
     const preferredAI = getPreferredAI()
 
     console.log('🎯 STARTING EBOOK GENERATION:')
@@ -808,23 +808,65 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
       console.log('✅ Gemini Response received - Length:', generatedText.length, 'characters')
       console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
       console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
+      
+      // VÉRIFICATION CRITIQUE: S'assurer qu'on a un contenu substantiel
+      if (!generatedText || generatedText.length < 500) {
+        console.error('❌ CONTENU IA INSUFFISANT ! Length:', generatedText?.length || 0)
+        throw new Error(`Contenu IA trop court: ${generatedText?.length || 0} caractères`)
+      }
     }
 
+    // DIAGNOSTIC COMPLET: Analyser la réponse IA avant parsing
+    console.log('🔍 DIAGNOSTIC COMPLET DE LA RÉPONSE IA:')
+    console.log('- Response length:', generatedText.length, 'characters')
+    console.log('- Response type:', typeof generatedText)
+    console.log('- Contains TITRE:', generatedText.includes('TITRE:'))
+    console.log('- Contains CONTENU:', generatedText.includes('CONTENU:'))
+    console.log('- Contains # Chapitre:', generatedText.includes('# Chapitre'))
+    console.log('- First 500 chars:', generatedText.substring(0, 500))
+    console.log('- Last 500 chars:', generatedText.substring(generatedText.length - 500))
+    
     // Parser la réponse selon le format attendu
     const parsed = parseGeneratedContent(generatedText, formData.author)
     
-    // Note: Signature d'unicité supprimée pour un contenu plus propre
+    // VALIDATION FINALE DU CONTENU PARSÉ
+    console.log('🎯 VALIDATION FINALE DU CONTENU PARSÉ:')
+    console.log('- Parsed content length:', parsed.content.length, 'characters')
+    console.log('- Parsed word count:', parsed.content.split(/\s+/).length, 'words')
+    console.log('- Parsed title:', parsed.title)
+    console.log('- Content preview (first 200):', parsed.content.substring(0, 200))
+    console.log('- Content preview (last 200):', parsed.content.substring(parsed.content.length - 200))
+    
+    // VÉRIFICATION CRITIQUE: S'assurer qu'on n'a pas le vieux fallback
+    if (parsed.content.includes('La Suite de l\'Aventure') || 
+        parsed.content.includes('se termine cette aventure extraordinaire')) {
+      console.error('🚨 DÉTECTION ANCIEN FALLBACK ! Forçage du contenu IA brut')
+      return {
+        title: parsed.title,
+        author: parsed.author,
+        content: generatedText, // FORCER le contenu IA brut complet
+        coverDescription: parsed.coverDescription,
+      }
+    }
     
     return parsed
 
   } catch (error) {
-    console.error("Erreur lors de la génération avec Gemini:", error)
+    console.error("❌ ERREUR CRITIQUE LORS DE LA GÉNÉRATION:", error)
+    console.error("❌ STACK TRACE:", error instanceof Error ? error.stack : 'No stack trace')
+    console.error("❌ FORMDATA:", { 
+      idea: formData.idea?.substring(0, 100),
+      genre: formData.genre,
+      length: formData.length 
+    })
 
-    // Contenu de fallback en cas d'erreur
+    // Contenu de fallback enrichi en cas d'erreur - Utiliser le contenu riche
+    console.log("🚨 USING RICH FALLBACK: Generating comprehensive content")
+    
     return {
       title: generateFallbackTitle(formData.idea),
       author: formData.author || "Auteur IA",
-      content: generateFallbackContent(formData),
+      content: generateFallbackContent(formData), // Utiliser le nouveau fallback riche
       coverDescription: generateFallbackCoverDescription(formData),
     }
   }
@@ -916,21 +958,38 @@ function parseGeneratedContent(text: string, authorName: string): GeneratedConte
 
     // NOUVEAU: Validation et enrichissement du contenu
     if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
-      console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding minimal structure')
+      console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding comprehensive structure')
       
-      // Si pas de structure, garder le contenu ENTIER mais ajouter structure minimale
+      // Si pas de structure, garder le contenu ENTIER mais ajouter structure riche
       const originalContent = content
-      content = `# Introduction
+      const lines = originalContent.split('\n').filter(line => line.trim())
+      const linesPerSection = Math.max(3, Math.floor(lines.length / 6))
+      
+      content = `# Introduction : Découverte de l'Univers
 
-${originalContent.split('\n').slice(0, 10).join('\n')}
+${lines.slice(0, linesPerSection).join('\n')}
 
-# Développement Principal
+# Chapitre 1 : Les Premiers Pas
 
-${originalContent.split('\n').slice(10).join('\n')}
+${lines.slice(linesPerSection, linesPerSection * 2).join('\n')}
 
-# Conclusion
+# Chapitre 2 : Développements Captivants
 
-${originalContent.split('\n').slice(-5).join('\n')}`
+${lines.slice(linesPerSection * 2, linesPerSection * 3).join('\n')}
+
+# Chapitre 3 : Moments Décisifs
+
+${lines.slice(linesPerSection * 3, linesPerSection * 4).join('\n')}
+
+# Chapitre 4 : Révélations Importantes
+
+${lines.slice(linesPerSection * 4, linesPerSection * 5).join('\n')}
+
+# Épilogue : Accomplissement de l'Aventure
+
+${lines.slice(linesPerSection * 5).join('\n')}
+
+Cette histoire captivante nous mène à travers un parcours riche en émotions et en découvertes, offrant une expérience de lecture complète et satisfaisante qui respecte l'essence du récit original tout en lui donnant une structure narrative claire et engageante.`
     }
 
     // FINAL LOG: Statistiques du contenu parsé
@@ -954,14 +1013,17 @@ ${originalContent.split('\n').slice(-5).join('\n')}`
 
   } catch (error) {
     console.error("❌ CRITICAL PARSING ERROR:", error)
-    console.log("📄 FALLBACK: Using raw text as content")
+    console.log("📄 EMERGENCY FAILSAFE: Using raw AI text as content")
+    console.log("📊 Raw text length:", text.length, "characters")
+    console.log("📊 Raw text preview:", text.substring(0, 300) + "...")
     
-    // FAILSAFE: En cas d'erreur, retourner TOUT le texte brut
+    // FAILSAFE ABSOLU: En cas d'erreur, retourner TOUT le texte brut IA
+    // C'est mieux d'avoir le contenu IA brut que le fallback générique
     return {
-      title: "Ebook Généré par IA",
+      title: "Ebook Généré par IA - Contenu Complet",
       author: authorName || "Auteur IA",
-      content: text || "Erreur lors de la génération du contenu.",
-      coverDescription: "Couverture moderne et élégante pour cet ebook unique",
+      content: text || "Erreur critique lors de la génération du contenu.",
+      coverDescription: "Couverture moderne et élégante pour cet ebook unique généré par IA",
     }
   }
 }
