@@ -797,7 +797,14 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 🚫 INTERDICTION ABSOLUE DE VOCABULAIRE NARRATIF POUR GUIDES PRATIQUES :
 ❌ JAMAIS utiliser : "cette histoire", "ce récit", "cette aventure", "notre héros", "les personnages", "l'intrigue", "l'univers de l'histoire"
 ❌ JAMAIS de conclusion : "Cette histoire captivante nous mène à travers un parcours riche en émotions"
-✅ UTILISER UNIQUEMENT : "ce guide", "ce manuel", "cette méthode", "ces techniques", "cet apprentissage", "ces conseils"`
+✅ UTILISER UNIQUEMENT : "ce guide", "ce manuel", "cette méthode", "ces techniques", "cet apprentissage", "ces conseils"
+
+🚫 INTERDICTION ABSOLUE DE DUPLICATIONS ET PARASITES :
+❌ JAMAIS écrire : "Introduction Introduction", "Chapitre 1 Chapitre 1", "Conclusion Conclusion"
+❌ JAMAIS mentionner : "(environ X mots)", "(1200 mots)", "environ 500 mots"
+❌ JAMAIS répéter les titres : Écrire UNE SEULE FOIS chaque titre
+✅ FORMAT STRICT : "Introduction :" puis contenu, "Chapitre 1 :" puis contenu
+✅ AUCUNE mention de comptage de mots dans le contenu final`
 
     // Système de génération avec fallback intelligent et logs détaillés
     let generatedText: string = ""
@@ -923,17 +930,38 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
       }
     }
     
-    // Vérification 2: Duplications de titres persistantes  
+    // Vérification 2: Duplications de titres persistantes + mentions mots
     if (parsed.content.includes('Introduction Introduction') || 
-        /Chapitre\s*\d+.*Chapitre\s*\d+/i.test(parsed.content)) {
-      console.error('🚨 DÉTECTION DUPLICATIONS TITRES ! Nettoyage d\'urgence')
+        /Chapitre\s*\d+.*Chapitre\s*\d+/i.test(parsed.content) ||
+        parsed.content.includes('(environ') ||
+        parsed.content.includes('Ce guide pratique vous aide à développer')) {
+      console.error('🚨 DÉTECTION DUPLICATIONS + PARASITES ! Nettoyage d\'urgence ULTRA-AGRESSIF')
       
-      // Nettoyage d'urgence ultra-agressif
+      // NETTOYAGE D'URGENCE ULTRA-AGRESSIF - ANNIHILATION TOTALE
       let cleanContent = parsed.content
-        .replace(/Introduction\s+Introduction[^:\n]*/gi, 'Introduction')
-        .replace(/Introduction:\s*[^#\n]*Introduction[^:\n]*:/gi, 'Introduction :')
-        .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
-        .replace(/Chapitre\s*(\d+):\s*[^#\n]*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
+        // SUPPRESSION PARASITES MOTS
+        .replace(/\(environ\s+\d+\s+mots?\)/gi, '')
+        .replace(/\(\d+\s+mots?\)/gi, '')
+        .replace(/environ\s+\d+\s+mots?/gi, '')
+        
+        // SUPPRESSION PHRASES FALLBACK PARASITES
+        .replace(/Ce guide pratique vous aide à développer vos compétences\s*\.?/gi, '')
+        .replace(/Ce guide vous fournit toutes les informations essentielles[^.]*\s*\.?/gi, '')
+        
+        // INTRODUCTION - ANNIHILATION
+        .replace(/Introduction\s+Introduction[^:\n]*\s*:?/gi, 'Introduction :')
+        .replace(/Introduction[^:\n]*Introduction\s*:?/gi, 'Introduction :')
+        .replace(/Introduction\s*:\s*[^#\n]*Introduction[^:\n]*:?/gi, 'Introduction :')
+        
+        // CHAPITRE - ANNIHILATION TOTALE
+        .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+        .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+        .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+        
+        // NETTOYAGE FINAL
+        .replace(/\s{3,}/g, ' ')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
       
       return {
         title: parsed.title,
@@ -1086,25 +1114,37 @@ ${lines.slice(linesPerSection * 5).join('\n')}
 Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine.`
       }
 
-      // NETTOYAGE CRITIQUE RENFORCÉ: Supprimer duplications avec regex ultra-robustes
+      // NETTOYAGE ULTRA-AGRESSIF: ANNIHILATION TOTALE DES DUPLICATIONS
       content = content
-        // Introduction dupliquée - PATTERN ULTRA-PRÉCIS
+        // SUPPRESSION MENTIONS DE MOTS (environ X mots) - PARASITE ABSOLU !
+        .replace(/\(environ\s+\d+\s+mots?\)/gi, '')
+        .replace(/\(\d+\s+mots?\)/gi, '')
+        .replace(/environ\s+\d+\s+mots?/gi, '')
+        
+        // INTRODUCTION - TOUTES VARIANTES POSSIBLES
+        .replace(/Introduction\s+Introduction\s*[^:\n]*:/gi, 'Introduction :')
+        .replace(/Introduction[^:\n]*Introduction\s*:/gi, 'Introduction :')
+        .replace(/Introduction\s*:\s*[^#\n]*Introduction\s*[^:\n]*:/gi, 'Introduction :')
         .replace(/Introduction\s*[^:\n]*?\s*Introduction\s*:/gi, 'Introduction :')
         .replace(/Introduction:\s*[^#\n]*?\s*Introduction\s*:/gi, 'Introduction :')
         .replace(/Introduction\s*:\s*[^#\n]*?\s*Introduction\s*[^:\n]*:/gi, 'Introduction :')
-        
-        // Chapitre dupliqué - PATTERN ULTRA-PRÉCIS  
-        .replace(/Chapitre\s*(\d+)\s*[^:\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1')
-        .replace(/Chapitre\s*(\d+):\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
-        .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1 :')
-        
-        // Conclusion/Épilogue dupliqués
-        .replace(/Conclusion\s*[^:\n]*?\s*Conclusion\s*:/gi, 'Conclusion :')
-        .replace(/Épilogue\s*[^:\n]*?\s*Épilogue\s*:/gi, 'Épilogue :')
-        
-        // NOUVEAU: Supprimer duplications sans deux-points aussi
         .replace(/Introduction\s+Introduction/gi, 'Introduction')
+        
+        // CHAPITRE - ANNIHILATION TOTALE TOUTES VARIANTES
+        .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
+        .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
+        .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1 :')
+        .replace(/Chapitre\s*(\d+):\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
+        .replace(/Chapitre\s*(\d+)\s*[^:\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1')
         .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1/gi, 'Chapitre $1')
+        
+        // CONCLUSION/ÉPILOGUE
+        .replace(/Conclusion\s+Conclusion[^:\n]*:/gi, 'Conclusion :')
+        .replace(/Conclusion[^:\n]*Conclusion\s*:/gi, 'Conclusion :')
+        .replace(/Conclusion\s*[^:\n]*?\s*Conclusion\s*:/gi, 'Conclusion :')
+        .replace(/Épilogue\s+Épilogue[^:\n]*:/gi, 'Épilogue :')
+        .replace(/Épilogue[^:\n]*Épilogue\s*:/gi, 'Épilogue :')
+        .replace(/Épilogue\s*[^:\n]*?\s*Épilogue\s*:/gi, 'Épilogue :')
         
       // SUPPRESSION PHRASES NARRATIVES INAPPROPRIÉES pour guides pratiques
       content = content
