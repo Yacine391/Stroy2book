@@ -325,8 +325,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     return {
       targetPages,
-      maxLinesPerPage: Math.max(linesPerPage, 40), // Augmenté de 20 à 40 pour éviter troncature
-      maxParagraphsPerPage: Math.max(paragraphsPerPage, 15) // Augmenté de 8 à 15
+      maxLinesPerPage: Math.max(linesPerPage, 80), // DRASTIQUEMENT augmenté de 40 à 80
+      maxParagraphsPerPage: Math.max(paragraphsPerPage, 30) // DRASTIQUEMENT augmenté de 15 à 30
     }
   }
   
@@ -342,9 +342,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // SYSTÈME DE SÉCURITÉ SIMPLIFIÉ: Forcer saut de page seulement si vraiment nécessaire
+    // SYSTÈME DE SÉCURITÉ ULTRA-PERMISSIF: Permettre beaucoup plus de contenu
     if (lineCount > maxLinesPerPage && line.length > 0) {
-      console.log('SECURITY: Force page break after', lineCount, 'lines')
+      console.log('SECURITY: Force page break after', lineCount, 'lines (max:', maxLinesPerPage, ')')
       pdf.addPage()
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -470,24 +470,24 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-      // Contrôle de page SIMPLIFIÉ et plus permissif
-      const neededHeight = lines.length * 4.5 + 6
-      const remainingSpace = pageHeight - margin - currentY
-      
-      console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
-      
-      // Saut de page SEULEMENT si vraiment pas assez de place (seuil plus permissif)
-      if (remainingSpace < neededHeight && neededHeight > 50) {
-        console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
-        pdf.addPage()
-        pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-        pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-        if (ebookData.hasWatermark) {
-          addWatermark()
+              // Contrôle de page ULTRA-PERMISSIF - Moins de sauts de page
+        const neededHeight = lines.length * 4.5 + 6
+        const remainingSpace = pageHeight - margin - currentY
+        
+        console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
+        
+        // Saut de page SEULEMENT si VRAIMENT IMPOSSIBLE de tenir (seuil très permissif)
+        if (remainingSpace < neededHeight && neededHeight > 100 && remainingSpace < 30) {
+          console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
+          pdf.addPage()
+          pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+          pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+          if (ebookData.hasWatermark) {
+            addWatermark()
+          }
+          currentY = margin
+          lineCount = 0
         }
-        currentY = margin
-        lineCount = 0
-      }
       
       lines.forEach((textLine, index) => {
         pdf.text(textLine, margin, currentY + (index * 4.5)) // Style livre: interligne 4.5pt

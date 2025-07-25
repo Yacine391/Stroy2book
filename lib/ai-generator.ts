@@ -461,43 +461,100 @@ ${getAudienceInstructions(audience)}
 
       if (genre === 'autres') {
         return `
-${getCategoryInstructions()}
+🎨 INSTRUCTIONS ULTRA-STRICTES POUR GENRE "AUTRES" :
 
-🎨 INSTRUCTIONS POUR GENRE "AUTRES" :
-- Tu vas créer un contenu ADAPTATIF selon l'idée proposée par l'utilisateur
-- Analyse l'idée pour déterminer automatiquement le format le plus approprié
-- INTERDICTION de personnages fictifs SAUF si l'idée demande explicitement de la fiction
-- Privilégie toujours le format INFORMATIF et ÉDUCATIF quand c'est possible
-- Format adaptatif : Guide, Manuel, Analyse, Tutoriel, ou Fiction selon l'idée
+🔍 ANALYSE OBLIGATOIRE DE L'IDÉE UTILISATEUR : "${idea}"
 
-🔍 ANALYSE AUTOMATIQUE DE L'IDÉE :
-- Si l'idée concerne des FAITS, CONSEILS, APPRENTISSAGE → Format NON-FICTION
-- Si l'idée demande une HISTOIRE, AVENTURE, PERSONNAGES → Format FICTION
-- Si l'idée est ambiguë → Privilégier le format ÉDUCATIF
+⚠️ RÈGLES STRICTES D'ADAPTATION AUTOMATIQUE :
 
-⚠️ RÈGLES POUR CONTENU "AUTRES" :
-❌ Ne jamais inventer de personnages si l'idée ne le demande pas explicitement
-❌ Pas de fiction gratuite pour des sujets sérieux
-✅ Adapter le ton et le style au sujet proposé
-✅ Créer le format le plus utile pour l'utilisateur
+1️⃣ ANALYSE AUTOMATIQUE DU SUJET :
+- Examiner chaque mot de l'idée : "${idea}"
+- Identifier le TYPE DE CONTENU demandé
+- Choisir le FORMAT le plus approprié
 
-EXEMPLES D'ADAPTATION :
-- "Guide de cuisine" → Format manuel pratique sans personnages
-- "Histoire de pirates" → Format fiction avec personnages et aventures
-- "Apprendre le jardinage" → Format guide éducatif factuel
-- "Conte pour enfants" → Format fiction créative avec personnages
+2️⃣ FORMATS AUTORISÉS SELON LE SUJET :
 
-STRUCTURE ADAPTATIVE :
-- Analyse de l'idée utilisateur
-- Choix du format le plus approprié
-- Développement selon les règles du format choisi
-- Contenu optimisé pour l'objectif de l'utilisateur
+📚 FORMAT ÉDUCATIF/INFORMATIF (PRIORITÉ) :
+- Mots-clés détectés : "apprendre", "guide", "conseils", "comment", "technique", "méthode", "tutoriel", "formation", "découvrir", "comprendre", "expliquer"
+- Contenu : Guide pratique, Manuel, Tutoriel, Documentation
+- INTERDICTION ABSOLUE de personnages fictifs
+
+🍳 FORMAT PRATIQUE/MANUEL :
+- Mots-clés : "cuisine", "recette", "bricolage", "jardinage", "artisanat", "construction", "réparation", "DIY"
+- Contenu : Instructions étape par étape, conseils pratiques
+- INTERDICTION ABSOLUE de personnages fictifs
+
+🌍 FORMAT DOCUMENTAIRE/FACTUEL :
+- Mots-clés : "histoire de", "origine", "évolution", "découverte", "science", "géographie", "culture", "tradition"
+- Contenu : Faits historiques, analyses, documentaire
+- INTERDICTION ABSOLUE de personnages fictifs
+
+🎭 FORMAT FICTION (SEULEMENT SI EXPLICITE) :
+- Mots-clés : "histoire", "conte", "aventure", "personnage", "héros", "récit", "narration"
+- Contenu : Histoire avec personnages SEULEMENT si clairement demandé
+
+3️⃣ DÉCISION AUTOMATIQUE BASÉE SUR "${idea}" :
+
+${(() => {
+  const ideaLower = idea.toLowerCase()
+  
+  // Mots-clés pour contenu éducatif/informatif
+  const educationalKeywords = ['apprendre', 'guide', 'conseil', 'comment', 'technique', 'méthode', 'tutoriel', 'formation', 'découvrir', 'comprendre', 'expliquer', 'enseigner']
+  
+  // Mots-clés pour contenu pratique
+  const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer']
+  
+  // Mots-clés pour contenu documentaire
+  const documentaryKeywords = ['histoire de', 'origine', 'évolution', 'découverte', 'science', 'géographie', 'culture', 'tradition', 'civilisation', 'époque']
+  
+  // Mots-clés pour fiction (seulement si explicite)
+  const fictionKeywords = ['conte', 'aventure', 'personnage', 'héros', 'récit', 'narration', 'histoire de pirates', 'légende']
+  
+  // Vérifier le type de contenu
+  const isEducational = educationalKeywords.some(keyword => ideaLower.includes(keyword))
+  const isPractical = practicalKeywords.some(keyword => ideaLower.includes(keyword))
+  const isDocumentary = documentaryKeywords.some(keyword => ideaLower.includes(keyword))
+  const isFiction = fictionKeywords.some(keyword => ideaLower.includes(keyword))
+  
+  if (isEducational) {
+    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU ÉDUCATIF
+📚 FORMAT CHOISI : Guide éducatif/informatif
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
+✅ CONTENU AUTORISÉ : Explications, conseils, méthodes, informations factuelles`
+  } else if (isPractical) {
+    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU PRATIQUE
+🛠️ FORMAT CHOISI : Manuel pratique/tutoriel
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
+✅ CONTENU AUTORISÉ : Instructions, étapes, conseils pratiques, techniques`
+  } else if (isDocumentary) {
+    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU DOCUMENTAIRE
+📖 FORMAT CHOISI : Documentation factuelle/historique
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
+✅ CONTENU AUTORISÉ : Faits historiques, analyses, données vérifiables`
+  } else if (isFiction) {
+    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU FICTION
+🎭 FORMAT CHOISI : Histoire/récit avec personnages
+✅ CONTENU AUTORISÉ : Personnages, dialogues, intrigue
+⚠️ ATTENTION : Fiction créative autorisée`
+  } else {
+    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU AMBIGU
+📚 FORMAT PAR DÉFAUT : Guide éducatif/informatif
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
+✅ CONTENU AUTORISÉ : Informations, explications, conseils basés sur le sujet`
+  }
+})()}
+
+4️⃣ OBLIGATIONS STRICTES :
+- Respecter EXACTEMENT le format détecté ci-dessus
+- NE JAMAIS créer de fiction si le format est éducatif/pratique/documentaire
+- Adapter le ton et le style au sujet proposé
+- Créer le contenu le plus utile pour l'utilisateur
 
 ${getAudienceInstructions(audience)}
 
 🌟 APPROCHE UNIQUE POUR CE CONTENU "AUTRES" (ID: ${unique.uniqueId}) :
-- ANALYSE INTELLIGENTE : ${unique.technique} pour déterminer le meilleur format
-- ADAPTATION : ${unique.atmosphere} selon le sujet proposé
+- ANALYSE INTELLIGENTE : ${unique.technique} pour le format détecté
+- ADAPTATION : ${unique.atmosphere} selon le sujet spécifique
 - STYLE FLEXIBLE : ${unique.style} adapté au contenu
 - APPROCHE CRÉATIVE : ${unique.twist} comme élément distinctif
 - PERSONNALISATION : ${unique.details} pour enrichir selon le thème`
