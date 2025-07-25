@@ -953,15 +953,25 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
         .replace(/Introduction[^:\n]*Introduction\s*:?/gi, 'Introduction :')
         .replace(/Introduction\s*:\s*[^#\n]*Introduction[^:\n]*:?/gi, 'Introduction :')
         
-        // CHAPITRE - ANNIHILATION TOTALE
-        .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
-        .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
-        .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+                 // CHAPITRE - ANNIHILATION TOTALE + NUMÉROTATION
+         .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+         .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+         .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:?/gi, 'Chapitre $1 :')
+         .replace(/Chapitre\s*(\d+)\s+(\d+)\./gi, 'Chapitre $2 :')   // NOUVEAU: "Chapitre 2 3." → "Chapitre 3 :"
+         .replace(/Chapitre\s*(\d+)\s+(\d+)\s*:/gi, 'Chapitre $2 :') // NOUVEAU: "Chapitre 2 3 :" → "Chapitre 3 :"
         
-        // NETTOYAGE FINAL
-        .replace(/\s{3,}/g, ' ')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
+                 // FORMATAGE SAUTS DE LIGNE + NETTOYAGE FINAL
+         .replace(/\s{3,}/g, ' ')
+         .replace(/\n{3,}/g, '\n\n')
+         
+         // FORMATAGE SAUTS DE LIGNE AVANT TITRES (demandé par utilisateur)
+         .replace(/(Introduction\s*:)/gi, '\n\n$1\n')           
+         .replace(/(Chapitre\s*\d+\s*:)/gi, '\n\n$1\n')        
+         .replace(/(Conclusion\s*:)/gi, '\n\n$1\n')            
+         .replace(/(Épilogue\s*:)/gi, '\n\n$1\n')              
+         
+         .replace(/^\n+/, '')          // Supprimer retours ligne début
+         .trim()
       
       return {
         title: parsed.title,
@@ -1130,13 +1140,17 @@ Ce guide vous fournit toutes les informations essentielles et les méthodes prat
         .replace(/Introduction\s*:\s*[^#\n]*?\s*Introduction\s*[^:\n]*:/gi, 'Introduction :')
         .replace(/Introduction\s+Introduction/gi, 'Introduction')
         
-        // CHAPITRE - ANNIHILATION TOTALE TOUTES VARIANTES
+        // CHAPITRE - ANNIHILATION TOTALE TOUTES VARIANTES + NUMÉROTATION COHÉRENTE
         .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
         .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
         .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1 :')
         .replace(/Chapitre\s*(\d+):\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
         .replace(/Chapitre\s*(\d+)\s*[^:\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1')
         .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1/gi, 'Chapitre $1')
+        
+        // NOUVEAUX: Fixer numérotation incohérente de chapitres (Chapitre 2 apparaît 2 fois)
+        .replace(/Chapitre\s*(\d+)\s+(\d+)\./gi, 'Chapitre $2 :')  // "Chapitre 2 3." → "Chapitre 3 :"
+        .replace(/Chapitre\s*(\d+)\s+(\d+)\s*:/gi, 'Chapitre $2 :') // "Chapitre 2 3 :" → "Chapitre 3 :"
         
         // CONCLUSION/ÉPILOGUE
         .replace(/Conclusion\s+Conclusion[^:\n]*:/gi, 'Conclusion :')
@@ -1171,11 +1185,19 @@ Ce guide vous fournit toutes les informations essentielles et les méthodes prat
         .replace(/Le domaine traité dans ce guide pratique\./gi, '')
         .replace(/Les explications détaillées fournies\./gi, '')
         
-      // NETTOYAGE FINAL: Supprimer phrases orphelines et répétitions
+      // FORMATAGE FINAL: Sauts de ligne + nettoyage
       content = content
         .replace(/\.\s*\.\s*/g, '. ')  // Double points
         .replace(/\s{3,}/g, ' ')       // Espaces multiples  
         .replace(/\n{3,}/g, '\n\n')   // Retours ligne multiples
+        
+        // FORMATAGE SAUTS DE LIGNE AVANT TITRES (demandé par utilisateur)
+        .replace(/(Introduction\s*:)/gi, '\n\n$1\n')           // "\n\nIntroduction :\n"
+        .replace(/(Chapitre\s*\d+\s*:)/gi, '\n\n$1\n')        // "\n\nChapitre X :\n"  
+        .replace(/(Conclusion\s*:)/gi, '\n\n$1\n')            // "\n\nConclusion :\n"
+        .replace(/(Épilogue\s*:)/gi, '\n\n$1\n')              // "\n\nÉpilogue :\n"
+        
+        .replace(/^\n+/, '')          // Supprimer retours ligne début
         .trim()
 
     // FINAL LOG: Statistiques du contenu parsé
