@@ -1020,41 +1020,51 @@ function parseGeneratedContent(text: string, authorName: string): GeneratedConte
       content = text.trim()
     }
 
-    // NOUVEAU: Validation et enrichissement du contenu
-    if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
-      console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding comprehensive structure')
-      
-      // Si pas de structure, garder le contenu ENTIER mais ajouter structure riche
-      const originalContent = content
-      const lines = originalContent.split('\n').filter(line => line.trim())
-      const linesPerSection = Math.max(3, Math.floor(lines.length / 6))
-      
-      content = `# Introduction : Découverte de l'Univers
+          // VALIDATION et nettoyage du contenu structuré
+      if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
+        console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding comprehensive structure')
+        
+        // Si pas de structure, garder le contenu ENTIER mais ajouter structure riche
+        const originalContent = content
+        const lines = originalContent.split('\n').filter(line => line.trim())
+        const linesPerSection = Math.max(3, Math.floor(lines.length / 6))
+        
+        content = `# Introduction
 
 ${lines.slice(0, linesPerSection).join('\n')}
 
-# Chapitre 1 : Les Premiers Pas
+# Chapitre 1
 
 ${lines.slice(linesPerSection, linesPerSection * 2).join('\n')}
 
-# Chapitre 2 : Développements Captivants
+# Chapitre 2
 
 ${lines.slice(linesPerSection * 2, linesPerSection * 3).join('\n')}
 
-# Chapitre 3 : Moments Décisifs
+# Chapitre 3
 
 ${lines.slice(linesPerSection * 3, linesPerSection * 4).join('\n')}
 
-# Chapitre 4 : Révélations Importantes
+# Chapitre 4
 
 ${lines.slice(linesPerSection * 4, linesPerSection * 5).join('\n')}
 
-# Épilogue : Accomplissement de l'Aventure
+# Conclusion
 
 ${lines.slice(linesPerSection * 5).join('\n')}
 
-Cette histoire captivante nous mène à travers un parcours riche en émotions et en découvertes, offrant une expérience de lecture complète et satisfaisante qui respecte l'essence du récit original tout en lui donnant une structure narrative claire et engageante.`
-    }
+Ce guide vous accompagne dans votre apprentissage avec des conseils pratiques et des techniques éprouvées pour maîtriser le sujet traité.`
+      }
+
+      // NETTOYAGE CRITIQUE: Supprimer les titres dupliqués
+      content = content
+        .replace(/Introduction\s*:\s*[^#\n]*Introduction\s*:/gi, 'Introduction :')
+        .replace(/Chapitre\s*\d+\s*:\s*[^#\n]*Chapitre\s*\d+\s*:/gi, (match) => {
+          const chapterNum = match.match(/Chapitre\s*(\d+)/i)?.[1] || '1'
+          return `Chapitre ${chapterNum} :`
+        })
+        .replace(/Conclusion\s*:\s*[^#\n]*Conclusion\s*:/gi, 'Conclusion :')
+        .replace(/Épilogue\s*:\s*[^#\n]*Épilogue\s*:/gi, 'Épilogue :')
 
     // FINAL LOG: Statistiques du contenu parsé
     const wordCount = content.split(/\s+/).length

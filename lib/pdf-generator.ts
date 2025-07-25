@@ -342,14 +342,12 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // DÉSACTIVATION TEMPORAIRE limite lignes - FORCER tout le contenu
-    // if (lineCount > maxLinesPerPage && line.length > 0) {
-    //   console.log('SECURITY DISABLED: Would force page break after', lineCount, 'lines (max:', maxLinesPerPage, ')')
-    // }
+    // DÉSACTIVATION COMPLÈTE de toutes les limites - FORCER TOUT LE CONTENU
+    console.log('ALL LIMITS DISABLED - Processing line', i+1, 'of', contentLines.length, '- Line:', line.substring(0, 50) + '...')
     
-    // NOUVEAU: Saut de page SEULEMENT si plus de place physique
-    if (currentY > pageHeight - margin - 50 && line.length > 0) {
-      console.log('PHYSICAL LIMIT: Force page break - currentY:', currentY, 'limit:', pageHeight - margin - 50)
+    // SAUT DE PAGE seulement si VRAIMENT plus de place du tout
+    if (currentY > pageHeight - margin - 15 && line.length > 0) {
+      console.log('ABSOLUTE PHYSICAL LIMIT: Force page break - currentY:', currentY)
       pdf.addPage()
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -371,9 +369,9 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     lineCount++ // Incrémenter le compteur de lignes
 
-    if (line.startsWith('# ')) {
-      // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
-      checkAndAddNewPageForChapter(30) // Augmenté de 20 à 30
+          if (line.startsWith('# ')) {
+        // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
+        checkAndAddNewPageForChapter(40) // Augmenté de 30 à 40 pour plus d'espace
       lineCount = 0 // Réinitialiser le compteur pour nouveau chapitre
       
       pdf.setFont(selectedFont, 'bold')
@@ -387,7 +385,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
         pdf.text(textLine, margin, currentY + (index * 10)) // Augmenté de 8 à 10
       })
       
-      currentY += lines.length * 8 + 12 // Réduit pour style livre: 8+12
+      currentY += lines.length * 8 + 20 // AUGMENTÉ pour plus d'espace: 12 → 20
       console.log('Added chapter title, currentY now:', currentY)
       
     } else if (line.startsWith('## ')) {
@@ -475,14 +473,17 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-                      // DÉSACTIVATION TEMPORAIRE contrôle d'espace - FORCER tout le contenu
-        // const neededHeight = lines.length * 4.5 + 6
-        // const remainingSpace = pageHeight - margin - currentY
-        // console.log('Space check DISABLED to force all content')
+                      // DÉSACTIVATION TOTALE contrôle d'espace - ABSOLUMENT TOUT LE CONTENU
+        console.log('SPACE CHECK COMPLETELY DISABLED - Processing paragraph with', lines.length, 'lines')
         
-        // SEULEMENT saut de page si VRAIMENT plus de place du tout
-        if (currentY > pageHeight - margin - 20) {
-          console.log('EMERGENCY page break - currentY too high:', currentY)
+        // Pas de saut de page préventif - on gère après si débordement
+      
+      lines.forEach((textLine, index) => {
+        const lineY = currentY + (index * 4.5)
+        
+        // Vérifier si on déborde - créer nouvelle page si nécessaire
+        if (lineY > pageHeight - margin - 10) {
+          console.log('OVERFLOW DETECTED - Creating new page at line', index, 'lineY:', lineY)
           pdf.addPage()
           pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
           pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -490,14 +491,19 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
             addWatermark()
           }
           currentY = margin
-          lineCount = 0
+          pdf.text(textLine, margin, currentY)
+          currentY += 4.5
+        } else {
+          pdf.text(textLine, margin, lineY)
         }
-      
-      lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 4.5)) // Style livre: interligne 4.5pt
       })
       
-      currentY += lines.length * 4 + 6 // Style livre classique: 4+6
+      // Ajuster currentY seulement si pas de débordement
+      if (currentY + (lines.length * 4.5) <= pageHeight - margin - 10) {
+        currentY += lines.length * 4 + 6 // Style livre classique: 4+6
+      } else {
+        currentY += 6 // Juste l'espacement de paragraphe
+      }
       paragraphCount++ // Incrémenter le compteur de paragraphes
       console.log('After paragraph, currentY:', currentY, 'paragraphCount:', paragraphCount)
     }
