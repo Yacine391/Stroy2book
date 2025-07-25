@@ -551,9 +551,12 @@ ${(() => {
    }
 })()}
 
-4️⃣ OBLIGATIONS STRICTES :
+4️⃣ OBLIGATIONS STRICTES ET INTERDICTIONS ABSOLUES :
 - Respecter EXACTEMENT le format détecté ci-dessus
 - NE JAMAIS créer de fiction si le format est éducatif/pratique/documentaire
+- INTERDICTION ABSOLUE de phrases narratives : "cette histoire", "ce récit", "cette aventure", "notre héros", "personnages", "intrigue"
+- INTERDICTION TOTALE de conclusions narratives : "Cette histoire captivante nous mène", "l'univers de l'histoire", "récit original"
+- UTILISER UNIQUEMENT vocabulaire technique et pratique : "ce guide", "ce manuel", "cette méthode", "ces techniques"
 - Adapter le ton et le style au sujet proposé
 - Créer le contenu le plus utile pour l'utilisateur
 
@@ -789,7 +792,12 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 
 🎯 RAPPEL FINAL CRITIQUE : Génère ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET assure-toi que l'histoire est COMPLÈTEMENT TERMINÉE avec une vraie conclusion !
 
-⚠️ CONTRÔLE QUALITÉ : Ton contenu doit faire ENTRE ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET être absolument unique et COMPLET !`
+⚠️ CONTRÔLE QUALITÉ : Ton contenu doit faire ENTRE ${lengthConfig.minWords}-${lengthConfig.maxWords} mots ET être absolument unique et COMPLET !
+
+🚫 INTERDICTION ABSOLUE DE VOCABULAIRE NARRATIF POUR GUIDES PRATIQUES :
+❌ JAMAIS utiliser : "cette histoire", "ce récit", "cette aventure", "notre héros", "les personnages", "l'intrigue", "l'univers de l'histoire"
+❌ JAMAIS de conclusion : "Cette histoire captivante nous mène à travers un parcours riche en émotions"
+✅ UTILISER UNIQUEMENT : "ce guide", "ce manuel", "cette méthode", "ces techniques", "cet apprentissage", "ces conseils"`
 
     // Système de génération avec fallback intelligent et logs détaillés
     let generatedText: string = ""
@@ -1053,10 +1061,10 @@ ${lines.slice(linesPerSection * 4, linesPerSection * 5).join('\n')}
 
 ${lines.slice(linesPerSection * 5).join('\n')}
 
-Ce guide vous accompagne dans votre apprentissage avec des conseils pratiques et des techniques éprouvées pour maîtriser le sujet traité.`
+Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine.`
       }
 
-      // NETTOYAGE CRITIQUE: Supprimer les titres dupliqués
+      // NETTOYAGE CRITIQUE: Supprimer les titres dupliqués et phrases narratives inappropriées
       content = content
         .replace(/Introduction\s*:\s*[^#\n]*Introduction\s*:/gi, 'Introduction :')
         .replace(/Chapitre\s*\d+\s*:\s*[^#\n]*Chapitre\s*\d+\s*:/gi, (match) => {
@@ -1065,6 +1073,19 @@ Ce guide vous accompagne dans votre apprentissage avec des conseils pratiques et
         })
         .replace(/Conclusion\s*:\s*[^#\n]*Conclusion\s*:/gi, 'Conclusion :')
         .replace(/Épilogue\s*:\s*[^#\n]*Épilogue\s*:/gi, 'Épilogue :')
+        
+      // SUPPRESSION PHRASES NARRATIVES INAPPROPRIÉES pour guides pratiques
+      content = content
+        .replace(/Cette histoire captivante nous mène à travers un parcours riche en émotions et en découvertes[^.]*\./gi, 'Ce guide complet vous accompagne dans votre apprentissage avec des conseils pratiques et éprouvés.')
+        .replace(/Cette histoire[^.]*narrative[^.]*\./gi, 'Ce guide vous fournit les informations essentielles pour maîtriser le sujet.')
+        .replace(/([Ll]'|[Cc]ette)\s*histoire[^.]*\./gi, 'Ce guide pratique vous aide à développer vos compétences.')
+        .replace(/([Ll]e|[Cc]ette)\s*récit[^.]*\./gi, 'Ce manuel vous donne tous les outils nécessaires.')
+        .replace(/([Ll]'|[Cc]ette)\s*aventure[^.]*\./gi, 'Cet apprentissage vous permettra de progresser efficacement.')
+        .replace(/([Nn]otre|[Ll]e)\s*héros[^.]*\./gi, 'L\'utilisateur de ce guide bénéficiera de techniques éprouvées.')
+        .replace(/([Ll]es|[Dd]es)\s*personnages[^.]*\./gi, 'Les différentes méthodes présentées dans ce guide.')
+        .replace(/([Ll]'|[Cc]ette)\s*intrigue[^.]*\./gi, 'La progression logique de ce guide.')
+        .replace(/[Ll]'univers[^.]*histoire[^.]*\./gi, 'Le domaine traité dans ce guide pratique.')
+        .replace(/([Dd]ialogue|[Cc]onversation)[^.]*\./gi, 'Les explications détaillées fournies.')
 
     // FINAL LOG: Statistiques du contenu parsé
     const wordCount = content.split(/\s+/).length
