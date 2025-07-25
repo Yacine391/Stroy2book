@@ -516,32 +516,39 @@ ${(() => {
   const isDocumentary = documentaryKeywords.some(keyword => ideaLower.includes(keyword))
   const isFiction = fictionKeywords.some(keyword => ideaLower.includes(keyword))
   
-  if (isEducational) {
-    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU ÉDUCATIF
-📚 FORMAT CHOISI : Guide éducatif/informatif
-❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
-✅ CONTENU AUTORISÉ : Explications, conseils, méthodes, informations factuelles`
-  } else if (isPractical) {
-    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU PRATIQUE
-🛠️ FORMAT CHOISI : Manuel pratique/tutoriel
-❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
-✅ CONTENU AUTORISÉ : Instructions, étapes, conseils pratiques, techniques`
-  } else if (isDocumentary) {
-    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU DOCUMENTAIRE
-📖 FORMAT CHOISI : Documentation factuelle/historique
-❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
-✅ CONTENU AUTORISÉ : Faits historiques, analyses, données vérifiables`
-  } else if (isFiction) {
-    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU FICTION
+     if (isEducational) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU ÉDUCATIF
+📚 FORMAT CHOISI : Guide éducatif/informatif STRICTEMENT PRATIQUE
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles, grand-mères, exemples personnels
+❌ INTERDICTION TOTALE : "ma grand-mère", "en 1978", "mon premier", "je me souviens", toute référence personnelle
+✅ CONTENU AUTORISÉ UNIQUEMENT : Explications techniques, conseils pratiques, méthodes concrètes, informations factuelles
+✅ STRUCTURE OBLIGATOIRE : Introduction technique + Chapitres pratiques + Conseils actionables + Conclusion pratique`
+   } else if (isPractical) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU PRATIQUE
+🛠️ FORMAT CHOISI : Manuel pratique/tutoriel STRICTEMENT TECHNIQUE
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles, exemples personnels
+❌ INTERDICTION TOTALE : "ma grand-mère", "mon expérience", "je me rappelle", toute référence personnelle
+✅ CONTENU AUTORISÉ UNIQUEMENT : Instructions étape par étape, conseils pratiques, techniques concrètes
+✅ STRUCTURE OBLIGATOIRE : Introduction technique + Étapes pratiques + Conseils techniques + Conclusion actionnable`
+   } else if (isDocumentary) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU DOCUMENTAIRE
+📖 FORMAT CHOISI : Documentation factuelle/historique STRICTEMENT OBJECTIVE
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles
+❌ INTERDICTION TOTALE : Toute référence personnelle ou subjective
+✅ CONTENU AUTORISÉ UNIQUEMENT : Faits historiques vérifiables, analyses objectives, données documentées
+✅ STRUCTURE OBLIGATOIRE : Introduction factuelle + Développement chronologique + Analyses + Conclusion documentée`
+   } else if (isFiction) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU FICTION
 🎭 FORMAT CHOISI : Histoire/récit avec personnages
-✅ CONTENU AUTORISÉ : Personnages, dialogues, intrigue
-⚠️ ATTENTION : Fiction créative autorisée`
-  } else {
-    return `🎯 DÉTECTION AUTOMATIQUE : CONTENU AMBIGU
-📚 FORMAT PAR DÉFAUT : Guide éducatif/informatif
-❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées
-✅ CONTENU AUTORISÉ : Informations, explications, conseils basés sur le sujet`
-  }
+✅ CONTENU AUTORISÉ : Personnages, dialogues, intrigue, anecdotes créatives
+⚠️ ATTENTION : Fiction créative autorisée SEULEMENT pour ce cas`
+   } else {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU AMBIGU - DEFAULT TECHNIQUE
+📚 FORMAT PAR DÉFAUT : Guide éducatif/informatif STRICTEMENT PRATIQUE
+❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles
+❌ INTERDICTION TOTALE : Toute référence personnelle, subjective ou narrative
+✅ CONTENU AUTORISÉ UNIQUEMENT : Informations techniques, explications factuelles, conseils pratiques basés sur le sujet`
+   }
 })()}
 
 4️⃣ OBLIGATIONS STRICTES :

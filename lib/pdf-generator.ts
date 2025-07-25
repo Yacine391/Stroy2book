@@ -325,8 +325,8 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     return {
       targetPages,
-      maxLinesPerPage: Math.max(linesPerPage, 80), // DRASTIQUEMENT augmenté de 40 à 80
-      maxParagraphsPerPage: Math.max(paragraphsPerPage, 30) // DRASTIQUEMENT augmenté de 15 à 30
+      maxLinesPerPage: Math.max(linesPerPage, 200), // SUPPRESSION LIMITES: 80 → 200 (quasi illimité)
+      maxParagraphsPerPage: Math.max(paragraphsPerPage, 100) // SUPPRESSION LIMITES: 30 → 100 (quasi illimité)
     }
   }
   
@@ -342,9 +342,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
-    // SYSTÈME DE SÉCURITÉ ULTRA-PERMISSIF: Permettre beaucoup plus de contenu
-    if (lineCount > maxLinesPerPage && line.length > 0) {
-      console.log('SECURITY: Force page break after', lineCount, 'lines (max:', maxLinesPerPage, ')')
+    // DÉSACTIVATION TEMPORAIRE limite lignes - FORCER tout le contenu
+    // if (lineCount > maxLinesPerPage && line.length > 0) {
+    //   console.log('SECURITY DISABLED: Would force page break after', lineCount, 'lines (max:', maxLinesPerPage, ')')
+    // }
+    
+    // NOUVEAU: Saut de page SEULEMENT si plus de place physique
+    if (currentY > pageHeight - margin - 50 && line.length > 0) {
+      console.log('PHYSICAL LIMIT: Force page break - currentY:', currentY, 'limit:', pageHeight - margin - 50)
       pdf.addPage()
       pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
@@ -470,15 +475,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const lines = splitTextToLines(line, contentWidth, 12)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
-              // Contrôle de page ULTRA-PERMISSIF - Moins de sauts de page
-        const neededHeight = lines.length * 4.5 + 6
-        const remainingSpace = pageHeight - margin - currentY
+                      // DÉSACTIVATION TEMPORAIRE contrôle d'espace - FORCER tout le contenu
+        // const neededHeight = lines.length * 4.5 + 6
+        // const remainingSpace = pageHeight - margin - currentY
+        // console.log('Space check DISABLED to force all content')
         
-        console.log('Space check:', { neededHeight, remainingSpace, currentY, pageHeight })
-        
-        // Saut de page SEULEMENT si VRAIMENT IMPOSSIBLE de tenir (seuil très permissif)
-        if (remainingSpace < neededHeight && neededHeight > 100 && remainingSpace < 30) {
-          console.log('FORCING page break - remaining space:', remainingSpace, 'needed:', neededHeight)
+        // SEULEMENT saut de page si VRAIMENT plus de place du tout
+        if (currentY > pageHeight - margin - 20) {
+          console.log('EMERGENCY page break - currentY too high:', currentY)
           pdf.addPage()
           pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
           pdf.rect(0, 0, pageWidth, pageHeight, 'F')
