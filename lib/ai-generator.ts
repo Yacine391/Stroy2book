@@ -909,14 +909,36 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     console.log('- Content preview (first 200):', parsed.content.substring(0, 200))
     console.log('- Content preview (last 200):', parsed.content.substring(parsed.content.length - 200))
     
-    // VÉRIFICATION CRITIQUE: S'assurer qu'on n'a pas le vieux fallback
+    // VÉRIFICATIONS CRITIQUES MULTIPLES
+    
+    // Vérification 1: Ancien fallback
     if (parsed.content.includes('La Suite de l\'Aventure') || 
         parsed.content.includes('se termine cette aventure extraordinaire')) {
       console.error('🚨 DÉTECTION ANCIEN FALLBACK ! Forçage du contenu IA brut')
       return {
         title: parsed.title,
         author: parsed.author,
-        content: generatedText, // FORCER le contenu IA brut complet
+        content: generatedText,
+        coverDescription: parsed.coverDescription,
+      }
+    }
+    
+    // Vérification 2: Duplications de titres persistantes  
+    if (parsed.content.includes('Introduction Introduction') || 
+        /Chapitre\s*\d+.*Chapitre\s*\d+/i.test(parsed.content)) {
+      console.error('🚨 DÉTECTION DUPLICATIONS TITRES ! Nettoyage d\'urgence')
+      
+      // Nettoyage d'urgence ultra-agressif
+      let cleanContent = parsed.content
+        .replace(/Introduction\s+Introduction[^:\n]*/gi, 'Introduction')
+        .replace(/Introduction:\s*[^#\n]*Introduction[^:\n]*:/gi, 'Introduction :')
+        .replace(/Chapitre\s*(\d+)[^:\n]*Chapitre\s*\1[^:\n]*/gi, 'Chapitre $1')
+        .replace(/Chapitre\s*(\d+):\s*[^#\n]*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
+      
+      return {
+        title: parsed.title,
+        author: parsed.author,
+        content: cleanContent,
         coverDescription: parsed.coverDescription,
       }
     }
@@ -1064,15 +1086,25 @@ ${lines.slice(linesPerSection * 5).join('\n')}
 Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine.`
       }
 
-      // NETTOYAGE CRITIQUE: Supprimer les titres dupliqués et phrases narratives inappropriées
+      // NETTOYAGE CRITIQUE RENFORCÉ: Supprimer duplications avec regex ultra-robustes
       content = content
-        .replace(/Introduction\s*:\s*[^#\n]*Introduction\s*:/gi, 'Introduction :')
-        .replace(/Chapitre\s*\d+\s*:\s*[^#\n]*Chapitre\s*\d+\s*:/gi, (match) => {
-          const chapterNum = match.match(/Chapitre\s*(\d+)/i)?.[1] || '1'
-          return `Chapitre ${chapterNum} :`
-        })
-        .replace(/Conclusion\s*:\s*[^#\n]*Conclusion\s*:/gi, 'Conclusion :')
-        .replace(/Épilogue\s*:\s*[^#\n]*Épilogue\s*:/gi, 'Épilogue :')
+        // Introduction dupliquée - PATTERN ULTRA-PRÉCIS
+        .replace(/Introduction\s*[^:\n]*?\s*Introduction\s*:/gi, 'Introduction :')
+        .replace(/Introduction:\s*[^#\n]*?\s*Introduction\s*:/gi, 'Introduction :')
+        .replace(/Introduction\s*:\s*[^#\n]*?\s*Introduction\s*[^:\n]*:/gi, 'Introduction :')
+        
+        // Chapitre dupliqué - PATTERN ULTRA-PRÉCIS  
+        .replace(/Chapitre\s*(\d+)\s*[^:\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1')
+        .replace(/Chapitre\s*(\d+):\s*[^#\n]*?\s*Chapitre\s*\1[^:\n]*:/gi, 'Chapitre $1 :')
+        .replace(/Chapitre\s*(\d+)\s*:\s*[^#\n]*?\s*Chapitre\s*\1/gi, 'Chapitre $1 :')
+        
+        // Conclusion/Épilogue dupliqués
+        .replace(/Conclusion\s*[^:\n]*?\s*Conclusion\s*:/gi, 'Conclusion :')
+        .replace(/Épilogue\s*[^:\n]*?\s*Épilogue\s*:/gi, 'Épilogue :')
+        
+        // NOUVEAU: Supprimer duplications sans deux-points aussi
+        .replace(/Introduction\s+Introduction/gi, 'Introduction')
+        .replace(/Chapitre\s*(\d+)\s+Chapitre\s*\1/gi, 'Chapitre $1')
         
       // SUPPRESSION PHRASES NARRATIVES INAPPROPRIÉES pour guides pratiques
       content = content
@@ -1086,6 +1118,25 @@ Ce guide vous fournit toutes les informations essentielles et les méthodes prat
         .replace(/([Ll]'|[Cc]ette)\s*intrigue[^.]*\./gi, 'La progression logique de ce guide.')
         .replace(/[Ll]'univers[^.]*histoire[^.]*\./gi, 'Le domaine traité dans ce guide pratique.')
         .replace(/([Dd]ialogue|[Cc]onversation)[^.]*\./gi, 'Les explications détaillées fournies.')
+        
+      // SUPPRESSION PHRASES DE FALLBACK POLLUANTES
+      content = content
+        .replace(/Ce guide pratique vous aide à développer vos compétences\./gi, '')
+        .replace(/Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine\./gi, '')
+        .replace(/Ce manuel vous donne tous les outils nécessaires\./gi, '')
+        .replace(/Cet apprentissage vous permettra de progresser efficacement\./gi, '')
+        .replace(/L'utilisateur de ce guide bénéficiera de techniques éprouvées\./gi, '')
+        .replace(/Les différentes méthodes présentées dans ce guide\./gi, '')
+        .replace(/La progression logique de ce guide\./gi, '')
+        .replace(/Le domaine traité dans ce guide pratique\./gi, '')
+        .replace(/Les explications détaillées fournies\./gi, '')
+        
+      // NETTOYAGE FINAL: Supprimer phrases orphelines et répétitions
+      content = content
+        .replace(/\.\s*\.\s*/g, '. ')  // Double points
+        .replace(/\s{3,}/g, ' ')       // Espaces multiples  
+        .replace(/\n{3,}/g, '\n\n')   // Retours ligne multiples
+        .trim()
 
     // FINAL LOG: Statistiques du contenu parsé
     const wordCount = content.split(/\s+/).length
