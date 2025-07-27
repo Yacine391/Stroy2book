@@ -28,9 +28,40 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
     }
   }, [formData.coverImage])
 
+  // Détection et formatage du contenu religieux multilingue
+  const formatReligiousContent = (text: string): string => {
+    // Escape HTML pour sécurité puis appliquer le formatage
+    let formattedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+    
+    // Détecter et formater les termes arabes avec translittération
+    formattedText = formattedText.replace(
+      /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)\s*\(([^)]+)\)/g,
+      '<span class="arabic-inline">$1</span> <span class="transliteration">($2)</span>'
+    )
+    
+    // Détecter et formater les termes latins
+    formattedText = formattedText.replace(
+      /\b([A-Z][a-z]+)\s*\(([^)]+en latin[^)]*)\)/g,
+      '<span class="latin-term">$1</span> <span class="translation">($2)</span>'
+    )
+    
+    // Détecter et formater les termes grecs
+    formattedText = formattedText.replace(
+      /([\u0370-\u03FF\u1F00-\u1FFF]+)\s*\(([^)]+)\)/g,
+      '<span class="greek-term">$1</span> <span class="transliteration">($2)</span>'
+    )
+    
+    return formattedText
+  }
+
   // Fonction de nettoyage du contenu
   const cleanContent = (content: string): string => {
-    return content
+    let cleaned = content
       // Supprimer les mentions de nombre de mots entre parenthèses
       .replace(/\(\d+\s*mots?\)/gi, '')
       // Supprimer les astérisques autour des titres
@@ -45,6 +76,9 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
       .replace(/^\s+|\s+$/gm, '')
       // Supprimer les lignes vides multiples
       .replace(/\n\s*\n\s*\n/g, '\n\n')
+    
+    // Appliquer le formatage religieux multilingue
+    return formatReligiousContent(cleaned)
   }
 
   // Diviser le contenu nettoyé en pages (simulation) - Ajusté pour des contenus plus longs
@@ -111,9 +145,17 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
                   <div className="text-sm text-gray-500 text-center">Chapitre {currentPage}</div>
                   <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     <div className="pr-2">
-                      <div className="text-gray-800 leading-relaxed text-justify whitespace-pre-wrap break-words">
-                        {pages[currentPage - 1] || "Contenu de la page..."}
-                      </div>
+                      <div 
+                        className="text-gray-800 leading-relaxed text-justify whitespace-pre-wrap break-words religious-content multilingual-text"
+                        style={{ 
+                          fontFamily: formData.fontFamily,
+                          fontSize: '14px',
+                          lineHeight: '1.7'
+                        }}
+                        dangerouslySetInnerHTML={{ 
+                          __html: (pages[currentPage - 1] || "Contenu de la page...").replace(/\n/g, '<br/>') 
+                        }}
+                      />
                     </div>
                   </div>
                   <div className="text-center text-sm text-gray-500 mt-2">{currentPage}</div>

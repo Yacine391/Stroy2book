@@ -6,6 +6,7 @@ Story2book AI est une application web qui utilise l'Intelligence Artificielle po
 
 - 🤖 **Génération automatique par IA** : Transformez votre idée en ebook complet
 - 📚 **Personnalisation avancée** : Choisissez le genre, public cible, longueur
+- 🕌 **Support multilingue religieux** : Intégration automatique d'arabe, latin, grec avec translittérations pour les contenus religieux
 - 🎨 **Interface moderne** : Design élégant avec Tailwind CSS
 - 📱 **Responsive** : Fonctionne sur tous les appareils
 - ⚡ **Rapide** : Génération en 30-60 secondes

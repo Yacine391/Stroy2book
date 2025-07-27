@@ -42,6 +42,7 @@ export default function HomePage() {
     { name: "Aventure", value: "aventure" },
     { name: "Mystère", value: "mystere" },
     { name: "Historique", value: "historique" },
+    { name: "Religion/Spiritualité", value: "religion-spiritualite" },
     { name: "Biographie", value: "biographie" },
     { name: "Développement personnel", value: "developpement-personnel" },
     { name: "Sport et Santé", value: "sport-sante" },

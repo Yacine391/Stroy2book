@@ -2,6 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Support pour les scripts arabes et autres langues */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Scheherazade+New:wght@400;500;600;700&display=swap');
+
+/* Classe pour texte multilingue religieux */
+.religious-text {
+  font-family: 'Amiri', 'Scheherazade New', serif;
+  line-height: 1.8;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* Support pour l'arabe inline */
+.arabic-inline {
+  font-family: 'Amiri', 'Scheherazade New', serif;
+  font-size: 1.1em;
+  font-weight: 500;
+  unicode-bidi: embed;
+  direction: rtl;
+  display: inline;
+  color: #059669;
+  border-bottom: 1px dotted #059669;
+}
+
+/* Support pour les termes latins */
+.latin-term {
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  color: #7c3aed;
+  border-bottom: 1px dotted #7c3aed;
+}
+
+/* Support pour les termes grecs */
+.greek-term {
+  font-family: 'Times New Roman', serif;
+  font-size: 1.05em;
+  color: #dc2626;
+  border-bottom: 1px dotted #dc2626;
+}
+
+/* Translittération et traductions */
+.transliteration, .translation {
+  font-style: italic;
+  color: #6b7280;
+  font-size: 0.95em;
+}
+
+/* Conteneur pour texte religieux */
+.religious-content {
+  line-height: 1.7;
+  word-spacing: 0.1em;
+}
+
+/* Amélioration de la lisibilité pour textes multilingues */
+.multilingual-text {
+  unicode-bidi: plaintext;
+  text-align: justify;
+  hyphens: auto;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
