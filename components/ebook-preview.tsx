@@ -30,25 +30,33 @@ export default function EbookPreview({ formData }: EbookPreviewProps) {
 
   // Détection et formatage du contenu religieux multilingue
   const formatReligiousContent = (text: string): string => {
+    // Escape HTML pour sécurité puis appliquer le formatage
+    let formattedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+    
     // Détecter et formater les termes arabes avec translittération
-    text = text.replace(
+    formattedText = formattedText.replace(
       /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)\s*\(([^)]+)\)/g,
       '<span class="arabic-inline">$1</span> <span class="transliteration">($2)</span>'
     )
     
     // Détecter et formater les termes latins
-    text = text.replace(
+    formattedText = formattedText.replace(
       /\b([A-Z][a-z]+)\s*\(([^)]+en latin[^)]*)\)/g,
       '<span class="latin-term">$1</span> <span class="translation">($2)</span>'
     )
     
     // Détecter et formater les termes grecs
-    text = text.replace(
+    formattedText = formattedText.replace(
       /([\u0370-\u03FF\u1F00-\u1FFF]+)\s*\(([^)]+)\)/g,
       '<span class="greek-term">$1</span> <span class="transliteration">($2)</span>'
     )
     
-    return text
+    return formattedText
   }
 
   // Fonction de nettoyage du contenu

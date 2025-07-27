@@ -38,6 +38,19 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
     coverDescription: "",
   })
 
+  // Détection du contenu religieux pour l'affichage
+  const detectReligiousContent = (idea: string, genre: string): boolean => {
+    const religiousKeywords = [
+      'islam', 'islamique', 'musulman', 'coran', 'véridique', 'sadiq', 'foi', 'religion',
+      'chrétien', 'christianisme', 'spiritualité', 'théologie', 'divin', 'sacré'
+    ]
+    const ideaLower = idea.toLowerCase()
+    return genre === 'religion-spiritualite' || 
+           religiousKeywords.some(keyword => ideaLower.includes(keyword))
+  }
+
+  const isReligiousContent = detectReligiousContent(formData.idea, formData.genre)
+
   const steps = [
     { name: "Analyse de votre idée", icon: Brain, description: "L'IA comprend votre concept" },
     { name: "Création du titre", icon: Sparkles, description: "Génération d'un titre accrocheur" },
@@ -83,6 +96,12 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">L'IA crée votre ebook</h2>
           <p className="text-gray-600">Veuillez patienter pendant que nous générons votre contenu...</p>
+          {isReligiousContent && (
+            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-200">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+              🕌 Mode multilingue religieux activé
+            </div>
+          )}
         </div>
         <div className="w-20" /> {/* Spacer */}
       </div>

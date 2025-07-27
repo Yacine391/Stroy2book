@@ -169,13 +169,33 @@ IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWo
     // Détection automatique du contenu religieux
     const detectReligiousContent = (idea: string, genre: string): boolean => {
       const religiousKeywords = [
-        'islam', 'musulman', 'coran', 'prophète', 'allah', 'dieu', 'foi', 'religion',
-        'chrétien', 'christianisme', 'jésus', 'christ', 'bible', 'église',
-        'judaïsme', 'juif', 'torah', 'synagogue', 'rabbi',
-        'bouddhisme', 'bouddha', 'méditation', 'dharma',
-        'hindouisme', 'krishna', 'vishnu', 'karma',
-        'spiritualité', 'prière', 'temple', 'sacré', 'divin',
-        'véridique', 'sadiq', 'hadith', 'sunna', 'imam', 'mosquée'
+        // Islam
+        'islam', 'islamique', 'musulman', 'coran', 'coranique', 'prophète', 'allah', 'dieu', 'foi', 'religion',
+        'véridique', 'sadiq', 'siddiq', 'hadith', 'sunna', 'imam', 'mosquée', 'mecque', 'médine',
+        'khalife', 'calife', 'jurisprudence', 'fiqh', 'charia', 'ramadan', 'hajj', 'umrah',
+        'tafsir', 'exégèse', 'théologie', 'kalām', 'soufisme', 'mystique',
+        
+        // Christianisme
+        'chrétien', 'christianisme', 'jésus', 'christ', 'bible', 'évangile', 'église', 'cathédrale',
+        'pape', 'vatican', 'catholique', 'protestant', 'orthodoxe', 'monastère', 'moine', 'nun',
+        'saint', 'sainte', 'miracle', 'résurrection', 'crucifixion', 'baptême', 'communion',
+        
+        // Judaïsme
+        'judaïsme', 'juif', 'torah', 'talmud', 'synagogue', 'rabbi', 'rabbin', 'kabbale',
+        'sabbat', 'pessah', 'yom kippour', 'rosh hashana', 'bar mitzvah', 'kasher',
+        
+        // Autres religions
+        'bouddhisme', 'bouddha', 'méditation', 'dharma', 'karma', 'nirvana', 'temple bouddhiste',
+        'hindouisme', 'krishna', 'vishnu', 'shiva', 'brahma', 'yoga', 'mantra',
+        'sikhisme', 'guru', 'gurdwara', 'zoroastrisme', 'confucianisme', 'taoïsme',
+        
+        // Termes généraux spirituels
+        'spiritualité', 'prière', 'temple', 'sacré', 'divin', 'révélation', 'prophétie',
+        'théologie', 'doctrine', 'croyance', 'culte', 'rituel', 'cérémonie', 'pèlerinage',
+        'tradition religieuse', 'histoire religieuse', 'études religieuses', 'comparative religion',
+        
+        // Mots du document fourni
+        'vérité', 'verite', 'foi', 'histoire islamique', 'tradition prophétique'
       ]
       
       const ideaLower = idea.toLowerCase()
