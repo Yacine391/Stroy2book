@@ -159,11 +159,28 @@ IMPORTANT : Respecte la fourchette ${lengthConfig.minWords}-${lengthConfig.maxWo
     // Classification des genres pour éviter la confusion fiction/non-fiction
     const getGenreCategory = (genre: string): 'fiction' | 'non-fiction' => {
       const fictionGenres = ['roman', 'science-fiction', 'fantasy', 'thriller', 'romance', 'aventure', 'mystere']
-      const nonFictionGenres = ['historique', 'biographie', 'developpement-personnel', 'sport-sante', 'autres']
+      const nonFictionGenres = ['historique', 'religion-spiritualite', 'biographie', 'developpement-personnel', 'sport-sante', 'autres']
       
       if (fictionGenres.includes(genre)) return 'fiction'
       if (nonFictionGenres.includes(genre)) return 'non-fiction'
       return 'fiction' // Par défaut
+    }
+
+    // Détection automatique du contenu religieux
+    const detectReligiousContent = (idea: string, genre: string): boolean => {
+      const religiousKeywords = [
+        'islam', 'musulman', 'coran', 'prophète', 'allah', 'dieu', 'foi', 'religion',
+        'chrétien', 'christianisme', 'jésus', 'christ', 'bible', 'église',
+        'judaïsme', 'juif', 'torah', 'synagogue', 'rabbi',
+        'bouddhisme', 'bouddha', 'méditation', 'dharma',
+        'hindouisme', 'krishna', 'vishnu', 'karma',
+        'spiritualité', 'prière', 'temple', 'sacré', 'divin',
+        'véridique', 'sadiq', 'hadith', 'sunna', 'imam', 'mosquée'
+      ]
+      
+      const ideaLower = idea.toLowerCase()
+      return genre === 'religion-spiritualite' || 
+             religiousKeywords.some(keyword => ideaLower.includes(keyword))
     }
 
     // Instructions spécifiques selon le genre avec éléments d'unicité
@@ -269,6 +286,122 @@ STRUCTURE NARRATIVE CLASSIQUE :
 - Exemples VARIÉS couvrant différentes situations de vie
 - Approche ÉQUILIBRÉE entre simplicité et profondeur`
         }
+      }
+
+      if (genre === 'religion-spiritualite') {
+        const isReligiousContent = detectReligiousContent(idea, genre)
+        
+        return `
+${getCategoryInstructions()}
+
+🕌 INSTRUCTIONS SPÉCIALISÉES POUR RELIGION/SPIRITUALITÉ :
+
+⚡ DÉTECTION AUTOMATIQUE DE CONTENU RELIGIEUX : ${isReligiousContent ? 'OUI' : 'NON'}
+
+🌍 OBLIGATION D'INCLUSION MULTILINGUE :
+${isReligiousContent ? `
+📖 TERMES MULTILINGUES OBLIGATOIRES À INTÉGRER :
+
+ARABE ISLAMIQUE (avec translittération) :
+- صدّیق (Ṣiddīq) - "le Véridique"
+- الصّادق (as-Ṣādiq) - "le Sincère" 
+- الحقّ (al-Ḥaqq) - "la Vérité"
+- إيمان (Īmān) - "foi"
+- تقوى (Taqwā) - "piété"
+- صدق (Ṣidq) - "véracité"
+- أمين (Amīn) - "digne de confiance"
+- حديث (Ḥadīth) - "tradition prophétique"
+- سنّة (Sunna) - "tradition"
+- إجماع (Ijmāʿ) - "consensus"
+- تفسير (Tafsīr) - "exégèse"
+- فقه (Fiqh) - "jurisprudence"
+
+LATIN ACADÉMIQUE :
+- Veritas (Vérité)
+- Fides (Foi) 
+- Sinceritas (Sincérité)
+- Integritas (Intégrité)
+- Auctoritas (Autorité)
+- Testimonium (Témoignage)
+- Traditio (Tradition)
+
+GREC CLASSIQUE (translittéré) :
+- Aletheia (ἀλήθεια) - "vérité"
+- Pistis (πίστις) - "foi"
+- Sophia (σοφία) - "sagesse"
+
+FORMAT D'INTÉGRATION OBLIGATOIRE :
+- Utilise le terme étranger suivi de sa translittération et traduction
+- Exemple : "le concept de صدّیق (Ṣiddīq, 'le Véridique')"
+- Exemple : "la notion de Veritas (Vérité en latin)"
+- Intègre naturellement dans le texte, pas comme une liste
+` : `
+📚 VOCABULAIRE SPIRITUEL GÉNÉRAL :
+- Utilise des termes spirituels universels adaptés au sujet
+- Intègre des concepts philosophiques et théologiques
+- Adapte le vocabulaire à la tradition religieuse traitée
+`}
+
+📋 STRUCTURE ACADÉMIQUE OBLIGATOIRE :
+- Ton ACADÉMIQUE et RESPECTUEUX
+- Sources et références historiques authentiques
+- Analyse théologique et historique rigoureuse
+- Contexte culturel et social détaillé
+- AUCUN personnage fictif ou dialogue inventé
+- Présentation objective et documentée
+
+🎯 APPROCHES SPÉCIALISÉES SELON LE SUJET :
+
+ISLAM :
+- Histoire des Califes et savants
+- Développement de la jurisprudence (Fiqh)
+- Évolution de la théologie (Kalām)
+- Tradition prophétique (Ḥadīth)
+- Exégèse coranique (Tafsīr)
+
+CHRISTIANISME :
+- Histoire de l'Église primitive
+- Développement de la doctrine
+- Tradition patristique
+- Conciles œcuméniques
+- Théologie sacramentelle
+
+JUDAÏSME :
+- Tradition talmudique
+- Histoire rabbinique
+- Développement halakhique
+- Pensée philosophique juive
+- Mystique kabbalistique
+
+SPIRITUALITÉ UNIVERSELLE :
+- Philosophie religieuse comparée
+- Mystique et contemplation
+- Éthique spirituelle
+- Pratiques contemplatives
+- Sagesse traditionnelle
+
+${getAudienceInstructions(audience)}
+
+🌟 APPROCHE UNIQUE POUR CE CONTENU RELIGIEUX (ID: ${unique.uniqueId}) :
+- PERSPECTIVE ACADÉMIQUE : ${unique.technique} pour l'analyse religieuse
+- ATMOSPHÈRE SPIRITUELLE : ${unique.atmosphere} dans l'approche du sacré
+- STYLE RESPECTUEUX : ${unique.style} pour présenter la tradition
+- ANGLE UNIQUE : ${unique.twist} comme approche distinctive
+- FOCUS CULTUREL : ${unique.details} pour enrichir le contexte
+
+⚠️ OBLIGATIONS ABSOLUES :
+- RESPECT des traditions religieuses traitées
+- EXACTITUDE historique et théologique
+- OBJECTIVITÉ académique sans prosélytisme
+- INCLUSION de terminologie multilingue appropriée
+- RÉFÉRENCES à des sources authentiques
+- CONTEXTUALISATION historique et culturelle
+
+STRUCTURE SPÉCIALISÉE RELIGION :
+${Array.from({length: lengthConfig.chaptersCount}, (_, i) => 
+  `# Chapitre ${i + 1} : [Titre religieux/spirituel avec termes originaux] (${lengthConfig.wordsPerChapter} mots requis avec terminologie multilingue)`
+).join('\n')}
+`
       }
 
       if (genre === 'historique') {
@@ -460,10 +593,51 @@ ${getAudienceInstructions(audience)}
       }
 
       if (genre === 'autres') {
+        const isReligiousContent = detectReligiousContent(idea, genre)
+        
         return `
 🎨 INSTRUCTIONS ULTRA-STRICTES POUR GENRE "AUTRES" :
 
 🔍 ANALYSE OBLIGATOIRE DE L'IDÉE UTILISATEUR : "${idea}"
+
+⚡ DÉTECTION CONTENU RELIGIEUX : ${isReligiousContent ? 'OUI - Application automatique du mode Religion/Spiritualité' : 'NON'}
+
+${isReligiousContent ? `
+🕌 MODE RELIGIEUX AUTOMATIQUE ACTIVÉ :
+
+📖 TERMES MULTILINGUES OBLIGATOIRES SELON LE CONTEXTE :
+
+POUR SUJETS ISLAMIQUES :
+- صدّیق (Ṣiddīq) - "le Véridique"
+- الصّادق (as-Ṣādiq) - "le Sincère"
+- الحقّ (al-Ḥaqq) - "la Vérité" 
+- حديث (Ḥadīth) - "tradition prophétique"
+- سنّة (Sunna) - "tradition"
+- تقوى (Taqwā) - "piété"
+- فقه (Fiqh) - "jurisprudence"
+
+POUR SUJETS CHRÉTIENS :
+- Veritas (Vérité en latin)
+- Fides (Foi en latin)
+- Logos (λόγος) - "Parole divine"
+- Agape (ἀγάπη) - "amour divin"
+
+POUR SUJETS SPIRITUELS GÉNÉRAUX :
+- Termes appropriés à la tradition étudiée
+- Concepts originaux avec translittération
+- Étymologies et significations profondes
+
+FORMAT D'INTÉGRATION NATURELLE :
+- Intègre les termes dans le flux du texte
+- Exemple : "Le concept coranique de صدّیق (Ṣiddīq, 'le Véridique') révèle..."
+- Pas de simple liste, mais intégration contextuelle
+
+⚠️ OBLIGATIONS RELIGIEUSES :
+- RESPECT absolu des traditions
+- EXACTITUDE des traductions et translittérations
+- CONTEXTE historique et théologique approprié
+- TON académique et respectueux
+` : ''}
 
 ⚠️ RÈGLES STRICTES D'ADAPTATION AUTOMATIQUE :
 
@@ -702,6 +876,7 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
     }
 
     const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, formData.targetAudience, uniqueElements)
+    const isReligiousContent = detectReligiousContent(formData.idea, formData.genre)
 
     const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
@@ -710,6 +885,34 @@ ${formData.genre ? `GENRE : ${formData.genre}` : ""}
 ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
+
+🕌 DÉTECTION AUTOMATIQUE DE CONTENU RELIGIEUX : ${isReligiousContent ? 'OUI - Mode multilingue activé' : 'NON'}
+
+${isReligiousContent ? `
+📚 OBLIGATION SPÉCIALE - CONTENU RELIGIEUX MULTILINGUE :
+Tu DOIS absolument intégrer des termes dans les langues originales avec leurs translittérations et traductions. Voici les termes OBLIGATOIRES à utiliser naturellement dans ton texte :
+
+TERMES ARABES OBLIGATOIRES (format : terme arabe (translittération, "traduction")) :
+- صدّیق (Ṣiddīq, "le Véridique")
+- الصّادق (as-Ṣādiq, "le Sincère")
+- الحقّ (al-Ḥaqq, "la Vérité")
+- أمين (Amīn, "digne de confiance")
+- حديث (Ḥadīth, "tradition prophétique")
+- سنّة (Sunna, "tradition")
+- تقوى (Taqwā, "piété")
+- فقه (Fiqh, "jurisprudence")
+
+TERMES LATINS OBLIGATOIRES :
+- Veritas (Vérité en latin)
+- Fides (Foi en latin)
+- Sinceritas (Sincérité en latin)
+- Integritas (Intégrité en latin)
+
+EXEMPLE D'INTÉGRATION NATURELLE :
+"Le concept coranique de صدّیق (Ṣiddīq, 'le Véridique') représente l'un des attributs les plus élevés de la foi musulmane, intimement lié à la notion latine de Veritas (Vérité en latin)."
+
+Tu DOIS intégrer au moins 8-10 de ces termes de façon naturelle dans ton texte.
+` : ""}
 
 ${formData.genre === 'developpement-personnel' ? `
 ⚠️ ATTENTION SPÉCIALE DÉVELOPPEMENT PERSONNEL ⚠️
