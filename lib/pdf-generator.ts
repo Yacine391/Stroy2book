@@ -204,56 +204,56 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     console.log(`Processing line ${i+1}/${contentLines.length}: ${line.substring(0, 50)}...`)
     
-    if (!line) {
-      // Ligne vide - espacement
-      currentY += 4
-      continue
-    }
+         if (!line) {
+       // Ligne vide - espacement réduit
+       currentY += 2
+       continue
+     }
 
-    // Déterminer le type de ligne et ses paramètres
-    let fontSize = 12
-    let fontStyle = 'normal'
-    let textColor = [50, 50, 50]
-    let lineSpacing = 4.5
-    let afterSpacing = 6
-    let displayText = line
-    
-    if (line.startsWith('# ')) {
-      // Titre principal (chapitre)
-      fontSize = 18
-      fontStyle = 'bold'
-      textColor = [80, 80, 80]
-      afterSpacing = 20
-      displayText = line.substring(2)
-      
-      // S'assurer qu'on a assez d'espace pour le titre
-      if (needsNewPage(40)) {
-        addNewPage()
-      }
-      
-    } else if (line.startsWith('## ')) {
-      // Sous-titre
-      fontSize = 16
-      fontStyle = 'bold'
-      textColor = [60, 60, 60]
-      afterSpacing = 15
-      displayText = line.substring(3)
-      
-      if (needsNewPage(30)) {
-        addNewPage()
-      }
-      
-    } else if (line.startsWith('### ')) {
-      // Sous-sous-titre
-      fontSize = 14
-      fontStyle = 'bold'
-      textColor = [80, 80, 80]
-      afterSpacing = 12
-      displayText = line.substring(4)
-      
-      if (needsNewPage(25)) {
-        addNewPage()
-      }
+         // Déterminer le type de ligne et ses paramètres
+     let fontSize = 12
+     let fontStyle = 'normal'
+     let textColor = [50, 50, 50]
+     let lineSpacing = 4.2
+     let afterSpacing = 3
+     let displayText = line
+     
+     if (line.startsWith('# ')) {
+       // Titre principal (chapitre)
+       fontSize = 16
+       fontStyle = 'bold'
+       textColor = [80, 80, 80]
+       afterSpacing = 8
+       displayText = line.substring(2)
+       
+       // S'assurer qu'on a assez d'espace pour le titre
+       if (needsNewPage(25)) {
+         addNewPage()
+       }
+       
+     } else if (line.startsWith('## ')) {
+       // Sous-titre
+       fontSize = 14
+       fontStyle = 'bold'
+       textColor = [60, 60, 60]
+       afterSpacing = 6
+       displayText = line.substring(3)
+       
+       if (needsNewPage(20)) {
+         addNewPage()
+       }
+       
+     } else if (line.startsWith('### ')) {
+       // Sous-sous-titre
+       fontSize = 13
+       fontStyle = 'bold'
+       textColor = [80, 80, 80]
+       afterSpacing = 5
+       displayText = line.substring(4)
+       
+       if (needsNewPage(18)) {
+         addNewPage()
+       }
       
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique

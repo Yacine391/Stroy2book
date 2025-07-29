@@ -1088,40 +1088,37 @@ function parseGeneratedContent(text: string, authorName: string): GeneratedConte
       content = text.trim()
     }
 
-          // VALIDATION et nettoyage du contenu structuré
-      if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
-        console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding comprehensive structure')
+          // VALIDATION du contenu structuré - AMÉLIORATION
+      if (!content.includes('# ') && !content.includes('## ')) {
+        console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding structure while preserving ALL content')
         
-        // Si pas de structure, garder le contenu ENTIER mais ajouter structure riche
+        // Si pas de structure, garder le contenu ENTIER et ajouter une structure minimale
         const originalContent = content
-        const lines = originalContent.split('\n').filter(line => line.trim())
-        const linesPerSection = Math.max(3, Math.floor(lines.length / 6))
+        const paragraphs = originalContent.split('\n\n').filter(p => p.trim().length > 50)
         
-        content = `# Introduction
+        if (paragraphs.length >= 3) {
+          // Diviser intelligemment en gardant TOUT le contenu
+          const introduction = paragraphs.slice(0, Math.ceil(paragraphs.length * 0.2))
+          const middle = paragraphs.slice(Math.ceil(paragraphs.length * 0.2), Math.ceil(paragraphs.length * 0.8))
+          const conclusion = paragraphs.slice(Math.ceil(paragraphs.length * 0.8))
+          
+          content = `# Introduction
 
-${lines.slice(0, linesPerSection).join('\n')}
+${introduction.join('\n\n')}
 
-# Chapitre 1
+# Développement
 
-${lines.slice(linesPerSection, linesPerSection * 2).join('\n')}
-
-# Chapitre 2
-
-${lines.slice(linesPerSection * 2, linesPerSection * 3).join('\n')}
-
-# Chapitre 3
-
-${lines.slice(linesPerSection * 3, linesPerSection * 4).join('\n')}
-
-# Chapitre 4
-
-${lines.slice(linesPerSection * 4, linesPerSection * 5).join('\n')}
+${middle.join('\n\n')}
 
 # Conclusion
 
-${lines.slice(linesPerSection * 5).join('\n')}
+${conclusion.join('\n\n')}`
+        } else {
+          // Si contenu très court, juste ajouter un titre
+          content = `# Contenu Principal
 
-Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine.`
+${originalContent}`
+        }
       }
 
       // NETTOYAGE ULTRA-AGRESSIF: ANNIHILATION TOTALE DES DUPLICATIONS

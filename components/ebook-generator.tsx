@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Download, Eye } from "lucide-react"
 import EbookPreview from "@/components/ebook-preview"
 import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
+import { generateWord, downloadWord } from "@/lib/word-generator"
 
 interface EbookGeneratorProps {
   formData: {
@@ -24,34 +25,50 @@ interface EbookGeneratorProps {
 
 export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps) {
   const [isDownloading, setIsDownloading] = useState(false)
+  const [downloadType, setDownloadType] = useState<'pdf' | 'word' | null>(null)
 
-  const handleDownload = async () => {
+  const handleDownload = async (type: 'pdf' | 'word') => {
     setIsDownloading(true)
+    setDownloadType(type)
 
     try {
-      // Générer le PDF avec le contenu réel ET paramètres de longueur
-      const pdfBlob = await generatePDF({
-        title: formData.title,
-        author: formData.author,
-        content: formData.content,
-        backgroundColor: formData.backgroundColor,
-        fontFamily: formData.fontFamily,
-        hasWatermark: formData.hasWatermark,
-        exactPages: formData.exactPages,
-        length: formData.length
-      })
-
-      // Créer un nom de fichier propre
-      const filename = `${formData.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+      const baseFilename = formData.title.replace(/[^a-zA-Z0-9]/g, '_')
       
-      // Télécharger le PDF
-      downloadPDF(pdfBlob, filename)
+      if (type === 'pdf') {
+        // Générer le PDF
+        const pdfBlob = await generatePDF({
+          title: formData.title,
+          author: formData.author,
+          content: formData.content,
+          backgroundColor: formData.backgroundColor,
+          fontFamily: formData.fontFamily,
+          hasWatermark: formData.hasWatermark,
+          exactPages: formData.exactPages,
+          length: formData.length
+        })
+
+        downloadPDF(pdfBlob, `${baseFilename}.pdf`)
+        
+      } else if (type === 'word') {
+        // Générer le document Word
+        const wordBlob = await generateWord({
+          title: formData.title,
+          author: formData.author,
+          content: formData.content,
+          backgroundColor: formData.backgroundColor,
+          fontFamily: formData.fontFamily,
+          hasWatermark: formData.hasWatermark
+        })
+
+        downloadWord(wordBlob, `${baseFilename}.docx`)
+      }
       
     } catch (error) {
-      console.error('Erreur lors de la génération du PDF:', error)
-      alert('Erreur lors de la génération du PDF. Veuillez réessayer.')
+      console.error(`Erreur lors de la génération du ${type.toUpperCase()}:`, error)
+      alert(`Erreur lors de la génération du ${type.toUpperCase()}. Veuillez réessayer.`)
     } finally {
       setIsDownloading(false)
+      setDownloadType(null)
     }
   }
 
@@ -87,19 +104,45 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={handleDownload} disabled={isDownloading} className="flex items-center space-x-2">
-              {isDownloading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  <span>Téléchargement...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  <span>Télécharger le PDF</span>
-                </>
-              )}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={() => handleDownload('pdf')} 
+                disabled={isDownloading} 
+                className="flex items-center space-x-2"
+                variant={downloadType === 'pdf' ? 'default' : 'default'}
+              >
+                {isDownloading && downloadType === 'pdf' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <span>Génération PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Télécharger PDF</span>
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                onClick={() => handleDownload('word')} 
+                disabled={isDownloading} 
+                className="flex items-center space-x-2"
+                variant="outline"
+              >
+                {isDownloading && downloadType === 'word' ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                    <span>Génération Word...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Télécharger Word</span>
+                  </>
+                )}
+              </Button>
+            </div>
 
             <Button variant="outline" onClick={onBack}>
               Créer un nouvel ebook
