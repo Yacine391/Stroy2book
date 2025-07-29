@@ -52,14 +52,13 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     format: 'a4'
   })
 
-  // Configuration de base avec debugging amélioré
+  // Configuration de base
   const pageWidth = pdf.internal.pageSize.getWidth()
   const pageHeight = pdf.internal.pageSize.getHeight()
   const margin = 20
   const contentWidth = pageWidth - (margin * 2)
   let currentY = margin
 
-  // Debug: Afficher les dimensions (A4 = 210x297mm)
   console.log('PDF Dimensions:', { pageWidth, pageHeight, margin, contentWidth })
 
   // Fonction pour convertir hex en RGB
@@ -74,7 +73,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   const bgColor = hexToRgb(ebookData.backgroundColor)
 
-  // Fonction pour mapper les polices (jsPDF supporte un nombre limité)
+  // Fonction pour mapper les polices
   const getFontMapping = (fontFamily: string): string => {
     const fontMap: { [key: string]: string } = {
       'Arial': 'helvetica',
@@ -91,51 +90,24 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
 
   const selectedFont = getFontMapping(ebookData.fontFamily)
 
-  // Fonction pour ajouter une nouvelle page avec couleur de fond - AMÉLIORÉE
-  const checkAndAddNewPage = (neededHeight: number) => {
-    const availableSpace = pageHeight - margin - currentY
-    console.log('Checking page:', { currentY, neededHeight, availableSpace, pageHeight })
-    
-    // Seuil plus conservateur pour forcer les sauts de page
-    if (availableSpace < neededHeight || currentY > pageHeight - margin - 50) {
-      console.log('Adding new page - current:', currentY, 'needed:', neededHeight)
-      pdf.addPage()
-      // Appliquer la couleur de fond à la nouvelle page
-      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      // Ajouter le filigrane si activé
-      if (ebookData.hasWatermark) {
-        addWatermark()
-      }
-      currentY = margin
-      return true
+  // Fonction pour ajouter une nouvelle page avec couleur de fond - SIMPLIFIÉE
+  const addNewPage = () => {
+    console.log('Adding new page - currentY was:', currentY)
+    pdf.addPage()
+    // Appliquer la couleur de fond à la nouvelle page
+    pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+    // Ajouter le filigrane si activé
+    if (ebookData.hasWatermark) {
+      addWatermark()
     }
-    return false
+    currentY = margin
   }
 
-  // Fonction spéciale pour les titres de chapitres - AMÉLIORÉE
-  const checkAndAddNewPageForChapter = (titleHeight: number) => {
-    const minSpaceAfterTitle = 80 // Augmenté à 80 pour plus d'espace
-    const totalNeeded = titleHeight + minSpaceAfterTitle
+  // Fonction pour vérifier si on a besoin d'une nouvelle page - SIMPLIFIÉE
+  const needsNewPage = (requiredHeight: number): boolean => {
     const availableSpace = pageHeight - margin - currentY
-    
-    console.log('Checking chapter page:', { currentY, titleHeight, minSpaceAfterTitle, totalNeeded, availableSpace })
-    
-    // Plus agressif pour les chapitres
-    if (availableSpace < totalNeeded || currentY > pageHeight - margin - 100) {
-      console.log('Adding new page for chapter')
-      pdf.addPage()
-      // Appliquer la couleur de fond à la nouvelle page
-      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      // Ajouter le filigrane si activé
-      if (ebookData.hasWatermark) {
-        addWatermark()
-      }
-      currentY = margin
-      return true
-    }
-    return false
+    return availableSpace < requiredHeight
   }
 
   // Fonction pour ajouter un filigrane
@@ -212,370 +184,143 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
 
   // Nouvelle page pour le contenu
-  pdf.addPage()
-  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-  // Ajouter le filigrane si activé
-  if (ebookData.hasWatermark) {
-    addWatermark()
-  }
-  currentY = margin
+  addNewPage()
 
-  // Configuration pour le contenu - Taille de police plus grande et meilleure lisibilité
+  // Configuration pour le contenu
   pdf.setFont(selectedFont, 'normal')
-  pdf.setFontSize(13) // Augmenté de 12 à 13
+  pdf.setFontSize(12)
   pdf.setTextColor(40, 40, 40)
 
   // Traitement du contenu markdown nettoyé
   const cleanedContent = cleanContent(ebookData.content)
+  const contentLines = cleanedContent.split('\n').map(line => line.trim())
   
-  // NOUVELLE STRATÉGIE: Diviser les paragraphes trop longs pour forcer la pagination
-  const preprocessContent = (content: string): string[] => {
-    const lines = content.split('\n')
-    const processedLines: string[] = []
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim()
-      
-      // Si c'est un titre ou une ligne courte, garder tel quel
-      if (trimmedLine.startsWith('#') || trimmedLine.length < 200) {
-        processedLines.push(trimmedLine)
-        continue
-      }
-      
-      // Si c'est un paragraphe long, le diviser en segments plus courts
-      if (trimmedLine.length > 200) {
-        const sentences = trimmedLine.split(/[.!?]+/)
-        let currentParagraph = ''
-        
-        for (let i = 0; i < sentences.length; i++) {
-          const sentence = sentences[i].trim()
-          if (!sentence) continue
-          
-          // Ajouter la ponctuation si ce n'est pas la dernière phrase
-          const punctuation = i < sentences.length - 1 ? '. ' : ''
-          const sentenceWithPunct = sentence + punctuation
-          
-          // Si ajouter cette phrase rendrait le paragraphe trop long
-          if (currentParagraph.length + sentenceWithPunct.length > 300) {
-            if (currentParagraph) {
-              processedLines.push(currentParagraph.trim())
-              processedLines.push('') // Ligne vide pour espacer
-            }
-            currentParagraph = sentenceWithPunct
-          } else {
-            currentParagraph += sentenceWithPunct
-          }
-        }
-        
-        // Ajouter le dernier paragraphe s'il existe
-        if (currentParagraph.trim()) {
-          processedLines.push(currentParagraph.trim())
-        }
-      } else {
-        processedLines.push(trimmedLine)
-      }
-    }
-    
-    return processedLines
-  }
+  console.log('Processing content lines:', contentLines.length)
+  console.log('Total content length:', cleanedContent.length, 'characters')
   
-  const contentLines = preprocessContent(cleanedContent)
-  
-  console.log('Processing content lines after preprocessing:', contentLines.length)
-  console.log('Original content length:', ebookData.content.length, 'characters')
-  console.log('Cleaned content length:', cleanedContent.length, 'characters')
-  
-  // CALCUL INTELLIGENT DU NOMBRE DE PAGES
-  const getOptimalPagination = () => {
-    const totalLines = contentLines.length
-    const wordsCount = cleanedContent.split(/\s+/).length
-    
-    let targetPages = 0
-    
-    // Déterminer le nombre de pages cible
-    if (ebookData.exactPages && ebookData.exactPages > 0) {
-      targetPages = ebookData.exactPages
-      console.log('Using exact pages:', targetPages)
-    } else if (ebookData.length) {
-      // Estimation basée sur la longueur
-      switch(ebookData.length) {
-        case 'court': targetPages = Math.max(8, Math.min(15, Math.ceil(wordsCount / 400))); break
-        case 'moyen': targetPages = Math.max(15, Math.min(35, Math.ceil(wordsCount / 350))); break  
-        case 'long': targetPages = Math.max(35, Math.min(60, Math.ceil(wordsCount / 300))); break
-        default: targetPages = Math.ceil(wordsCount / 350)
-      }
-      console.log('Estimated pages for', ebookData.length, ':', targetPages)
-    } else {
-      targetPages = Math.ceil(wordsCount / 350) // Par défaut
-      console.log('Default pages calculation:', targetPages)
-    }
-    
-    // Calculer l'espacement optimal pour atteindre le nombre de pages
-    const linesPerPage = Math.ceil(totalLines / Math.max(targetPages - 1, 1)) // -1 pour la couverture
-    const paragraphsPerPage = Math.ceil(linesPerPage / 3) // Estimation 3 lignes par paragraphe
-    
-    console.log('PAGINATION TARGET:', {
-      targetPages,
-      totalLines,
-      wordsCount,
-      linesPerPage,
-      paragraphsPerPage
-    })
-    
-    return {
-      targetPages,
-      maxLinesPerPage: Math.max(linesPerPage, 200), // SUPPRESSION LIMITES: 80 → 200 (quasi illimité)
-      maxParagraphsPerPage: Math.max(paragraphsPerPage, 100) // SUPPRESSION LIMITES: 30 → 100 (quasi illimité)
-    }
-  }
-  
-  const pagination = getOptimalPagination()
-  
-  let lineCount = 0 // Compteur pour forcer les sauts de page
-  const maxLinesPerPage = pagination.maxLinesPerPage
-  let contentHeight = 0 // Hauteur du contenu accumulé
-  let paragraphCount = 0 // Compteur de paragraphes
-  const maxParagraphsPerPage = pagination.maxParagraphsPerPage
-  let processedLines = 0 // Compteur pour debug
-  
+  // NOUVELLE LOGIQUE SIMPLIFIÉE - Traiter TOUT le contenu ligne par ligne
   for (let i = 0; i < contentLines.length; i++) {
-    const line = contentLines[i].trim()
+    const line = contentLines[i]
     
-    // DÉSACTIVATION COMPLÈTE de toutes les limites - FORCER TOUT LE CONTENU
-    console.log('ALL LIMITS DISABLED - Processing line', i+1, 'of', contentLines.length, '- Line:', line.substring(0, 50) + '...')
-    
-    // SAUT DE PAGE seulement si VRAIMENT plus de place du tout
-    if (currentY > pageHeight - margin - 15 && line.length > 0) {
-      console.log('ABSOLUTE PHYSICAL LIMIT: Force page break - currentY:', currentY)
-      pdf.addPage()
-      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      if (ebookData.hasWatermark) {
-        addWatermark()
-      }
-      currentY = margin
-      lineCount = 0
-      paragraphCount = 0
-    }
-    
-    processedLines++ // Debug: compteur de lignes traitées (AVANT toute condition)
+    console.log(`Processing line ${i+1}/${contentLines.length}: ${line.substring(0, 50)}...`)
     
     if (!line) {
-      // Ligne vide - espacement livre classique
-      currentY += 4 // Réduit de 10 à 4 pour style livre
+      // Ligne vide - espacement
+      currentY += 4
       continue
     }
-    
-    lineCount++ // Incrémenter le compteur de lignes
 
-          if (line.startsWith('# ')) {
-        // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
-        checkAndAddNewPageForChapter(40) // Augmenté de 30 à 40 pour plus d'espace
-      lineCount = 0 // Réinitialiser le compteur pour nouveau chapitre
+    // Déterminer le type de ligne et ses paramètres
+    let fontSize = 12
+    let fontStyle = 'normal'
+    let textColor = [50, 50, 50]
+    let lineSpacing = 4.5
+    let afterSpacing = 6
+    let displayText = line
+    
+    if (line.startsWith('# ')) {
+      // Titre principal (chapitre)
+      fontSize = 18
+      fontStyle = 'bold'
+      textColor = [80, 80, 80]
+      afterSpacing = 20
+      displayText = line.substring(2)
       
-      pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(20) // Augmenté de 18 à 20
-      pdf.setTextColor(80, 80, 80)
-      
-      const titleText = line.substring(2)
-      const lines = splitTextToLines(titleText, contentWidth, 20)
-      
-      lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 10)) // Augmenté de 8 à 10
-      })
-      
-      currentY += lines.length * 8 + 20 // AUGMENTÉ pour plus d'espace: 12 → 20
-      console.log('Added chapter title, currentY now:', currentY)
+      // S'assurer qu'on a assez d'espace pour le titre
+      if (needsNewPage(40)) {
+        addNewPage()
+      }
       
     } else if (line.startsWith('## ')) {
-      // Sous-titre (section importante) - Amélioration espacement
-      checkAndAddNewPageForChapter(25) // Augmenté de 18 à 25
-      pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(16) // Augmenté de 14 à 16
-      pdf.setTextColor(60, 60, 60)
+      // Sous-titre
+      fontSize = 16
+      fontStyle = 'bold'
+      textColor = [60, 60, 60]
+      afterSpacing = 15
+      displayText = line.substring(3)
       
-      const chapterText = line.substring(3)
-      const lines = splitTextToLines(chapterText, contentWidth, 16)
-      
-      lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 8)) // Augmenté de 6 à 8
-      })
-      
-      currentY += lines.length * 6 + 8 // Style livre: 6+8
+      if (needsNewPage(30)) {
+        addNewPage()
+      }
       
     } else if (line.startsWith('### ')) {
-      // Sous-sous-titre - Amélioration lisibilité
-      checkAndAddNewPage(20) // Augmenté de 15 à 20
-      pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(14) // Augmenté de 12 à 14
-      pdf.setTextColor(80, 80, 80)
+      // Sous-sous-titre
+      fontSize = 14
+      fontStyle = 'bold'
+      textColor = [80, 80, 80]
+      afterSpacing = 12
+      displayText = line.substring(4)
       
-      const subTitleText = line.substring(4)
-      const lines = splitTextToLines(subTitleText, contentWidth, 14)
-      
-      lines.forEach((textLine, index) => {
-        pdf.text(textLine, margin, currentY + (index * 7)) // Augmenté de 5 à 7
-      })
-      
-      currentY += lines.length * 5 + 6 // Style livre: 5+6
+      if (needsNewPage(25)) {
+        addNewPage()
+      }
       
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique
-      checkAndAddNewPage(10)
-      pdf.setFont(selectedFont, 'italic')
-      pdf.setFontSize(11)
-      pdf.setTextColor(100, 100, 100)
-      
-      const italicText = line.substring(1, line.length - 1)
-      const lines = splitTextToLines(italicText, contentWidth, 11)
-      
-      lines.forEach((textLine, index) => {
-        const textWidth = pdf.getTextWidth(textLine)
-        const x = (pageWidth - textWidth) / 2 // Centrer le texte italique
-        pdf.text(textLine, x, currentY + (index * 5))
-      })
-      
-      currentY += lines.length * 5 + 8
+      fontSize = 11
+      fontStyle = 'italic'
+      textColor = [100, 100, 100]
+      displayText = line.substring(1, line.length - 1)
       
     } else if (line.startsWith('**') && line.endsWith('**')) {
       // Texte en gras
-      checkAndAddNewPage(10)
-      pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(12)
-      pdf.setTextColor(60, 60, 60)
-      
-      const boldText = line.substring(2, line.length - 2)
-      const lines = splitTextToLines(boldText, contentWidth, 12)
-      
-      lines.forEach((textLine, index) => {
-        const textWidth = pdf.getTextWidth(textLine)
-        const x = (pageWidth - textWidth) / 2 // Centrer le texte en gras
-        pdf.text(textLine, x, currentY + (index * 5))
-      })
-      
-      currentY += lines.length * 5 + 8
+      fontSize = 12
+      fontStyle = 'bold'
+      textColor = [60, 60, 60]
+      displayText = line.substring(2, line.length - 2)
       
     } else if (line === '---') {
       // Séparateur
-      checkAndAddNewPage(10)
+      if (needsNewPage(10)) {
+        addNewPage()
+      }
       pdf.setDrawColor(180, 180, 180)
       pdf.setLineWidth(0.5)
       pdf.line(margin + 20, currentY, pageWidth - margin - 20, currentY)
       currentY += 10
-      
-    } else if (line.length > 0) {
-      // Paragraphe normal - Amélioration lisibilité et espacement
-      pdf.setFont(selectedFont, 'normal')
-      pdf.setFontSize(12) // Augmenté de 11 à 12
-      pdf.setTextColor(50, 50, 50)
-      
-      const lines = splitTextToLines(line, contentWidth, 12)
-      console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
-      
-                      // DÉSACTIVATION TOTALE contrôle d'espace - ABSOLUMENT TOUT LE CONTENU
-        console.log('SPACE CHECK COMPLETELY DISABLED - Processing paragraph with', lines.length, 'lines')
-        
-        // Pas de saut de page préventif - on gère après si débordement
-      
-      lines.forEach((textLine, index) => {
-        const lineY = currentY + (index * 4.5)
-        
-        // Vérifier si on déborde - créer nouvelle page si nécessaire
-        if (lineY > pageHeight - margin - 10) {
-          console.log('OVERFLOW DETECTED - Creating new page at line', index, 'lineY:', lineY)
-          pdf.addPage()
-          pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-          pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-          if (ebookData.hasWatermark) {
-            addWatermark()
-          }
-          currentY = margin
-          pdf.text(textLine, margin, currentY)
-          currentY += 4.5
-        } else {
-          pdf.text(textLine, margin, lineY)
-        }
-      })
-      
-      // Ajuster currentY seulement si pas de débordement
-      if (currentY + (lines.length * 4.5) <= pageHeight - margin - 10) {
-        currentY += lines.length * 4 + 6 // Style livre classique: 4+6
-      } else {
-        currentY += 6 // Juste l'espacement de paragraphe
-      }
-      paragraphCount++ // Incrémenter le compteur de paragraphes
-      console.log('After paragraph, currentY:', currentY, 'paragraphCount:', paragraphCount)
+      continue
     }
+    
+    // Configurer le style
+    pdf.setFont(selectedFont, fontStyle)
+    pdf.setFontSize(fontSize)
+    pdf.setTextColor(textColor[0], textColor[1], textColor[2])
+    
+    // Diviser le texte en lignes qui tiennent dans la largeur
+    const lines = splitTextToLines(displayText, contentWidth, fontSize)
+    
+    // Vérifier si on a assez d'espace pour toutes les lignes
+    const totalHeightNeeded = lines.length * lineSpacing + afterSpacing
+    if (needsNewPage(totalHeightNeeded)) {
+      addNewPage()
+    }
+    
+    // Afficher toutes les lignes
+    lines.forEach((textLine, lineIndex) => {
+      const y = currentY + (lineIndex * lineSpacing)
+      
+      // Vérification de sécurité : si une ligne déborde, créer une nouvelle page
+      if (y > pageHeight - margin - 10) {
+        addNewPage()
+        pdf.text(textLine, margin, currentY)
+        currentY += lineSpacing
+      } else {
+        pdf.text(textLine, margin, y)
+      }
+    })
+    
+    // Mettre à jour currentY
+    currentY += lines.length * lineSpacing + afterSpacing
+    
+    console.log(`Line ${i+1} processed, currentY now: ${currentY}`)
   }
 
-  console.log('FINAL STATS: Total lines to process:', contentLines.length, 'Lines actually processed:', processedLines)
-  
-  // VÉRIFICATION CRITIQUE RENFORCÉE: S'assurer que tout le contenu a été traité
-  const missingLines = contentLines.length - processedLines
-  
-  if (missingLines > 0) {
-    console.error('❌ CONTENT TRUNCATION DETECTED!')
-    console.error('Missing lines:', missingLines, '/', contentLines.length)
-    console.error('Processing ALL remaining lines...')
-    
-    // NOUVEAU: Traiter TOUTES les lignes manquantes sans exception
-    for (let i = 0; i < contentLines.length; i++) {
-      const line = contentLines[i].trim()
-      
-      // Skip si la ligne a déjà été traitée (approximation)
-      if (i < processedLines && line.length > 0) continue
-      
-      // Ajouter TOUT le contenu manquant, même les lignes vides
-      if (currentY > pageHeight - margin - 40) {
-        pdf.addPage()
-        pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-        pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-        if (ebookData.hasWatermark) {
-          addWatermark()
-        }
-        currentY = margin
-      }
-      
-      if (!line) {
-        currentY += 4 // Espacement pour lignes vides
-        continue
-      }
-      
-      // Ajouter le contenu de récupération
-      pdf.setFont(selectedFont, 'normal')
-      pdf.setFontSize(12)
-      pdf.setTextColor(50, 50, 50)
-      
-      const lines = splitTextToLines(line, contentWidth, 12)
-      lines.forEach((textLine, index) => {
-        // Vérifier l'espace pour chaque ligne
-        if (currentY + (index * 4.5) > pageHeight - margin - 10) {
-          pdf.addPage()
-          pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-          pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-          if (ebookData.hasWatermark) {
-            addWatermark()
-          }
-          currentY = margin
-        }
-        pdf.text(textLine, margin, currentY + (index * 4.5))
-      })
-      
-      currentY += lines.length * 4.5 + 6
-      console.log('RECOVERY: Added line', i+1, '/', contentLines.length, '- Content:', line.substring(0, 50) + '...')
-    }
-    
-    console.log('✅ ALL missing content has been FORCEFULLY added to PDF')
-  } else {
-    console.log('✅ All content processed successfully on first pass')
-  }
+  console.log('✅ ALL CONTENT PROCESSED - Total lines:', contentLines.length)
   
   const finalPages = pdf.getNumberOfPages()
   console.log('PDF GENERATION COMPLETE:')
-  console.log('- Target pages:', pagination.targetPages)  
-  console.log('- Actual pages:', finalPages)
-  console.log('- Content fully included:', processedLines >= contentLines.length ? '✅' : '❌')
+  console.log('- Final pages:', finalPages)
+  console.log('- All content included: ✅')
 
   // Ajouter les numéros de page
   const totalPages = pdf.getNumberOfPages()
