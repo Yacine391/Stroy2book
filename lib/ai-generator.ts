@@ -498,6 +498,12 @@ ${getAudienceInstructions(audience)}
 ${(() => {
   const ideaLower = idea.toLowerCase()
   
+  // Mots-clés pour contenu religieux/islamique
+  const religiousKeywords = ['islam', 'musulman', 'coran', 'prophete', 'religion', 'hadith', 'allah', 'frise', 'chronologie', 'humanite', 'creation', 'adam', 'jugement', 'islamique', 'calir', 'mecque', 'medine', 'hégire', 'sunna']
+  
+  // Mots-clés pour contenu historique/chronologique
+  const historicalKeywords = ['frise', 'chronologie', 'histoire', 'timeline', 'epoque', 'periode', 'evenement', 'historique', 'dates', 'debut', 'fin', 'depuis', 'jusqu', 'origine', 'évolution']
+  
   // Mots-clés pour contenu éducatif/informatif
   const educationalKeywords = ['apprendre', 'guide', 'conseil', 'comment', 'technique', 'méthode', 'tutoriel', 'formation', 'découvrir', 'comprendre', 'expliquer', 'enseigner']
   
@@ -505,18 +511,38 @@ ${(() => {
   const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer']
   
   // Mots-clés pour contenu documentaire
-  const documentaryKeywords = ['histoire de', 'origine', 'évolution', 'découverte', 'science', 'géographie', 'culture', 'tradition', 'civilisation', 'époque']
+  const documentaryKeywords = ['science', 'géographie', 'culture', 'tradition', 'civilisation', 'analyse', 'etude']
   
   // Mots-clés pour fiction (seulement si explicite)
   const fictionKeywords = ['conte', 'aventure', 'personnage', 'héros', 'récit', 'narration', 'histoire de pirates', 'légende']
   
-  // Vérifier le type de contenu
+  // Vérifier le type de contenu avec priorité sur religieux et historique
+  const isReligious = religiousKeywords.some(keyword => ideaLower.includes(keyword))
+  const isHistorical = historicalKeywords.some(keyword => ideaLower.includes(keyword))
   const isEducational = educationalKeywords.some(keyword => ideaLower.includes(keyword))
   const isPractical = practicalKeywords.some(keyword => ideaLower.includes(keyword))
   const isDocumentary = documentaryKeywords.some(keyword => ideaLower.includes(keyword))
   const isFiction = fictionKeywords.some(keyword => ideaLower.includes(keyword))
   
-     if (isEducational) {
+     if (isReligious) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU RELIGIEUX/ISLAMIQUE
+📖 FORMAT CHOISI : Documentation religieuse chronologique STRICTEMENT RESPECTUEUSE
+🕌 SUJET DÉTECTÉ : "${idea}"
+❌ INTERDICTION ABSOLUE : Fiction, personnages inventés, histoires fantaisistes, interprétations personnelles
+❌ INTERDICTION TOTALE : Débats théologiques, controverses, opinions personnelles
+✅ CONTENU OBLIGATOIRE : Chronologie islamique authentique basée sur Coran et Sunna
+✅ STRUCTURE RELIGIEUSE : Introduction respectueuse + Périodes chronologiques (Création → Prophètes → Islam → Fin des temps) + Références sources + Conclusion édifiante
+✅ TON REQUIS : Respectueux, informatif, traditionnel, factuel selon la tradition islamique`
+   } else if (isHistorical) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU HISTORIQUE/CHRONOLOGIQUE
+📅 FORMAT CHOISI : Documentation chronologique STRICTEMENT FACTUELLE
+🔍 SUJET DÉTECTÉ : "${idea}"
+❌ INTERDICTION ABSOLUE : Fiction, personnages inventés, histoires fantaisistes
+❌ INTERDICTION TOTALE : Anecdotes personnelles, opinions subjectives
+✅ CONTENU OBLIGATOIRE : Chronologie factuelle avec dates et événements vérifiables
+✅ STRUCTURE CHRONOLOGIQUE : Introduction + Périodes temporelles + Événements majeurs + Contexte historique + Conclusion documentée
+✅ TON REQUIS : Objectif, informatif, documentaire, précis`
+   } else if (isEducational) {
      return `🎯 DÉTECTION AUTOMATIQUE : CONTENU ÉDUCATIF
 📚 FORMAT CHOISI : Guide éducatif/informatif STRICTEMENT PRATIQUE
 ❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles, grand-mères, exemples personnels
@@ -1240,56 +1266,123 @@ function generateFallbackTitle(idea: string): string {
 }
 
 function generateFallbackContent(formData: FormData): string {
+  const idea = formData.idea.toLowerCase()
+  
+  // Détecter le type de contenu demandé
+  const isReligious = ['islam', 'musulman', 'coran', 'prophete', 'religion', 'hadith', 'allah', 'frise', 'chronologie', 'humanite', 'creation', 'adam', 'jugement', 'islamique'].some(keyword => idea.includes(keyword))
+  const isHistorical = ['frise', 'chronologie', 'histoire', 'timeline', 'epoque', 'periode', 'evenement', 'historique', 'dates', 'debut', 'fin'].some(keyword => idea.includes(keyword))
+  
+  if (isReligious) {
+    // Contenu religieux adaptatif
+    return `# Introduction : Chronologie de l'Humanité selon l'Islam
+
+Basé sur votre demande : "${formData.idea}"
+
+Cette documentation présente une vue d'ensemble chronologique de l'histoire de l'humanité selon la perspective islamique, en s'appuyant sur les sources religieuses authentiques que sont le Coran et la Sunna.
+
+# Chapitre 1 : La Création et les Premiers Temps
+
+Selon la tradition islamique, l'histoire de l'humanité commence avec la création d'Adam (paix sur lui), le premier être humain, créé par Allah à partir d'argile. Adam et Hawwa (Ève) furent placés dans le Paradis avant d'être envoyés sur Terre suite à leur désobéissance.
+
+Cette période marque le début de l'humanité sur Terre, avec les premiers enseignements divins transmis à Adam, considéré comme le premier prophète de l'Islam.
+
+# Chapitre 2 : L'Époque des Prophètes
+
+L'histoire se poursuit avec l'envoi de nombreux prophètes et messagers par Allah pour guider l'humanité. Parmi les plus notables : Noé (Nuh), Abraham (Ibrahim), Moïse (Musa), Jésus (Isa), et finalement Mohammed (paix et bénédictions sur eux tous).
+
+Chaque prophète a apporté le message du monothéisme (Tawhid) adapté à son époque et à son peuple, culminant avec la révélation du Coran au prophète Mohammed.
+
+# Chapitre 3 : L'Avènement de l'Islam
+
+L'Islam, révélé au 7ème siècle, marque une étape majeure dans cette chronologie. La Hégire (émigration de La Mecque à Médine) en 622 de l'ère chrétienne constitue le début du calendrier musulman.
+
+Cette période voit l'établissement de la communauté musulmane (Oumma) et l'expansion rapide de l'Islam à travers le monde.
+
+# Chapitre 4 : Les Signes de la Fin des Temps
+
+Selon les hadiths prophétiques, plusieurs signes précéderont la fin des temps, incluant l'apparition du Dajjal (l'Antéchrist), le retour de Jésus (Isa), et l'avènement de l'Imam Mahdi.
+
+Ces événements eschatologiques mèneront au Jour du Jugement dernier, où chaque âme sera jugée selon ses actes.
+
+# Conclusion : La Vision Islamique de l'Histoire
+
+Cette chronologie offre la perspective islamique sur l'histoire de l'humanité, du commencement à la fin des temps. Elle souligne l'importance de la guidance divine continue à travers les âges et la responsabilité de chaque être humain devant Allah.
+
+Cette vision encourage les croyants à tirer des leçons de l'histoire et à se préparer pour l'au-delà en suivant les enseignements de l'Islam.`
+  }
+  
+  if (isHistorical) {
+    // Contenu historique adaptatif  
+    return `# Introduction : Chronologie Historique
+
+Basé sur votre demande : "${formData.idea}"
+
+Cette documentation présente une approche chronologique du sujet demandé, organisée de manière systématique pour offrir une vue d'ensemble claire et structurée.
+
+# Chapitre 1 : Les Origines
+
+Ce chapitre examine les origines et les fondements historiques du sujet étudié, en établissant le contexte nécessaire à la compréhension de l'évolution chronologique qui suit.
+
+Les premières manifestations et développements sont analysés dans leur contexte historique, avec attention aux facteurs qui ont influencé leur émergence.
+
+# Chapitre 2 : Développement et Évolution
+
+Cette section retrace l'évolution progressive du sujet à travers les différentes périodes historiques, en identifiant les moments clés et les transformations significatives.
+
+Les influences externes et internes qui ont façonné cette évolution sont examinées avec un regard analytique et objectif.
+
+# Chapitre 3 : Périodes Importantes
+
+Ce chapitre se concentre sur les périodes les plus significatives, en analysant leur impact et leur contribution à l'ensemble du développement historique.
+
+Chaque période est contextualisée dans son époque, avec attention aux événements contemporains qui ont pu influencer le cours des développements.
+
+# Conclusion : Synthèse Chronologique
+
+Cette chronologie offre une vue d'ensemble structurée qui permet de comprendre l'évolution dans le temps du sujet étudié. L'approche chronologique révèle les patterns de développement et les connexions entre les différentes périodes.
+
+Cette documentation constitue une base pour approfondir la compréhension du sujet dans sa dimension temporelle et historique.`
+  }
+  
+  // Fallback générique amélioré pour autres cas
   const lengthConfig = {
-    court: { chapters: 5, wordsPerChapter: 500 },
-    moyen: { chapters: 8, wordsPerChapter: 700 },
-    long: { chapters: 12, wordsPerChapter: 900 },
-    exact: { chapters: Math.max(5, Math.floor((formData.exactPages || 10) / 3)), wordsPerChapter: 600 }
+    court: { chapters: 3, wordsPerChapter: 500 },
+    moyen: { chapters: 4, wordsPerChapter: 700 },
+    long: { chapters: 5, wordsPerChapter: 900 },
+    exact: { chapters: Math.max(3, Math.floor((formData.exactPages || 10) / 3)), wordsPerChapter: 600 }
   }
   
   const config = lengthConfig[formData.length as keyof typeof lengthConfig] || lengthConfig.court
   
-  // Générer un contenu de fallback COMPLET et LONG
-  let fullContent = `# Introduction : Découverte de l'Univers
+  // Contenu générique adaptatif
+  let fullContent = `# Introduction : Exploration du Sujet
 
-Basé sur votre idée fascinante : "${formData.idea}"
+Basé sur votre demande : "${formData.idea}"
 
-Cette histoire extraordinaire commence dans un univers où l'imagination n'a pas de limites. Notre protagoniste, animé par ${formData.genre ? `l'esprit du ${formData.genre}` : 'une curiosité insatiable'}, s'apprête à vivre une aventure qui marquera à jamais sa destinée.
-
-Dans ce monde riche en possibilités, chaque détail compte, chaque rencontre peut changer le cours des événements, et chaque décision peut ouvrir de nouveaux horizons. L'atmosphère qui règne ici est chargée d'émotions intenses et de mystères qui n'attendent qu'à être élucidés.
-
-Notre héros commence son périple avec un mélange d'excitation et d'appréhension, conscient que cette quête va le transformer profondément. Les premiers pas de cette aventure sont déjà lourds de promesses et de défis qui feront de cette histoire un récit inoubliable.
-
-L'environnement qui entoure notre protagoniste est façonné par des éléments uniques qui créent une ambiance particulière. Chaque lieu visité, chaque personnage rencontré apporte sa pierre à l'édifice de cette narration captivante qui se déploie sous nos yeux.
+Cette documentation présente une exploration approfondie du sujet demandé, organisée de manière claire et structurée pour faciliter la compréhension et l'apprentissage.
 
 `
 
-  // Générer des chapitres complets et détaillés
+  // Générer des chapitres adaptatifs
   for (let i = 1; i <= config.chapters; i++) {
     const chapterTitles = [
-      "L'Éveil de la Quête", "Les Premiers Défis", "Rencontres Extraordinaires", 
-      "Révélations Surprenantes", "L'Épreuve du Courage", "Secrets Dévoilés",
-      "Alliance Inattendues", "Le Tournant Décisif", "Face au Destin",
-      "La Vérité Éclate", "L'Ultime Confrontation", "Renaissance et Sagesse"
+      "Aspects Fondamentaux", "Développements Principaux", "Éléments Clés", 
+      "Applications Pratiques", "Considérations Avancées"
     ]
     
-    const title = chapterTitles[i - 1] || `L'Aventure Continue - Partie ${i}`
+    const title = chapterTitles[i - 1] || `Section ${i}`
     
     fullContent += `# Chapitre ${i} : ${title}
 
-Ce chapitre marque une étape cruciale dans le développement de notre récit. L'intrigue se densifie et les enjeux deviennent de plus en plus importants pour notre protagoniste qui évolue dans un environnement en constante transformation.
+Cette section présente des éléments essentiels pour la compréhension du sujet traité. Les informations sont organisées de manière logique pour faciliter l'apprentissage et l'assimilation des concepts présentés.
 
-Les événements de ce chapitre s'enchaînent avec une logique narrative parfaitement maîtrisée, créant une progression fluide et naturelle qui maintient le lecteur en haleine. Chaque paragraphe apporte sa contribution à l'ensemble de l'œuvre, tissant un récit cohérent et captivant.
+Les développements présentés dans cette partie s'appuient sur des bases solides et offrent une perspective complète sur les aspects abordés. Chaque élément contribue à construire une compréhension globale et approfondie.
 
-Notre héros fait face à de nouveaux défis qui testent ses capacités et sa détermination. Ces épreuves ne sont pas seulement des obstacles à surmonter, mais des opportunités de croissance personnelle qui enrichissent son caractère et approfondissent sa compréhension du monde qui l'entoure.
+Cette section examine les différents aspects du sujet sous un angle pratique et accessible, en mettant l'accent sur les éléments qui permettent une meilleure compréhension de l'ensemble.
 
-L'atmosphère de ce chapitre est particulièrement travaillée, avec des descriptions vivantes qui immergent le lecteur dans l'univers de l'histoire. Les dialogues sont naturels et authentiques, révélant la personnalité de chaque personnage et faisant avancer l'intrigue de manière organique.
+Les informations présentées sont structurées pour offrir une progression logique dans l'apprentissage, permettant au lecteur de construire progressivement sa compréhension du domaine étudié.
 
-Les rebondissements de ce chapitre sont calculés avec précision pour maintenir l'intérêt du lecteur tout en respectant la logique interne de l'histoire. Chaque surprise est préparée avec soin et s'inscrit dans la continuité narrative de l'ensemble de l'œuvre.
-
-Les émotions véhiculées dans cette partie du récit sont particulièrement intenses, créant une connexion forte entre le lecteur et les personnages. Cette dimension émotionnelle est essentielle pour donner de la profondeur et de l'authenticité à l'histoire.
-
-Le rythme de ce chapitre est parfaitement calibré, alternant entre moments de tension et instants de réflexion, permettant au lecteur de souffler tout en maintenant son engagement dans l'histoire. Cette variation de tempo contribue à créer une expérience de lecture riche et variée.
+Cette partie du guide fournit des éléments concrets et utiles qui enrichissent la compréhension générale du sujet et contribuent à une vision d'ensemble cohérente et complète.
 
 `
   }
