@@ -5,6 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🚀 API Route: Starting ebook generation...')
     
+    // DEBUG: Vérifier la clé API dans cette route
+    const openaiKey = process.env.OPENAI_API_KEY
+    console.log('🔑 DEBUG OpenAI Key in generate-ebook:', {
+      configured: !!openaiKey,
+      prefix: openaiKey ? openaiKey.substring(0, 10) + '...' : 'NOT_SET',
+      suffix: openaiKey ? '...' + openaiKey.slice(-4) : 'NOT_SET'
+    })
+    
     const formData = await request.json()
     
     console.log('📋 Received form data:', {
