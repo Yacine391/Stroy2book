@@ -22,22 +22,39 @@ export async function POST(request: NextRequest) {
     })
     
     // Générer l'ebook côté serveur où les env vars sont disponibles
+    console.log('🚀 Calling generateEbook...')
     const result = await generateEbook(formData)
     
-    console.log('✅ Generation successful, returning result')
+    console.log('✅ Generation successful:', {
+      hasTitle: !!result.title,
+      hasContent: !!result.content,
+      hasAuthor: !!result.author,
+      contentLength: result.content?.length || 0
+    })
     
-    return Response.json({
+    const response = {
       success: true,
       data: result
-    })
+    }
+    
+    console.log('📤 Sending response:', JSON.stringify(response).substring(0, 200) + '...')
+    
+    return Response.json(response)
     
   } catch (error) {
     console.error('❌ API Route Error:', error)
+    console.error('❌ Error Stack:', error instanceof Error ? error.stack : 'No stack')
+    console.error('❌ Error Type:', typeof error)
     
-    return Response.json({
+    const errorResponse = {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    }, { status: 500 })
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    }
+    
+    console.log('📤 Sending error response:', JSON.stringify(errorResponse))
+    
+    return Response.json(errorResponse, { status: 500 })
   }
 }

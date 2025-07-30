@@ -66,7 +66,22 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
           },
           body: JSON.stringify(formData)
         }).then(async (response) => {
-          const result = await response.json()
+          console.log('🔍 API Response Status:', response.status)
+          console.log('🔍 API Response Headers:', response.headers)
+          
+          // Lire la réponse comme texte d'abord
+          const responseText = await response.text()
+          console.log('🔍 Raw API Response:', responseText)
+          
+          // Essayer de parser en JSON
+          let result
+          try {
+            result = JSON.parse(responseText)
+          } catch (parseError) {
+            console.error('❌ JSON Parse Error:', parseError)
+            console.error('❌ Response Text:', responseText.substring(0, 500))
+            throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`)
+          }
           
           if (!result.success) {
             throw new Error(result.error || 'API generation failed')
