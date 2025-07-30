@@ -29,8 +29,9 @@ const cleanContent = (content: string): string => {
     .replace(/\*([^*]+)\*/g, '$1')                // *texte* → texte
     
     // 4. 🚨 CORRECTION CRITIQUE: CONVERTIR ## EN # POUR LES TITRES PRINCIPAUX
-    .replace(/^##\s+/gm, '# ')                    // ## Titre → # Titre
-    .replace(/^###\s+/gm, '## ')                  // ### Titre → ## Titre
+      .replace(/^####\s+/gm, '')                   // #### → supprimé complètement
+  .replace(/^###\s+/gm, '')                    // ### → supprimé complètement  
+  .replace(/^##\s+/gm, '')                     // ## → supprimé complètement
     
     // 5. CORRIGER LES BLOCS DE TEXTE SANS RETOURS À LA LIGNE
     // Ajouter des retours à la ligne avant les titres cachés dans le texte
