@@ -23,23 +23,20 @@ interface EbookData {
   length?: string
 }
 
-// Fonction de nettoyage du contenu
+// Fonction de nettoyage du contenu - PRÉSERVER LES TITRES MARKDOWN
 const cleanContent = (content: string): string => {
   return content
     // Supprimer les signatures d'unicité HTML
     .replace(/<!--\s*Signature d'unicité:.*?-->/gi, '')
     // Supprimer les mentions de nombre de mots entre parenthèses
     .replace(/\(\d+\s*mots?\)/gi, '')
-    // Supprimer les astérisques autour des titres
+    // Supprimer les astérisques autour des titres SAUF dans les listes
     .replace(/\*\*(.*?)\*\*/g, '$1')
-    // Supprimer les astérisques simples
-    .replace(/\*(.*?)\*/g, '$1')
-    // Supprimer les dièses de markdown mais garder les espaces pour la hiérarchie
-    .replace(/^#{1,6}\s*/gm, '')
-    // Nettoyer les espaces multiples
-    .replace(/\s+/g, ' ')
-    // Nettoyer les espaces en début/fin de ligne
-    .replace(/^\s+|\s+$/gm, '')
+    // NE PAS supprimer les dièses - ils sont nécessaires pour détecter les titres !
+    // Nettoyer les espaces multiples SAUF en début de ligne (pour préserver les titres)
+    .replace(/([^\n])\s+/g, '$1 ')
+    // Nettoyer les espaces en fin de ligne seulement
+    .replace(/\s+$/gm, '')
     // Supprimer les lignes vides multiples
     .replace(/\n\s*\n\s*\n/g, '\n\n')
 }

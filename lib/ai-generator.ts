@@ -508,7 +508,7 @@ ${(() => {
   const educationalKeywords = ['apprendre', 'guide', 'conseil', 'comment', 'technique', 'méthode', 'tutoriel', 'formation', 'découvrir', 'comprendre', 'expliquer', 'enseigner']
   
   // Mots-clés pour contenu pratique
-  const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer']
+  const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'jardiner', 'planter', 'cultiver', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer', 'débutant', 'apprendre', 'guide', 'tutoriel']
   
   // Mots-clés pour contenu documentaire
   const documentaryKeywords = ['science', 'géographie', 'culture', 'tradition', 'civilisation', 'analyse', 'etude']
@@ -1271,6 +1271,7 @@ function generateFallbackContent(formData: FormData): string {
   // Détecter le type de contenu demandé
   const isReligious = ['islam', 'musulman', 'coran', 'prophete', 'religion', 'hadith', 'allah', 'frise', 'chronologie', 'humanite', 'creation', 'adam', 'jugement', 'islamique'].some(keyword => idea.includes(keyword))
   const isHistorical = ['frise', 'chronologie', 'histoire', 'timeline', 'epoque', 'periode', 'evenement', 'historique', 'dates', 'debut', 'fin'].some(keyword => idea.includes(keyword))
+  const isPractical = ['cuisine', 'recette', 'bricolage', 'jardinage', 'jardiner', 'planter', 'cultiver', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer', 'débutant', 'apprendre', 'guide', 'tutoriel'].some(keyword => idea.includes(keyword))
   
   if (isReligious) {
     // Contenu religieux adaptatif
@@ -1311,6 +1312,140 @@ Cette chronologie offre la perspective islamique sur l'histoire de l'humanité, 
 Cette vision encourage les croyants à tirer des leçons de l'histoire et à se préparer pour l'au-delà en suivant les enseignements de l'Islam.`
   }
   
+  if (isPractical) {
+    // Contenu pratique spécialisé (ex: jardinage)
+    const idea = formData.idea.toLowerCase()
+    
+    if (idea.includes('jardinage') || idea.includes('jardiner') || idea.includes('planter')) {
+      return `# Introduction : Guide Pratique du Jardinage pour Débutants
+
+Basé sur votre demande : "${formData.idea}"
+
+Ce guide complet vous accompagne dans vos premiers pas en jardinage. Que vous ayez un grand jardin, un petit balcon ou quelques pots sur un rebord de fenêtre, vous trouverez ici tous les conseils pratiques pour débuter avec succès.
+
+Le jardinage est une activité enrichissante qui vous connecte à la nature tout en vous permettant de cultiver vos propres légumes, herbes aromatiques et fleurs. Ce guide vous donnera les bases essentielles pour commencer votre aventure jardinière.
+
+# Chapitre 1 : Les Outils et Matériel de Base
+
+Pour bien commencer en jardinage, il est essentiel de s'équiper correctement sans pour autant investir une fortune. Voici les outils indispensables pour débuter :
+
+**Outils essentiels :**
+- Bêche pour retourner la terre
+- Serfouette pour désherber et ameublir
+- Arrosoir avec pomme d'arrosage
+- Sécateur pour tailler les plantes
+- Râteau pour niveler le sol
+- Transplantoir pour repiquer
+
+**Équipements de protection :**
+- Gants de jardinage résistants
+- Genouillères pour protéger vos genoux
+- Chapeau pour se protéger du soleil
+
+Ces outils de base vous permettront de réaliser la plupart des tâches de jardinage. Vous pourrez compléter votre équipement au fur et à mesure de vos besoins.
+
+# Chapitre 2 : Comprendre Son Sol et Choisir l'Emplacement
+
+Le succès de votre jardin dépend largement de la qualité de votre sol et du choix de l'emplacement de vos plantations.
+
+**Analyser son sol :**
+- Observer la texture : argileux, sableux ou limoneux
+- Tester le pH avec des bandelettes
+- Vérifier le drainage en creusant un trou
+- Identifier les zones humides et sèches
+
+**Choisir l'emplacement :**
+- Privilégier les zones ensoleillées (6h de soleil minimum)
+- Éviter les zones trop ventées
+- S'assurer d'un accès facile à l'eau
+- Tenir compte de l'ombre portée par les bâtiments et arbres
+
+**Améliorer son sol :**
+- Ajouter du compost pour enrichir la terre
+- Incorporer du sable si le sol est trop argileux
+- Ajouter de l'argile si le sol est trop sableux
+- Pailler pour maintenir l'humidité
+
+# Chapitre 3 : Premières Plantations et Semis
+
+Commencer par des plantes faciles à cultiver vous donnera confiance et motivation pour la suite de votre parcours jardinier.
+
+**Légumes faciles pour débuter :**
+- Radis : croissance rapide (30 jours)
+- Laitues : peu exigeantes en soins
+- Épinards : résistants au froid
+- Haricots verts : productifs et faciles
+- Courgettes : généreuses en récoltes
+
+**Herbes aromatiques simples :**
+- Persil : indispensable en cuisine
+- Ciboulette : repousse après chaque coupe
+- Menthe : très résistante (attention à l'envahissement)
+- Basilic : parfait pour l'été
+
+**Calendrier de plantation :**
+- Printemps : semis des légumes d'été
+- Été : plantation des légumes d'automne
+- Automne : préparation du jardin pour l'hiver
+- Hiver : planification et préparation des semis
+
+# Chapitre 4 : Entretien et Soins Quotidiens
+
+Un jardin demande des soins réguliers mais simples une fois que vous avez pris le rythme.
+
+**Arrosage efficace :**
+- Arroser de préférence le matin ou le soir
+- Privilégier un arrosage moins fréquent mais abondant
+- Utiliser un paillis pour limiter l'évaporation
+- Adapter la fréquence selon la météo et la saison
+
+**Protection contre les nuisibles :**
+- Inspection régulière des plantes
+- Utilisation de méthodes naturelles (pucerons → savon noir)
+- Encourager la biodiversité (coccinelles, oiseaux)
+- Rotation des cultures pour éviter l'épuisement du sol
+
+**Fertilisation naturelle :**
+- Compostage des déchets de cuisine et de jardin
+- Utilisation d'engrais organiques
+- Incorporation de fumier bien décomposé
+- Paillis nutritif avec des tontes de gazon
+
+# Conclusion : Votre Parcours Jardinier
+
+Ce guide vous a donné les bases essentielles pour débuter en jardinage avec confiance. Le jardinage est un apprentissage constant où chaque saison apporte de nouvelles expériences et découvertes.
+
+N'hésitez pas à tenir un carnet de jardin pour noter vos observations, réussites et échecs. C'est ainsi que vous développerez votre propre expertise et que votre jardin deviendra de plus en plus productif et beau.
+
+Le jardinage vous apportera non seulement des légumes frais et des fleurs, mais aussi une connexion précieuse avec les cycles naturels et un moyen de vous détendre tout en prenant soin de votre environnement.
+
+Bon jardinage !`
+    } else {
+      // Autre contenu pratique générique
+      return `# Introduction : Guide Pratique
+
+Basé sur votre demande : "${formData.idea}"
+
+Ce guide pratique vous accompagne étape par étape dans l'apprentissage et la maîtrise du sujet demandé.
+
+# Chapitre 1 : Les Bases Essentielles
+
+Cette section présente les fondamentaux nécessaires pour bien commencer votre apprentissage.
+
+# Chapitre 2 : Techniques et Méthodes
+
+Découvrez les techniques principales et les méthodes éprouvées pour progresser efficacement.
+
+# Chapitre 3 : Mise en Pratique
+
+Appliquez concrètement ce que vous avez appris avec des exercices et des exemples pratiques.
+
+# Conclusion : Votre Progression
+
+Ce guide vous a fourni les outils nécessaires pour maîtriser le sujet et continuer votre progression de manière autonome.`
+    }
+  }
+  
   if (isHistorical) {
     // Contenu historique adaptatif  
     return `# Introduction : Chronologie Historique
@@ -1323,25 +1458,17 @@ Cette documentation présente une approche chronologique du sujet demandé, orga
 
 Ce chapitre examine les origines et les fondements historiques du sujet étudié, en établissant le contexte nécessaire à la compréhension de l'évolution chronologique qui suit.
 
-Les premières manifestations et développements sont analysés dans leur contexte historique, avec attention aux facteurs qui ont influencé leur émergence.
-
 # Chapitre 2 : Développement et Évolution
 
 Cette section retrace l'évolution progressive du sujet à travers les différentes périodes historiques, en identifiant les moments clés et les transformations significatives.
-
-Les influences externes et internes qui ont façonné cette évolution sont examinées avec un regard analytique et objectif.
 
 # Chapitre 3 : Périodes Importantes
 
 Ce chapitre se concentre sur les périodes les plus significatives, en analysant leur impact et leur contribution à l'ensemble du développement historique.
 
-Chaque période est contextualisée dans son époque, avec attention aux événements contemporains qui ont pu influencer le cours des développements.
-
 # Conclusion : Synthèse Chronologique
 
-Cette chronologie offre une vue d'ensemble structurée qui permet de comprendre l'évolution dans le temps du sujet étudié. L'approche chronologique révèle les patterns de développement et les connexions entre les différentes périodes.
-
-Cette documentation constitue une base pour approfondir la compréhension du sujet dans sa dimension temporelle et historique.`
+Cette chronologie offre une vue d'ensemble structurée qui permet de comprendre l'évolution dans le temps du sujet étudié. L'approche chronologique révèle les patterns de développement et les connexions entre les différentes périodes.`
   }
   
   // Fallback générique amélioré pour autres cas

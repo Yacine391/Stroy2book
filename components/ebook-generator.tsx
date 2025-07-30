@@ -119,7 +119,7 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
                 ) : (
                   <>
                     <Download className="h-4 w-4" />
-                    <span>Télécharger l'ebook</span>
+                    <span>Télécharger PDF</span>
                   </>
                 )}
               </Button>
