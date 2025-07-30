@@ -972,12 +972,12 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
     console.log('- Prompt length:', prompt.length, 'characters')
 
-    // 🚀 OPENAI O4-MINI UNIQUEMENT
-    console.log('🚀 Generating with OpenAI o4-mini...')
+    // 🚀 OPENAI GPT-4O-MINI UNIQUEMENT
+    console.log('🚀 Generating with OpenAI gpt-4o-mini...')
     const startTime = Date.now()
     
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'o4-mini',
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
