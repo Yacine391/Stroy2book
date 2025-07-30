@@ -940,20 +940,32 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     // 🚀 GÉNÉRATION OPENAI UNIQUEMENT
     let generatedText: string = ""
     
-    // Initialiser OpenAI à l'exécution (pas à l'import !)
-    const openaiApiKey = process.env.OPENAI_API_KEY
+    // 🔧 FORCE REFRESH: Lire la clé directement depuis process.env à chaque fois
+    const freshApiKey = process.env.OPENAI_API_KEY
     
-    if (!openaiApiKey) {
+    console.log('🔑 FRESH API KEY READ:', {
+      configured: !!freshApiKey,
+      prefix: freshApiKey ? freshApiKey.substring(0, 15) + '...' : 'NOT_SET',
+      suffix: freshApiKey ? '...' + freshApiKey.slice(-8) : 'NOT_SET',
+      length: freshApiKey?.length || 0,
+      timestamp: new Date().toISOString()
+    })
+    
+    if (!freshApiKey) {
       throw new Error('OPENAI_API_KEY is required! Please configure it in Vercel environment variables.')
     }
     
-    const openai = new OpenAI({ apiKey: openaiApiKey })
+    // Créer une nouvelle instance OpenAI à chaque fois
+    const openai = new OpenAI({ 
+      apiKey: freshApiKey,
+      timeout: 60000
+    })
     
     console.log('🎯 STARTING EBOOK GENERATION - OPENAI ONLY:')
     console.log('- Using: OpenAI GPT-4o')
-    console.log('- API Key configured:', !!openaiApiKey)
-    console.log('- API Key prefix:', openaiApiKey.substring(0, 15) + '...')
-    console.log('- API Key suffix:', '...' + openaiApiKey.slice(-8))
+    console.log('- API Key configured:', !!freshApiKey)
+    console.log('- API Key prefix:', freshApiKey.substring(0, 15) + '...')
+    console.log('- API Key suffix:', '...' + freshApiKey.slice(-8))
     console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
     console.log('- Target chapters:', lengthConfig.chaptersCount)
     console.log('- Genre:', formData.genre)
