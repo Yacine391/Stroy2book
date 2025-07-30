@@ -9,7 +9,19 @@
   },
   "functions": {
     "app/**/*.{tsx,ts,jsx,js}": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
-  }
+  },
+  "public": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ]
 }

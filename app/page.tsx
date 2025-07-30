@@ -122,6 +122,11 @@ export default function HomePage() {
       return
     }
 
+    if (!formData.genre.trim()) {
+      alert("Veuillez choisir un genre pour votre ebook.")
+      return
+    }
+
     setCurrentStep("generating")
   }
 
@@ -254,7 +259,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Genre */}
                   <div className="space-y-2">
-                    <Label>Genre (optionnel)</Label>
+                    <Label>Genre</Label>
                     <Select value={formData.genre} onValueChange={(value) => handleInputChange("genre", value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Choisir un genre" />

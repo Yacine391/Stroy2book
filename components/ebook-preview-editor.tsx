@@ -128,7 +128,7 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 flex items-center space-x-2"
           >
             <Download className="h-4 w-4" />
-            <span>Télécharger PDF</span>
+            <span>Télécharger l'ebook</span>
           </Button>
         </div>
       </div>

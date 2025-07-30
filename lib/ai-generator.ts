@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 
 interface FormData {
@@ -19,22 +18,10 @@ interface GeneratedContent {
   coverDescription: string
 }
 
-// Initialiser les APIs IA avec système de fallback
-const openaiApiKey = process.env.OPENAI_API_KEY
-const googleApiKey = process.env.GOOGLE_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
+// 🚀 OPENAI UNIQUEMENT - PLUS DE GOOGLE GEMINI
+// IMPORTANT: Initialisation différée - pas au moment de l'import !
 
-const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
-const genAI = new GoogleGenerativeAI(googleApiKey)
-
-// Fonction pour détecter quelle API utiliser
-const getPreferredAI = () => {
-  if (openaiApiKey && openai) {
-    console.log('🚀 Using OpenAI GPT-4 (Premium API)')
-    return 'openai'
-  }
-  console.log('🔄 Using Google Gemini (Fallback API)')
-  return 'google'
-}
+// 🚀 OPENAI UNIQUEMENT - Configuration vérifiée au démarrage
 
 // Générateur d'éléments uniques pour chaque histoire
 const generateUniqueElements = () => {
@@ -124,9 +111,9 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
     
     const getExactLength = (length: string, exactPages: number) => {
       const lengthConfig = {
-        court: { pages: 10, minPages: 5, maxPages: 15 },      // 5-15 pages (cible 10)
-        moyen: { pages: 27, minPages: 20, maxPages: 35 },     // 20-35 pages (cible 27)  
-        long: { pages: 47, minPages: 35, maxPages: 60 },      // 35-60 pages (cible 47)
+        court: { pages: 3, minPages: 2, maxPages: 4 },       // 2-4 pages (cible 3) - ULTRA RÉDUIT
+        moyen: { pages: 5, minPages: 4, maxPages: 7 },       // 4-7 pages (cible 5) - ULTRA RÉDUIT  
+        long: { pages: 8, minPages: 6, maxPages: 12 },       // 6-12 pages (cible 8) - ULTRA RÉDUIT
         exact: { pages: exactPages, minPages: exactPages, maxPages: exactPages }, // Pages exactes
       }
       
@@ -498,25 +485,51 @@ ${getAudienceInstructions(audience)}
 ${(() => {
   const ideaLower = idea.toLowerCase()
   
+  // Mots-clés pour contenu religieux/islamique
+  const religiousKeywords = ['islam', 'musulman', 'coran', 'prophete', 'religion', 'hadith', 'allah', 'frise', 'chronologie', 'humanite', 'creation', 'adam', 'jugement', 'islamique', 'calir', 'mecque', 'medine', 'hégire', 'sunna']
+  
+  // Mots-clés pour contenu historique/chronologique
+  const historicalKeywords = ['frise', 'chronologie', 'histoire', 'timeline', 'epoque', 'periode', 'evenement', 'historique', 'dates', 'debut', 'fin', 'depuis', 'jusqu', 'origine', 'évolution']
+  
   // Mots-clés pour contenu éducatif/informatif
   const educationalKeywords = ['apprendre', 'guide', 'conseil', 'comment', 'technique', 'méthode', 'tutoriel', 'formation', 'découvrir', 'comprendre', 'expliquer', 'enseigner']
   
   // Mots-clés pour contenu pratique
-  const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer']
+  const practicalKeywords = ['cuisine', 'recette', 'bricolage', 'jardinage', 'jardiner', 'planter', 'cultiver', 'artisanat', 'construction', 'réparation', 'diy', 'faire', 'créer', 'fabriquer', 'débutant', 'apprendre', 'guide', 'tutoriel']
   
   // Mots-clés pour contenu documentaire
-  const documentaryKeywords = ['histoire de', 'origine', 'évolution', 'découverte', 'science', 'géographie', 'culture', 'tradition', 'civilisation', 'époque']
+  const documentaryKeywords = ['science', 'géographie', 'culture', 'tradition', 'civilisation', 'analyse', 'etude']
   
   // Mots-clés pour fiction (seulement si explicite)
   const fictionKeywords = ['conte', 'aventure', 'personnage', 'héros', 'récit', 'narration', 'histoire de pirates', 'légende']
   
-  // Vérifier le type de contenu
+  // Vérifier le type de contenu avec priorité sur religieux et historique
+  const isReligious = religiousKeywords.some(keyword => ideaLower.includes(keyword))
+  const isHistorical = historicalKeywords.some(keyword => ideaLower.includes(keyword))
   const isEducational = educationalKeywords.some(keyword => ideaLower.includes(keyword))
   const isPractical = practicalKeywords.some(keyword => ideaLower.includes(keyword))
   const isDocumentary = documentaryKeywords.some(keyword => ideaLower.includes(keyword))
   const isFiction = fictionKeywords.some(keyword => ideaLower.includes(keyword))
   
-     if (isEducational) {
+     if (isReligious) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU RELIGIEUX/ISLAMIQUE
+📖 FORMAT CHOISI : Documentation religieuse chronologique STRICTEMENT RESPECTUEUSE
+🕌 SUJET DÉTECTÉ : "${idea}"
+❌ INTERDICTION ABSOLUE : Fiction, personnages inventés, histoires fantaisistes, interprétations personnelles
+❌ INTERDICTION TOTALE : Débats théologiques, controverses, opinions personnelles
+✅ CONTENU OBLIGATOIRE : Chronologie islamique authentique basée sur Coran et Sunna
+✅ STRUCTURE RELIGIEUSE : Introduction respectueuse + Périodes chronologiques (Création → Prophètes → Islam → Fin des temps) + Références sources + Conclusion édifiante
+✅ TON REQUIS : Respectueux, informatif, traditionnel, factuel selon la tradition islamique`
+   } else if (isHistorical) {
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU HISTORIQUE/CHRONOLOGIQUE
+📅 FORMAT CHOISI : Documentation chronologique STRICTEMENT FACTUELLE
+🔍 SUJET DÉTECTÉ : "${idea}"
+❌ INTERDICTION ABSOLUE : Fiction, personnages inventés, histoires fantaisistes
+❌ INTERDICTION TOTALE : Anecdotes personnelles, opinions subjectives
+✅ CONTENU OBLIGATOIRE : Chronologie factuelle avec dates et événements vérifiables
+✅ STRUCTURE CHRONOLOGIQUE : Introduction + Périodes temporelles + Événements majeurs + Contexte historique + Conclusion documentée
+✅ TON REQUIS : Objectif, informatif, documentaire, précis`
+   } else if (isEducational) {
      return `🎯 DÉTECTION AUTOMATIQUE : CONTENU ÉDUCATIF
 📚 FORMAT CHOISI : Guide éducatif/informatif STRICTEMENT PRATIQUE
 ❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles, grand-mères, exemples personnels
@@ -543,11 +556,29 @@ ${(() => {
 ✅ CONTENU AUTORISÉ : Personnages, dialogues, intrigue, anecdotes créatives
 ⚠️ ATTENTION : Fiction créative autorisée SEULEMENT pour ce cas`
    } else {
-     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU AMBIGU - DEFAULT TECHNIQUE
-📚 FORMAT PAR DÉFAUT : Guide éducatif/informatif STRICTEMENT PRATIQUE
-❌ INTERDICTION ABSOLUE : Personnages fictifs, histoires inventées, anecdotes personnelles
-❌ INTERDICTION TOTALE : Toute référence personnelle, subjective ou narrative
-✅ CONTENU AUTORISÉ UNIQUEMENT : Informations techniques, explications factuelles, conseils pratiques basés sur le sujet`
+     return `🎯 DÉTECTION AUTOMATIQUE : CONTENU SPÉCIALISÉ - EXPERT UNIVERSEL
+🧠 ANALYSE INTELLIGENTE DE LA DEMANDE : "${idea}"
+🎯 MISSION : Devenir expert du sujet demandé et créer un contenu de haute qualité
+
+📋 INSTRUCTIONS UNIVERSELLES :
+1. ANALYSER le sujet demandé pour comprendre le domaine d'expertise requis
+2. GÉNÉRER un titre accrocheur et professionnel qui reflète le contenu
+3. CRÉER un contenu expert, informatif et de haute qualité sur le sujet
+4. ADAPTER le ton et le style au domaine (scientifique, historique, pratique, culturel, etc.)
+5. STRUCTURER avec Introduction + Chapitres thématiques + Conclusion
+
+✅ CONTENU EXPERT REQUIS :
+- Informations précises et documentées sur le sujet
+- Expertise adaptée au domaine demandé
+- Titre accrocheur et professionnel
+- Structure claire et logique
+- Contenu approfondi et utile
+
+❌ INTERDICTIONS :
+- Contenu générique ou vague
+- Titre non-accrocheur comme "L'Histoire de..."
+- Références personnelles inappropriées
+- Contenu superficiel`
    }
 })()}
 
@@ -703,7 +734,113 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
 
     const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, formData.targetAudience, uniqueElements)
 
-    const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
+    // 🧠 SYSTÈME DE PROMPT INTELLIGENT ADAPTATIF
+    const isNonFictionRequest = (idea: string, genre: string): boolean => {
+      const ideaLower = idea.toLowerCase()
+      const nonFictionKeywords = [
+        'histoire', 'guide', 'apprendre', 'comment', 'tutoriel', 'méthode',
+        'technique', 'conseil', 'formation', 'éducation', 'enseignement',
+        'jardinage', 'cuisine', 'business', 'développement', 'science',
+        'médecine', 'technologie', 'informatique', 'finance', 'marketing',
+        'chronologie', 'frise', 'documentation', 'manuel', 'cours',
+        'islam', 'religion', 'coran', 'islamique', 'musulman', 'prière',
+        'enfants', 'bases', 'fondements', 'spirituel', 'foi', 'croyance'
+      ]
+      
+      return genre === 'autres' || genre === 'developpement-personnel' || 
+             nonFictionKeywords.some(keyword => ideaLower.includes(keyword))
+    }
+
+    const generateSmartTitle = (idea: string): string => {
+      const ideaLower = idea.toLowerCase()
+      
+      if (ideaLower.includes('histoire') && ideaLower.includes('algerie')) {
+        return "L'Algérie à Travers les Siècles : Une Histoire Fascinante"
+      } else if (ideaLower.includes('jardinage')) {
+        return "Jardiner Comme un Pro : Guide Complet du Jardinier Moderne"
+      } else if (ideaLower.includes('cuisine')) {
+        return "Secrets de Chef : Maîtrisez l'Art Culinaire"
+      } else if (ideaLower.includes('business') || ideaLower.includes('entreprise')) {
+        return "Réussir en Affaires : Stratégies Gagnantes d'Entrepreneurs"
+      } else if (ideaLower.includes('programmation') || ideaLower.includes('code')) {
+        return "Maîtriser la Programmation : De Débutant à Expert"
+      } else if (ideaLower.includes('islam') && (ideaLower.includes('enfant') || ideaLower.includes('enfants'))) {
+        return "Les Trésors de l'Islam : Guide Éducatif pour Enfants"
+      } else if (ideaLower.includes('islam') || ideaLower.includes('religion')) {
+        return "Découverte de l'Islam : Guide Complet et Accessible"
+      } else if (ideaLower.includes('histoire')) {
+        const subject = idea.match(/histoire de (la |le |les |l')?(.+)/i)?.[2] || idea.replace(/.*histoire de? /i, '')
+        return `${subject.charAt(0).toUpperCase() + subject.slice(1)} : Un Voyage à Travers l'Histoire`
+      } else {
+        // Générer un titre accrocheur basé sur les mots-clés principaux
+        const words = idea.split(' ').filter(w => w.length > 3)
+        const mainTopic = words.slice(-2).join(' ')
+        return `Maîtriser ${mainTopic.charAt(0).toUpperCase() + mainTopic.slice(1)} : Guide Expert Complet`
+      }
+    }
+
+    const isNonFiction = isNonFictionRequest(formData.idea, formData.genre)
+    const smartTitle = generateSmartTitle(formData.idea)
+
+    const prompt = isNonFiction ? 
+    `🧠 Tu es un EXPERT UNIVERSEL et écrivain professionnel spécialisé dans la création de guides et contenus éducatifs de haute qualité.
+
+🎯 MISSION : Créer un guide expert complet sur le sujet demandé
+
+📋 ANALYSE DE LA DEMANDE :
+IDÉE PRINCIPALE : "${formData.idea}"
+TITRE SUGGÉRÉ : "${smartTitle}"
+${formData.genre ? `GENRE : ${formData.genre}` : ""}
+${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
+LONGUEUR REQUISE : ${targetLength}
+AUTEUR : ${formData.author || "Expert IA"}
+
+🔥 INSTRUCTIONS EXPERTES UNIVERSELLES :
+1. ANALYSE le sujet demandé pour devenir instantanément expert dans ce domaine
+2. GÉNÈRE un titre accrocheur et professionnel (suggestion: "${smartTitle}")
+3. CRÉE un contenu de qualité expert avec informations précises et utiles
+4. STRUCTURE avec Introduction + Chapitres thématiques + Conclusion pratique
+5. ADAPTE le ton au domaine (scientifique, historique, pratique, technique, etc.)
+
+✅ FORMAT EXPERT REQUIS :
+- Introduction engageante qui pose le contexte et les enjeux
+- Chapitres avec contenus techniques/informatifs approfondis
+- Conseils pratiques et actionables
+- Exemples concrets et cas d'usage
+- Informations factuelles et vérifiables
+- Conclusion avec résumé et perspectives
+
+❌ INTERDICTIONS ABSOLUES :
+- Personnages fictifs ou dialogues inventés
+- Histoires narratives avec intrigue
+- Références personnelles ("ma grand-mère", "mon expérience")
+- Contenu générique ou superficiel
+- Titres fades comme "L'Histoire de..." ou "Introduction à..."
+
+🎯 SPÉCIALISATION AUTOMATIQUE :
+Si Histoire → Chronologie détaillée avec dates, événements, personnages historiques réels
+Si Jardinage → Techniques, outils, plants, saisons, conseils pratiques
+Si Cuisine → Techniques, ingrédients, recettes, astuces de chef
+Si Business → Stratégies, méthodes, outils, études de cas
+Si Science → Explications techniques, théories, applications
+Si Technologie → Fonctionnement, usages, évolutions
+Si Islam/Religion → Enseignements fondamentaux, pratiques, valeurs, adaptés à l'âge
+Si Enfants → Langage simple, exemples concrets, approche pédagogique
+→ Pour TOUT autre sujet : Expertise adaptée automatiquement
+
+🕌 SPÉCIALISATION ISLAM POUR ENFANTS :
+Si le sujet concerne l'Islam pour enfants :
+- Utilise un langage simple et accessible
+- Explique les concepts avec des exemples du quotidien
+- Structure : Bases de la foi, Pratiques quotidiennes, Valeurs morales
+- Inclus des histoires éducatives (prophètes, exemples positifs)
+- Évite les sujets complexes ou controversés
+- Focus sur l'amour, la bonté, le respect, la famille
+- Chapitres : Les 5 piliers, La prière, Le Coran, Les bonnes actions, Les prophètes`
+
+    :
+
+    `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
 IDÉE PRINCIPALE : "${formData.idea}"
 ${formData.genre ? `GENRE : ${formData.genre}` : ""}
@@ -711,22 +848,13 @@ ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
-${formData.genre === 'developpement-personnel' ? `
-⚠️ ATTENTION SPÉCIALE DÉVELOPPEMENT PERSONNEL ⚠️
-Tu vas créer un GUIDE PRATIQUE, PAS UNE FICTION !
-- INTERDICTION ABSOLUE de créer des personnages, dialogues ou histoires inventées
-- SEULEMENT des conseils pratiques, exercices et méthodes concrètes
-- Format : Introduction + Chapitres thématiques + Exercices + Plan d'action
-` : `🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}`}
+🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}
 Créée le : ${uniqueElements.timeSignature}
 
 ${genreInstructions}
 
-⚠️ EXIGENCES D'UNICITÉ ABSOLUE - JAMAIS RÉPÉTÉE ⚠️ :
-Cette histoire DOIT être absolument UNIQUE et ne JAMAIS ressembler à une autre histoire générée.
-
-TECHNIQUES D'ORIGINALITÉ OBLIGATOIRES :
-- Commence par un élément complètement INATTENDU lié à l'idée
+EXIGENCES :
+- Contenu UNIQUE et original
 - Développe des PERSONNAGES avec des particularités physiques/mentales uniques
 - Crée un CONFLIT CENTRAL que personne d'autre n'aurait imaginé
 - Invente des LIEUX avec des caractéristiques géographiques/architecturales originales
@@ -806,93 +934,74 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 ✅ FORMAT STRICT : "Introduction :" puis contenu, "Chapitre 1 :" puis contenu
 ✅ AUCUNE mention de comptage de mots dans le contenu final`
 
-    // Système de génération avec fallback intelligent et logs détaillés
+    // 🚀 GÉNÉRATION OPENAI UNIQUEMENT
     let generatedText: string = ""
-    const preferredAI = getPreferredAI()
-
-    console.log('🎯 STARTING EBOOK GENERATION:')
-    console.log('- Preferred AI:', preferredAI)
+    
+    // 🔧 FORCE REFRESH: Lire la clé directement depuis process.env à chaque fois
+    const freshApiKey = process.env.OPENAI_API_KEY
+    
+    console.log('🔑 FRESH API KEY READ:', {
+      configured: !!freshApiKey,
+      prefix: freshApiKey ? freshApiKey.substring(0, 15) + '...' : 'NOT_SET',
+      suffix: freshApiKey ? '...' + freshApiKey.slice(-8) : 'NOT_SET',
+      length: freshApiKey?.length || 0,
+      timestamp: new Date().toISOString()
+    })
+    
+    if (!freshApiKey) {
+      throw new Error('OPENAI_API_KEY is required! Please configure it in Vercel environment variables.')
+    }
+    
+    // Créer une nouvelle instance OpenAI à chaque fois
+    const openai = new OpenAI({ 
+      apiKey: freshApiKey,
+      timeout: 60000
+    })
+    
+    console.log('🎯 STARTING EBOOK GENERATION - OPENAI ONLY:')
+    console.log('- Using: OpenAI GPT-4o')
+    console.log('- API Key configured:', !!freshApiKey)
+    console.log('- API Key prefix:', freshApiKey.substring(0, 15) + '...')
+    console.log('- API Key suffix:', '...' + freshApiKey.slice(-8))
     console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
     console.log('- Target chapters:', lengthConfig.chaptersCount)
     console.log('- Genre:', formData.genre)
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
+    console.log('- Prompt length:', prompt.length, 'characters')
 
-    if (preferredAI === 'openai' && openai) {
-      console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
-      
-      try {
-        const completion = await openai.chat.completions.create({
-          model: process.env.OPENAI_MODEL || 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'Tu es un écrivain professionnel français expert en création d\'ebooks. Tu génères du contenu de haute qualité, précis et engageant.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: formData.genre === 'historique' ? 0.7 : 1.0,
-          max_tokens: 16384, // OpenAI limite plus stricte
-          presence_penalty: 0.1,
-          frequency_penalty: 0.1,
-        })
-
-        generatedText = completion.choices[0]?.message?.content || ''
-        
-        console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
-        console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
-        console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
-        
-        if (!generatedText) {
-          throw new Error('Réponse vide d\'OpenAI')
-        }
-        
-      } catch (openaiError) {
-        console.warn('⚠️ Erreur OpenAI, fallback vers Google:', openaiError)
-        
-        // Fallback vers Google Gemini
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: formData.genre === 'historique' ? 0.7 : 1.2,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 32768,
-          },
-        })
-        generatedText = result.response.text()
-        
-        console.log('✅ Gemini Fallback Response - Length:', generatedText.length, 'characters')
-      }
-      
-    } else {
-      console.log('🔄 Utilisation de Google Gemini (API de base)')
-      
-      // Utiliser Google Gemini
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: formData.genre === 'historique' ? 0.7 : 1.2,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 32768,
+    // 🚀 OPENAI GPT-4O-MINI UNIQUEMENT
+    console.log('🚀 Generating with OpenAI gpt-4o-mini...')
+    const startTime = Date.now()
+    
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Tu es un écrivain professionnel français expert en création d\'ebooks. Tu génères du contenu de haute qualité, précis et engageant.'
         },
-      })
-      generatedText = result.response.text()
-      
-      console.log('✅ Gemini Response received - Length:', generatedText.length, 'characters')
-      console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
-      console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
-      
-      // VÉRIFICATION CRITIQUE: S'assurer qu'on a un contenu substantiel
-      if (!generatedText || generatedText.length < 500) {
-        console.error('❌ CONTENU IA INSUFFISANT ! Length:', generatedText?.length || 0)
-        throw new Error(`Contenu IA trop court: ${generatedText?.length || 0} caractères`)
-      }
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 4096,  // OPTIMISÉ pour Vercel
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+    })
+
+    generatedText = completion.choices[0]?.message?.content || ''
+    const endTime = Date.now()
+    const duration = endTime - startTime
+
+    console.log('⏱️ OpenAI Generation Time:', duration, 'ms')
+    console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
+    console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
+    console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
+    
+    if (!generatedText || generatedText.length < 500) {
+      throw new Error(`OpenAI returned insufficient content: ${generatedText?.length || 0} characters`)
     }
 
     // DIAGNOSTIC COMPLET: Analyser la réponse IA avant parsing
@@ -992,15 +1101,8 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
       length: formData.length 
     })
 
-    // Contenu de fallback enrichi en cas d'erreur - Utiliser le contenu riche
-    console.log("🚨 USING RICH FALLBACK: Generating comprehensive content")
-    
-    return {
-      title: generateFallbackTitle(formData.idea),
-      author: formData.author || "Auteur IA",
-      content: generateFallbackContent(formData), // Utiliser le nouveau fallback riche
-      coverDescription: generateFallbackCoverDescription(formData),
-    }
+    // 🚨 FALLBACK SUPPRIMÉ - FORCER L'AFFICHAGE DE L'ERREUR RÉELLE
+    throw new Error(`IA GENERATION FAILED: ${error instanceof Error ? error.message : 'Unknown error'}. Check API keys and configuration.`)
   }
 }
 
@@ -1088,40 +1190,37 @@ function parseGeneratedContent(text: string, authorName: string): GeneratedConte
       content = text.trim()
     }
 
-          // VALIDATION et nettoyage du contenu structuré
-      if (!content.includes('# Chapitre') && !content.includes('#Chapitre') && !content.includes('## ')) {
-        console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding comprehensive structure')
+          // VALIDATION du contenu structuré - AMÉLIORATION
+      if (!content.includes('# ') && !content.includes('## ')) {
+        console.warn('⚠️ NO CHAPTER STRUCTURE DETECTED - Adding structure while preserving ALL content')
         
-        // Si pas de structure, garder le contenu ENTIER mais ajouter structure riche
+        // Si pas de structure, garder le contenu ENTIER et ajouter une structure minimale
         const originalContent = content
-        const lines = originalContent.split('\n').filter(line => line.trim())
-        const linesPerSection = Math.max(3, Math.floor(lines.length / 6))
+        const paragraphs = originalContent.split('\n\n').filter(p => p.trim().length > 50)
         
-        content = `# Introduction
+        if (paragraphs.length >= 3) {
+          // Diviser intelligemment en gardant TOUT le contenu
+          const introduction = paragraphs.slice(0, Math.ceil(paragraphs.length * 0.2))
+          const middle = paragraphs.slice(Math.ceil(paragraphs.length * 0.2), Math.ceil(paragraphs.length * 0.8))
+          const conclusion = paragraphs.slice(Math.ceil(paragraphs.length * 0.8))
+          
+          content = `# Introduction
 
-${lines.slice(0, linesPerSection).join('\n')}
+${introduction.join('\n\n')}
 
-# Chapitre 1
+# Développement
 
-${lines.slice(linesPerSection, linesPerSection * 2).join('\n')}
-
-# Chapitre 2
-
-${lines.slice(linesPerSection * 2, linesPerSection * 3).join('\n')}
-
-# Chapitre 3
-
-${lines.slice(linesPerSection * 3, linesPerSection * 4).join('\n')}
-
-# Chapitre 4
-
-${lines.slice(linesPerSection * 4, linesPerSection * 5).join('\n')}
+${middle.join('\n\n')}
 
 # Conclusion
 
-${lines.slice(linesPerSection * 5).join('\n')}
+${conclusion.join('\n\n')}`
+        } else {
+          // Si contenu très court, juste ajouter un titre
+          content = `# Contenu Principal
 
-Ce guide vous fournit toutes les informations essentielles et les méthodes pratiques nécessaires pour développer vos compétences dans ce domaine.`
+${originalContent}`
+        }
       }
 
       // NETTOYAGE ULTRA-AGRESSIF: ANNIHILATION TOTALE DES DUPLICATIONS
@@ -1236,92 +1335,53 @@ Ce guide vous fournit toutes les informations essentielles et les méthodes prat
   }
 }
 
-// Fonctions de fallback en cas d'erreur
+// 🎯 FONCTION FALLBACK UNIVERSELLE POUR LES TITRES
 function generateFallbackTitle(idea: string): string {
-  const keywords = idea.split(' ').slice(0, 3).join(' ')
-  return `L'Histoire de ${keywords}`.substring(0, 60)
+  console.log('🚨 FALLBACK TITLE UNIVERSEL - L\'IA devrait gérer le titre!')
+  
+  // Simple extraction de mots-clés pour un titre générique
+  const words = idea.split(' ').filter(w => w.length > 3)
+  const mainTopic = words.slice(-2).join(' ')
+  return `Guide Expert : ${mainTopic.charAt(0).toUpperCase() + mainTopic.slice(1)}`
 }
 
 function generateFallbackContent(formData: FormData): string {
-  const lengthConfig = {
-    court: { chapters: 5, wordsPerChapter: 500 },
-    moyen: { chapters: 8, wordsPerChapter: 700 },
-    long: { chapters: 12, wordsPerChapter: 900 },
-    exact: { chapters: Math.max(5, Math.floor((formData.exactPages || 10) / 3)), wordsPerChapter: 600 }
-  }
+  console.log('🚨 FALLBACK UNIVERSEL SIMPLE - L\'IA devrait gérer tous les sujets!')
   
-  const config = lengthConfig[formData.length as keyof typeof lengthConfig] || lengthConfig.court
-  
-  // Générer un contenu de fallback COMPLET et LONG
-  let fullContent = `# Introduction : Découverte de l'Univers
-
-Basé sur votre idée fascinante : "${formData.idea}"
-
-Cette histoire extraordinaire commence dans un univers où l'imagination n'a pas de limites. Notre protagoniste, animé par ${formData.genre ? `l'esprit du ${formData.genre}` : 'une curiosité insatiable'}, s'apprête à vivre une aventure qui marquera à jamais sa destinée.
-
-Dans ce monde riche en possibilités, chaque détail compte, chaque rencontre peut changer le cours des événements, et chaque décision peut ouvrir de nouveaux horizons. L'atmosphère qui règne ici est chargée d'émotions intenses et de mystères qui n'attendent qu'à être élucidés.
-
-Notre héros commence son périple avec un mélange d'excitation et d'appréhension, conscient que cette quête va le transformer profondément. Les premiers pas de cette aventure sont déjà lourds de promesses et de défis qui feront de cette histoire un récit inoubliable.
-
-L'environnement qui entoure notre protagoniste est façonné par des éléments uniques qui créent une ambiance particulière. Chaque lieu visité, chaque personnage rencontré apporte sa pierre à l'édifice de cette narration captivante qui se déploie sous nos yeux.
-
-`
-
-  // Générer des chapitres complets et détaillés
-  for (let i = 1; i <= config.chapters; i++) {
-    const chapterTitles = [
-      "L'Éveil de la Quête", "Les Premiers Défis", "Rencontres Extraordinaires", 
-      "Révélations Surprenantes", "L'Épreuve du Courage", "Secrets Dévoilés",
-      "Alliance Inattendues", "Le Tournant Décisif", "Face au Destin",
-      "La Vérité Éclate", "L'Ultime Confrontation", "Renaissance et Sagesse"
-    ]
-    
-    const title = chapterTitles[i - 1] || `L'Aventure Continue - Partie ${i}`
-    
-    fullContent += `# Chapitre ${i} : ${title}
-
-Ce chapitre marque une étape cruciale dans le développement de notre récit. L'intrigue se densifie et les enjeux deviennent de plus en plus importants pour notre protagoniste qui évolue dans un environnement en constante transformation.
-
-Les événements de ce chapitre s'enchaînent avec une logique narrative parfaitement maîtrisée, créant une progression fluide et naturelle qui maintient le lecteur en haleine. Chaque paragraphe apporte sa contribution à l'ensemble de l'œuvre, tissant un récit cohérent et captivant.
-
-Notre héros fait face à de nouveaux défis qui testent ses capacités et sa détermination. Ces épreuves ne sont pas seulement des obstacles à surmonter, mais des opportunités de croissance personnelle qui enrichissent son caractère et approfondissent sa compréhension du monde qui l'entoure.
-
-L'atmosphère de ce chapitre est particulièrement travaillée, avec des descriptions vivantes qui immergent le lecteur dans l'univers de l'histoire. Les dialogues sont naturels et authentiques, révélant la personnalité de chaque personnage et faisant avancer l'intrigue de manière organique.
-
-Les rebondissements de ce chapitre sont calculés avec précision pour maintenir l'intérêt du lecteur tout en respectant la logique interne de l'histoire. Chaque surprise est préparée avec soin et s'inscrit dans la continuité narrative de l'ensemble de l'œuvre.
-
-Les émotions véhiculées dans cette partie du récit sont particulièrement intenses, créant une connexion forte entre le lecteur et les personnages. Cette dimension émotionnelle est essentielle pour donner de la profondeur et de l'authenticité à l'histoire.
-
-Le rythme de ce chapitre est parfaitement calibré, alternant entre moments de tension et instants de réflexion, permettant au lecteur de souffler tout en maintenant son engagement dans l'histoire. Cette variation de tempo contribue à créer une expérience de lecture riche et variée.
-
-`
+  // 🎯 FALLBACK UNIVERSEL SIMPLE - Pas de cas spéciaux, juste un guide générique
+  const generateSmartTitle = (idea: string): string => {
+    // Extraire les mots clés principaux
+    const words = idea.split(' ').filter(w => w.length > 3)
+    const mainTopic = words.slice(-2).join(' ')
+    return `Maîtriser ${mainTopic.charAt(0).toUpperCase() + mainTopic.slice(1)} : Guide Expert`
   }
 
-  fullContent += `# Épilogue : L'Accomplissement de la Destinée
+  const smartTitle = generateSmartTitle(formData.idea)
+  
+  console.log(`📊 FALLBACK UNIVERSEL: "${smartTitle}" pour "${formData.idea}"`)
+  
+  // ✅ CONTENU UNIVERSEL qui s'adapte à N'IMPORTE QUEL SUJET
+  return `# ${smartTitle}
 
-Cette aventure extraordinaire touche maintenant à sa fin, mais pas sans avoir laissé des traces indélébiles dans l'âme de notre protagoniste et dans le cœur du lecteur. Le parcours accompli révèle toute sa richesse et sa profondeur lorsqu'on en contemple l'ensemble.
+Basé sur votre demande : "${formData.idea}"
 
-Les leçons apprises au cours de cette quête transcendent le simple divertissement pour offrir une véritable réflexion sur la condition humaine et les valeurs universelles qui nous unissent. Cette dimension philosophique donne à l'histoire une portée qui dépasse le cadre de la fiction.
+Ce guide expert vous accompagne dans la découverte approfondie du sujet demandé. L'IA est conçue pour traiter n'importe quel sujet avec expertise.
 
-Notre héros, transformé par son expérience, incarne maintenant une sagesse nouvelle qui lui permettra d'aborder l'avenir avec sérénité et confiance. Cette évolution personnelle constitue le véritable trésor de cette aventure, bien plus précieux que toutes les richesses matérielles.
+# Chapitre 1 : Les Fondamentaux
 
-L'univers dans lequel s'est déroulée cette histoire continuera d'exister dans l'imagination du lecteur, peuplé de personnages attachants et de lieux magiques qui resteront gravés dans sa mémoire. Cette persistance imaginaire témoigne de la réussite de cette création littéraire.
+Ce chapitre pose les bases essentielles du sujet. Nous explorons les concepts clés, la terminologie importante et les principes fondamentaux nécessaires à votre compréhension.
 
-L'impact de cette histoire dépasse le moment de la lecture pour s'inscrire dans la durée, nourrissant la réflexion et l'inspiration du lecteur bien au-delà de la dernière page. C'est là la marque des grandes œuvres de fiction, capables de transformer celui qui les découvre.
+# Chapitre 2 : Développement Approfondi
 
-Cette conclusion marque non pas une fin, mais un nouveau commencement, car chaque histoire véritable ouvre des portes vers d'autres univers possibles et inspire de nouvelles aventures. L'imagination ainsi nourrie devient source créatrice pour de futures explorations littéraires.
+Nous entrons dans le cœur du sujet avec les aspects techniques et les méthodes spécialisées. Ce chapitre développe les éléments centraux du domaine étudié.
 
----
+# Chapitre 3 : Applications et Exemples
 
-*Ebook complet généré avec Story2book AI - Votre idée transformée en récit captivant*
+Ce chapitre présente les applications pratiques et les cas concrets. Vous découvrirez comment utiliser les connaissances acquises dans des situations réelles.
 
-**Statistiques de cette création :**
-- ${config.chapters + 2} sections développées
-- Plus de ${(config.chapters * config.wordsPerChapter) + 1000} mots de contenu riche
-- Narration complète et satisfaisante
-- Développement approfondi des thèmes et personnages`
+# Conclusion
 
-  return fullContent
+Ce guide vous a fourni une base solide dans le domaine étudié. L'IA principale devrait normalement gérer tous les sujets - ce fallback ne devrait apparaître qu'en cas d'erreur technique.`
 }
 
 function generateFallbackCoverDescription(formData: FormData): string {
