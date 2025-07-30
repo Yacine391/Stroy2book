@@ -76,13 +76,8 @@ const cleanContent = (content: string): string => {
   cleaned = cleaned.replace(/^#\s+(.+)/m, '$1')
   
   // 11. 🚨 VÉRIFICATION CRITIQUE: S'assurer qu'on a du contenu structuré
-  if (!cleaned.includes('# ')) {
-    console.warn('⚠️ AUCUN TITRE DÉTECTÉ - Ajout d\'une structure minimale')
-    // Si aucun titre détecté, ajouter au moins un titre principal
-    if (cleaned.length > 0) {
-      cleaned = `Guide Expert\n\n${cleaned}`  // SANS # au début
-    }
-  }
+  // SUPPRIMÉ: Plus d'ajout automatique de "Guide Expert"
+  // Le contenu sera utilisé tel quel
   
   console.log('✅ NETTOYAGE TERMINÉ - Longueur sortie:', cleaned.length)
   console.log('📊 Titres détectés:', (cleaned.match(/^# /gm) || []).length)
