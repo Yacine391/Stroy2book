@@ -23,7 +23,7 @@ interface EbookData {
   length?: string
 }
 
-// Fonction de nettoyage du contenu - PRÉSERVER LES TITRES MARKDOWN
+// Fonction de nettoyage du contenu - PRÉSERVER LES RETOURS À LA LIGNE ET TITRES MARKDOWN
 const cleanContent = (content: string): string => {
   return content
     // Supprimer les signatures d'unicité HTML
@@ -33,12 +33,19 @@ const cleanContent = (content: string): string => {
     // Supprimer les astérisques autour des titres SAUF dans les listes
     .replace(/\*\*(.*?)\*\*/g, '$1')
     // NE PAS supprimer les dièses - ils sont nécessaires pour détecter les titres !
-    // Nettoyer les espaces multiples SAUF en début de ligne (pour préserver les titres)
-    .replace(/([^\n])\s+/g, '$1 ')
-    // Nettoyer les espaces en fin de ligne seulement
-    .replace(/\s+$/gm, '')
-    // Supprimer les lignes vides multiples
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    
+    // 🚨 CORRECTION MAJEURE : PRÉSERVER LES RETOURS À LA LIGNE
+    // Nettoyer les espaces multiples EN LIGNE seulement (pas entre les lignes)
+    .replace(/[ \t]+/g, ' ')  // Seulement espaces et tabs en excès
+    
+    // Nettoyer les espaces en fin de ligne
+    .replace(/[ \t]+$/gm, '')
+    
+    // Supprimer les lignes vides multiples (max 2 lignes vides)
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    
+    // S'assurer qu'il n'y a pas d'espaces avant les titres markdown
+    .replace(/^\s*(#+ )/gm, '$1')
 }
 
 export async function generatePDF(ebookData: EbookData): Promise<Blob> {

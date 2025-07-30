@@ -9,17 +9,31 @@ interface EbookData {
   hasWatermark?: boolean
 }
 
-// Fonction de nettoyage du contenu (même que PDF)
+// Fonction de nettoyage du contenu - CORRIGÉE POUR PRÉSERVER MARKDOWN ET RETOURS À LA LIGNE
 const cleanContent = (content: string): string => {
   return content
+    // Supprimer les signatures d'unicité HTML
     .replace(/<!--\s*Signature d'unicité:.*?-->/gi, '')
+    // Supprimer les mentions de nombre de mots entre parenthèses
     .replace(/\(\d+\s*mots?\)/gi, '')
+    // Supprimer les astérisques autour du texte (gras/italique) mais garder le contenu
     .replace(/\*\*(.*?)\*\*/g, '$1')
     .replace(/\*(.*?)\*/g, '$1')
-    .replace(/^#{1,6}\s*/gm, '')
-    .replace(/\s+/g, ' ')
-    .replace(/^\s+|\s+$/gm, '')
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    
+    // 🚨 NE PAS SUPPRIMER LES # - ils sont nécessaires pour détecter les titres !
+    // 🚨 CORRECTION MAJEURE : PRÉSERVER LES RETOURS À LA LIGNE
+    
+    // Nettoyer les espaces multiples EN LIGNE seulement (pas entre les lignes)
+    .replace(/[ \t]+/g, ' ')  // Seulement espaces et tabs en excès
+    
+    // Nettoyer les espaces en fin de ligne
+    .replace(/[ \t]+$/gm, '')
+    
+    // Supprimer les lignes vides multiples (max 2 lignes vides)
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    
+    // S'assurer qu'il n'y a pas d'espaces avant les titres markdown
+    .replace(/^\s*(#+ )/gm, '$1')
 }
 
 export async function generateWord(ebookData: EbookData): Promise<Blob> {
