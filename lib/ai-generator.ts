@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 
 interface FormData {
@@ -19,26 +18,13 @@ interface GeneratedContent {
   coverDescription: string
 }
 
-// Initialiser les APIs IA avec système de fallback
+// 🚀 OPENAI UNIQUEMENT - PLUS DE GOOGLE GEMINI
 const openaiApiKey = process.env.OPENAI_API_KEY
-const googleApiKey = process.env.GOOGLE_API_KEY || 'AIzaSyADxgpjRiMRWwdWrXnoORIt_ibPX7N1FQs'
 
+// Initialiser OpenAI seulement si la clé existe (pour éviter erreur au build)
 const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
-const genAI = new GoogleGenerativeAI(googleApiKey)
 
-// Fonction pour détecter quelle API utiliser
-const getPreferredAI = () => {
-  console.log('🔍 DEBUG: openaiApiKey exists:', !!openaiApiKey)
-  console.log('🔍 DEBUG: openai object exists:', !!openai)
-  
-  if (openaiApiKey && openai) {
-    console.log('🚀 Using OpenAI GPT-4 (Premium API)')
-    return 'openai'
-  }
-  console.log('🔄 Using Google Gemini (Fallback API)')
-  console.log('⚠️ WARNING: OpenAI not available, using Google')
-  return 'google'
-}
+// 🚀 OPENAI UNIQUEMENT - Configuration vérifiée au démarrage
 
 // Générateur d'éléments uniques pour chaque histoire
 const generateUniqueElements = () => {
@@ -954,100 +940,52 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 ✅ FORMAT STRICT : "Introduction :" puis contenu, "Chapitre 1 :" puis contenu
 ✅ AUCUNE mention de comptage de mots dans le contenu final`
 
-    // Système de génération avec fallback intelligent et logs détaillés
+    // 🚀 GÉNÉRATION OPENAI UNIQUEMENT
     let generatedText: string = ""
-    const preferredAI = getPreferredAI()
     
-    // 🚨 FORCE OPENAI SI DISPONIBLE pour éviter Google 503
-    const forceOpenAI = openaiApiKey && openai
-    console.log('🔧 FORCE OPENAI:', forceOpenAI)
-
-    console.log('🎯 STARTING EBOOK GENERATION:')
-    console.log('- Preferred AI:', forceOpenAI ? 'openai (FORCED)' : preferredAI)
-    console.log('- OpenAI Key available:', !!openaiApiKey)
-    console.log('- Google Key available:', !!googleApiKey)
+    // Vérifier que OpenAI est configuré
+    if (!openaiApiKey || !openai) {
+      throw new Error('OPENAI_API_KEY is required! Please configure it in Vercel environment variables.')
+    }
+    
+    console.log('🎯 STARTING EBOOK GENERATION - OPENAI ONLY:')
+    console.log('- Using: OpenAI GPT-4o')
+    console.log('- API Key configured:', !!openaiApiKey)
     console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
     console.log('- Target chapters:', lengthConfig.chaptersCount)
     console.log('- Genre:', formData.genre)
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
     console.log('- Prompt length:', prompt.length, 'characters')
 
-    if ((preferredAI === 'openai' || forceOpenAI) && openai) {
-      console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
-      
-      try {
-        const completion = await openai.chat.completions.create({
-          model: process.env.OPENAI_MODEL || 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'Tu es un écrivain professionnel français expert en création d\'ebooks. Tu génères du contenu de haute qualité, précis et engageant.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: formData.genre === 'historique' ? 0.7 : 1.0,
-          max_tokens: 16384, // OpenAI limite plus stricte
-          presence_penalty: 0.1,
-          frequency_penalty: 0.1,
-        })
-
-        generatedText = completion.choices[0]?.message?.content || ''
-        
-        console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
-        console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
-        console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
-        
-        if (!generatedText) {
-          throw new Error('Réponse vide d\'OpenAI')
-        }
-        
-      } catch (openaiError) {
-        console.warn('⚠️ Erreur OpenAI, fallback vers Google:', openaiError)
-        
-        // Fallback vers Google Gemini
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: formData.genre === 'historique' ? 0.7 : 1.2,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 32768,
-          },
-        })
-        generatedText = result.response.text()
-        
-        console.log('✅ Gemini Fallback Response - Length:', generatedText.length, 'characters')
-      }
-      
-    } else {
-      console.log('🔄 Utilisation de Google Gemini (API de base)')
-      
-      // Utiliser Google Gemini
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: formData.genre === 'historique' ? 0.7 : 1.2,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 32768,
+    // 🚀 OPENAI GPT-4O UNIQUEMENT
+    console.log('🚀 Generating with OpenAI GPT-4o...')
+    
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'Tu es un écrivain professionnel français expert en création d\'ebooks. Tu génères du contenu de haute qualité, précis et engageant.'
         },
-      })
-      generatedText = result.response.text()
-      
-      console.log('✅ Gemini Response received - Length:', generatedText.length, 'characters')
-      console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
-      console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
-      
-      // VÉRIFICATION CRITIQUE: S'assurer qu'on a un contenu substantiel
-      if (!generatedText || generatedText.length < 500) {
-        console.error('❌ CONTENU IA INSUFFISANT ! Length:', generatedText?.length || 0)
-        throw new Error(`Contenu IA trop court: ${generatedText?.length || 0} caractères`)
-      }
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: formData.genre === 'historique' ? 0.7 : 1.0,
+      max_tokens: 16384,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+    })
+
+    generatedText = completion.choices[0]?.message?.content || ''
+    
+    console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
+    console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
+    console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
+    
+    if (!generatedText || generatedText.length < 500) {
+      throw new Error(`OpenAI returned insufficient content: ${generatedText?.length || 0} characters`)
     }
 
     // DIAGNOSTIC COMPLET: Analyser la réponse IA avant parsing
