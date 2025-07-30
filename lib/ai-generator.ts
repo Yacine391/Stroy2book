@@ -777,7 +777,7 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
         return "Réussir en Affaires : Stratégies Gagnantes d'Entrepreneurs"
       } else if (ideaLower.includes('programmation') || ideaLower.includes('code')) {
         return "Maîtriser la Programmation : De Débutant à Expert"
-      } else if (ideaLower.includes('islam') && ideaLower.includes('enfants')) {
+      } else if (ideaLower.includes('islam') && (ideaLower.includes('enfant') || ideaLower.includes('enfants'))) {
         return "Les Trésors de l'Islam : Guide Éducatif pour Enfants"
       } else if (ideaLower.includes('islam') || ideaLower.includes('religion')) {
         return "Découverte de l'Islam : Guide Complet et Accessible"
