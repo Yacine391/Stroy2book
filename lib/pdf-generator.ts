@@ -198,62 +198,73 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   console.log('Processing content lines:', contentLines.length)
   console.log('Total content length:', cleanedContent.length, 'characters')
   
-  // NOUVELLE LOGIQUE SIMPLIFIÉE - Traiter TOUT le contenu ligne par ligne
+    // LOGIQUE AMÉLIORÉE POUR MISE EN PAGE PROPRE
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i]
     
     console.log(`Processing line ${i+1}/${contentLines.length}: ${line.substring(0, 50)}...`)
     
-         if (!line) {
-       // Ligne vide - espacement réduit
-       currentY += 2
-       continue
-     }
+    if (!line) {
+      // Ligne vide - espacement minimal
+      currentY += 3
+      continue
+    }
 
-         // Déterminer le type de ligne et ses paramètres
-     let fontSize = 12
-     let fontStyle = 'normal'
-     let textColor = [50, 50, 50]
-     let lineSpacing = 4.2
-     let afterSpacing = 3
-     let displayText = line
-     
-     if (line.startsWith('# ')) {
-       // Titre principal (chapitre)
-       fontSize = 16
-       fontStyle = 'bold'
-       textColor = [80, 80, 80]
-       afterSpacing = 8
-       displayText = line.substring(2)
-       
-       // S'assurer qu'on a assez d'espace pour le titre
-       if (needsNewPage(25)) {
-         addNewPage()
-       }
-       
-     } else if (line.startsWith('## ')) {
-       // Sous-titre
-       fontSize = 14
-       fontStyle = 'bold'
-       textColor = [60, 60, 60]
-       afterSpacing = 6
-       displayText = line.substring(3)
-       
-       if (needsNewPage(20)) {
-         addNewPage()
-       }
-       
-     } else if (line.startsWith('### ')) {
-       // Sous-sous-titre
-       fontSize = 13
-       fontStyle = 'bold'
-       textColor = [80, 80, 80]
-       afterSpacing = 5
-       displayText = line.substring(4)
-       
-       if (needsNewPage(18)) {
-         addNewPage()
-       }
+    // Déterminer le type de ligne et ses paramètres
+    let fontSize = 12
+    let fontStyle = 'normal'
+    let textColor = [50, 50, 50]
+    let lineSpacing = 5
+    let afterSpacing = 6
+    let displayText = line
+    let isSpecialElement = false
+    
+    if (line.startsWith('# ')) {
+      // Titre principal (chapitre) - Espacement spécial pour introduction
+      fontSize = 16
+      fontStyle = 'bold'
+      textColor = [80, 80, 80]
+      displayText = line.substring(2)
+      isSpecialElement = true
+      
+      // Espacement spécial pour "Introduction"
+      if (displayText.toLowerCase().includes('introduction')) {
+        afterSpacing = 12 // 2 lignes d'espacement comme demandé
+      } else {
+        afterSpacing = 8 // 1 ligne d'espacement pour les chapitres
+      }
+      
+      // Vérifier si on a besoin d'une nouvelle page
+      const neededSpace = 30 + afterSpacing
+      if (needsNewPage(neededSpace)) {
+        addNewPage()
+      }
+      
+    } else if (line.startsWith('## ')) {
+      // Sous-titre
+      fontSize = 14
+      fontStyle = 'bold'
+      textColor = [60, 60, 60]
+      afterSpacing = 6
+      displayText = line.substring(3)
+      isSpecialElement = true
+      
+      if (needsNewPage(25)) {
+        addNewPage()
+      }
+      
+    } else if (line.startsWith('### ')) {
+      // Sous-sous-titre
+      fontSize = 13
+      fontStyle = 'bold'
+      textColor = [80, 80, 80]
+      afterSpacing = 5
+      displayText = line.substring(4)
+      isSpecialElement = true
+      
+      if (needsNewPage(20)) {
+        addNewPage()
+      }
       
     } else if (line.startsWith('*') && line.endsWith('*')) {
       // Texte en italique
@@ -289,30 +300,41 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     // Diviser le texte en lignes qui tiennent dans la largeur
     const lines = splitTextToLines(displayText, contentWidth, fontSize)
     
-    // Vérifier si on a assez d'espace pour toutes les lignes
-    const totalHeightNeeded = lines.length * lineSpacing + afterSpacing
-    if (needsNewPage(totalHeightNeeded)) {
+    // Calculer l'espace total nécessaire
+    const totalHeight = lines.length * lineSpacing + afterSpacing
+    
+    // Vérifier si on a assez d'espace pour TOUT le contenu
+    if (needsNewPage(totalHeight)) {
       addNewPage()
     }
     
-    // Afficher toutes les lignes
-    lines.forEach((textLine, lineIndex) => {
+    // Afficher toutes les lignes du contenu
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const textLine = lines[lineIndex]
       const y = currentY + (lineIndex * lineSpacing)
       
-      // Vérification de sécurité : si une ligne déborde, créer une nouvelle page
-      if (y > pageHeight - margin - 10) {
+      // Vérification de sécurité absolue
+      if (y > pageHeight - margin - 15) {
+        console.log('EMERGENCY: Creating new page mid-content')
         addNewPage()
-        pdf.text(textLine, margin, currentY)
-        currentY += lineSpacing
+        // Reprendre l'affichage des lignes restantes sur la nouvelle page
+        for (let remainingIndex = lineIndex; remainingIndex < lines.length; remainingIndex++) {
+          const remainingLine = lines[remainingIndex]
+          const newY = currentY + ((remainingIndex - lineIndex) * lineSpacing)
+          pdf.text(remainingLine, margin, newY)
+        }
+        currentY += (lines.length - lineIndex) * lineSpacing + afterSpacing
+        break
       } else {
         pdf.text(textLine, margin, y)
+        if (lineIndex === lines.length - 1) {
+          // Dernière ligne : mettre à jour currentY
+          currentY = y + lineSpacing + afterSpacing
+        }
       }
-    })
+    }
     
-    // Mettre à jour currentY
-    currentY += lines.length * lineSpacing + afterSpacing
-    
-    console.log(`Line ${i+1} processed, currentY now: ${currentY}`)
+    console.log(`Line ${i+1} processed, currentY now: ${currentY}, isSpecial: ${isSpecialElement}`)
   }
 
   console.log('✅ ALL CONTENT PROCESSED - Total lines:', contentLines.length)
