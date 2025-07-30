@@ -28,11 +28,15 @@ const genAI = new GoogleGenerativeAI(googleApiKey)
 
 // Fonction pour détecter quelle API utiliser
 const getPreferredAI = () => {
+  console.log('🔍 DEBUG: openaiApiKey exists:', !!openaiApiKey)
+  console.log('🔍 DEBUG: openai object exists:', !!openai)
+  
   if (openaiApiKey && openai) {
     console.log('🚀 Using OpenAI GPT-4 (Premium API)')
     return 'openai'
   }
   console.log('🔄 Using Google Gemini (Fallback API)')
+  console.log('⚠️ WARNING: OpenAI not available, using Google')
   return 'google'
 }
 
@@ -953,9 +957,13 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     // Système de génération avec fallback intelligent et logs détaillés
     let generatedText: string = ""
     const preferredAI = getPreferredAI()
+    
+    // 🚨 FORCE OPENAI SI DISPONIBLE pour éviter Google 503
+    const forceOpenAI = openaiApiKey && openai
+    console.log('🔧 FORCE OPENAI:', forceOpenAI)
 
     console.log('🎯 STARTING EBOOK GENERATION:')
-    console.log('- Preferred AI:', preferredAI)
+    console.log('- Preferred AI:', forceOpenAI ? 'openai (FORCED)' : preferredAI)
     console.log('- OpenAI Key available:', !!openaiApiKey)
     console.log('- Google Key available:', !!googleApiKey)
     console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
@@ -964,7 +972,7 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
     console.log('- Prompt length:', prompt.length, 'characters')
 
-    if (preferredAI === 'openai' && openai) {
+    if ((preferredAI === 'openai' || forceOpenAI) && openai) {
       console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
       
       try {
