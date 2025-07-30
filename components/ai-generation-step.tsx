@@ -56,7 +56,7 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
 
         // Génération du contenu via API route avec TIMEOUT
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout: Génération IA trop longue (60s)')), 60000)
+          setTimeout(() => reject(new Error('Timeout: Génération IA trop longue (90s)')), 90000)
         )
         
         const generationPromise = fetch('/api/generate-ebook', {

@@ -111,9 +111,9 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
     
     const getExactLength = (length: string, exactPages: number) => {
       const lengthConfig = {
-        court: { pages: 10, minPages: 5, maxPages: 15 },      // 5-15 pages (cible 10)
-        moyen: { pages: 27, minPages: 20, maxPages: 35 },     // 20-35 pages (cible 27)  
-        long: { pages: 47, minPages: 35, maxPages: 60 },      // 35-60 pages (cible 47)
+        court: { pages: 5, minPages: 3, maxPages: 8 },       // 3-8 pages (cible 5) - RÉDUIT
+        moyen: { pages: 12, minPages: 8, maxPages: 18 },     // 8-18 pages (cible 12) - RÉDUIT
+        long: { pages: 25, minPages: 18, maxPages: 35 },     // 18-35 pages (cible 25) - RÉDUIT
         exact: { pages: exactPages, minPages: exactPages, maxPages: exactPages }, // Pages exactes
       }
       
@@ -972,11 +972,12 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
     console.log('- Prompt length:', prompt.length, 'characters')
 
-    // 🚀 OPENAI GPT-4O UNIQUEMENT
-    console.log('🚀 Generating with OpenAI GPT-4o...')
+    // 🚀 OPENAI GPT-4.1-MINI UNIQUEMENT
+    console.log('🚀 Generating with OpenAI GPT-4.1-mini...')
+    const startTime = Date.now()
     
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
       messages: [
         {
           role: 'system',
@@ -987,14 +988,17 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
           content: prompt
         }
       ],
-      temperature: formData.genre === 'historique' ? 0.7 : 1.0,
-      max_tokens: 16384,
+      temperature: 0.7,
+      max_tokens: 8192,  // RÉDUIT pour vitesse
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
     })
 
     generatedText = completion.choices[0]?.message?.content || ''
-    
+    const endTime = Date.now()
+    const duration = endTime - startTime
+
+    console.log('⏱️ OpenAI Generation Time:', duration, 'ms')
     console.log('✅ OpenAI Response received - Length:', generatedText.length, 'characters')
     console.log('🔍 First 200 chars:', generatedText.substring(0, 200) + '...')
     console.log('🔍 Last 200 chars:', '...' + generatedText.substring(generatedText.length - 200))
