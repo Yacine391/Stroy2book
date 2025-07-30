@@ -72,12 +72,15 @@ const cleanContent = (content: string): string => {
     // 9. SUPPRIMER LES LIGNES VIDES AU DÉBUT ET À LA FIN
     .trim()
   
-  // 10. 🚨 VÉRIFICATION CRITIQUE: S'assurer qu'on a du contenu structuré
+  // 10. 🔧 SUPPRESSION DU # EN DÉBUT DE TITRE PRINCIPAL
+  cleaned = cleaned.replace(/^#\s+(.+)/m, '$1')
+  
+  // 11. 🚨 VÉRIFICATION CRITIQUE: S'assurer qu'on a du contenu structuré
   if (!cleaned.includes('# ')) {
     console.warn('⚠️ AUCUN TITRE DÉTECTÉ - Ajout d\'une structure minimale')
     // Si aucun titre détecté, ajouter au moins un titre principal
     if (cleaned.length > 0) {
-      cleaned = `# Guide Expert\n\n${cleaned}`
+      cleaned = `Guide Expert\n\n${cleaned}`  // SANS # au début
     }
   }
   
