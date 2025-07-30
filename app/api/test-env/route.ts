@@ -8,6 +8,7 @@ export async function GET() {
     openai_prefix: openaiKey ? openaiKey.substring(0, 10) + '...' : 'NOT_SET',
     google_removed: true,
     message: 'Google Gemini completely removed - OpenAI only',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cache_bust: Date.now() // Force nouveau déploiement
   });
 }
