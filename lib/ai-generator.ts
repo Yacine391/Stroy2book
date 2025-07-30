@@ -1136,15 +1136,8 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
       length: formData.length 
     })
 
-    // Contenu de fallback enrichi en cas d'erreur - Utiliser le contenu riche
-    console.log("🚨 USING RICH FALLBACK: Generating comprehensive content")
-    
-    return {
-      title: generateFallbackTitle(formData.idea),
-      author: formData.author || "Auteur IA",
-      content: generateFallbackContent(formData), // Utiliser le nouveau fallback riche
-      coverDescription: generateFallbackCoverDescription(formData),
-    }
+    // 🚨 FALLBACK SUPPRIMÉ - FORCER L'AFFICHAGE DE L'ERREUR RÉELLE
+    throw new Error(`IA GENERATION FAILED: ${error instanceof Error ? error.message : 'Unknown error'}. Check API keys and configuration.`)
   }
 }
 
