@@ -54,8 +54,14 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
           await new Promise((resolve) => setTimeout(resolve, 2000 + Math.random() * 2000))
         }
 
-        // Génération du contenu avec l'IA
-        const content = await generateEbook(formData)
+        // Génération du contenu avec l'IA avec TIMEOUT
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout: Génération IA trop longue (60s)')), 60000)
+        )
+        
+        const generationPromise = generateEbook(formData)
+        
+        const content = await Promise.race([generationPromise, timeoutPromise]) as { title: string; author: string; content: string; coverDescription: string; }
         setGeneratedContent(content)
         setIsGenerating(false)
 
@@ -64,8 +70,14 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
           onComplete(content)
         }, 1500)
       } catch (error) {
-        console.error("Erreur lors de la génération:", error)
+        console.error("❌ ERREUR GÉNÉRATION IA:", error)
         setIsGenerating(false)
+        
+        // Afficher l'erreur à l'utilisateur
+        alert(`Erreur de génération IA: ${error instanceof Error ? error.message : 'Erreur inconnue'}. Vérifiez la console pour plus de détails.`)
+        
+        // Retourner à l'étape précédente
+        onBack()
       }
     }
 

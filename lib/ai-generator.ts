@@ -956,10 +956,13 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
 
     console.log('🎯 STARTING EBOOK GENERATION:')
     console.log('- Preferred AI:', preferredAI)
+    console.log('- OpenAI Key available:', !!openaiApiKey)
+    console.log('- Google Key available:', !!googleApiKey)
     console.log('- Target length:', lengthConfig.minWords, '-', lengthConfig.maxWords, 'words')
     console.log('- Target chapters:', lengthConfig.chaptersCount)
     console.log('- Genre:', formData.genre)
     console.log('- Idea:', formData.idea?.substring(0, 100) + '...')
+    console.log('- Prompt length:', prompt.length, 'characters')
 
     if (preferredAI === 'openai' && openai) {
       console.log('🚀 Utilisation d\'OpenAI GPT-4o (API Premium)')
