@@ -111,9 +111,9 @@ export async function generateEbook(formData: FormData): Promise<GeneratedConten
     
     const getExactLength = (length: string, exactPages: number) => {
       const lengthConfig = {
-        court: { pages: 5, minPages: 3, maxPages: 8 },       // 3-8 pages (cible 5) - RÉDUIT
-        moyen: { pages: 12, minPages: 8, maxPages: 18 },     // 8-18 pages (cible 12) - RÉDUIT
-        long: { pages: 25, minPages: 18, maxPages: 35 },     // 18-35 pages (cible 25) - RÉDUIT
+        court: { pages: 3, minPages: 2, maxPages: 4 },       // 2-4 pages (cible 3) - ULTRA RÉDUIT
+        moyen: { pages: 5, minPages: 4, maxPages: 7 },       // 4-7 pages (cible 5) - ULTRA RÉDUIT  
+        long: { pages: 8, minPages: 6, maxPages: 12 },       // 6-12 pages (cible 8) - ULTRA RÉDUIT
         exact: { pages: exactPages, minPages: exactPages, maxPages: exactPages }, // Pages exactes
       }
       
