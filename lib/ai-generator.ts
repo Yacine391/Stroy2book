@@ -853,11 +853,8 @@ Créée le : ${uniqueElements.timeSignature}
 
 ${genreInstructions}
 
-⚠️ EXIGENCES D'UNICITÉ ABSOLUE - JAMAIS RÉPÉTÉE ⚠️ :
-Cette histoire DOIT être absolument UNIQUE et ne JAMAIS ressembler à une autre histoire générée.
-
-TECHNIQUES D'ORIGINALITÉ OBLIGATOIRES :
-- Commence par un élément complètement INATTENDU lié à l'idée
+EXIGENCES :
+- Contenu UNIQUE et original
 - Développe des PERSONNAGES avec des particularités physiques/mentales uniques
 - Crée un CONFLIT CENTRAL que personne d'autre n'aurait imaginé
 - Invente des LIEUX avec des caractéristiques géographiques/architecturales originales
@@ -989,7 +986,7 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
         }
       ],
       temperature: 0.7,
-      max_tokens: 8192,  // RÉDUIT pour vitesse
+      max_tokens: 4096,  // OPTIMISÉ pour Vercel
       presence_penalty: 0.1,
       frequency_penalty: 0.1,
     })

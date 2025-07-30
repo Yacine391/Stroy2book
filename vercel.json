@@ -9,7 +9,7 @@
   },
   "functions": {
     "app/**/*.{tsx,ts,jsx,js}": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "public": true,
