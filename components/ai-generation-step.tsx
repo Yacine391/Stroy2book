@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Brain, BookOpen, Sparkles, CheckCircle } from "lucide-react"
-import { generateEbook } from "@/lib/ai-generator"
+// Plus d'import direct - utilise API route
 
 interface AIGenerationStepProps {
   formData: {
@@ -54,12 +54,26 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
           await new Promise((resolve) => setTimeout(resolve, 2000 + Math.random() * 2000))
         }
 
-        // Génération du contenu avec l'IA avec TIMEOUT
+        // Génération du contenu via API route avec TIMEOUT
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout: Génération IA trop longue (60s)')), 60000)
         )
         
-        const generationPromise = generateEbook(formData)
+        const generationPromise = fetch('/api/generate-ebook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        }).then(async (response) => {
+          const result = await response.json()
+          
+          if (!result.success) {
+            throw new Error(result.error || 'API generation failed')
+          }
+          
+          return result.data
+        })
         
         const content = await Promise.race([generationPromise, timeoutPromise]) as { title: string; author: string; content: string; coverDescription: string; }
         setGeneratedContent(content)
