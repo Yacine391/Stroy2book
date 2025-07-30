@@ -23,29 +23,68 @@ interface EbookData {
   length?: string
 }
 
-// Fonction de nettoyage du contenu - PRÉSERVER LES RETOURS À LA LIGNE ET TITRES MARKDOWN
+// 🔥 FONCTION DE NETTOYAGE ROBUSTE - CORRIGE TOUS LES PROBLÈMES IDENTIFIÉS
 const cleanContent = (content: string): string => {
-  return content
-    // Supprimer les signatures d'unicité HTML
+  console.log('🧽 NETTOYAGE ROBUSTE - Longueur entrée:', content.length)
+  
+  let cleaned = content
+    // 1. SUPPRIMER LES ÉLÉMENTS PARASITES
     .replace(/<!--\s*Signature d'unicité:.*?-->/gi, '')
-    // Supprimer les mentions de nombre de mots entre parenthèses
     .replace(/\(\d+\s*mots?\)/gi, '')
-    // Supprimer les astérisques autour des titres SAUF dans les listes
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    // NE PAS supprimer les dièses - ils sont nécessaires pour détecter les titres !
+    .replace(/environ\s+\d+\s+mots?/gi, '')
     
-    // 🚨 CORRECTION MAJEURE : PRÉSERVER LES RETOURS À LA LIGNE
-    // Nettoyer les espaces multiples EN LIGNE seulement (pas entre les lignes)
-    .replace(/[ \t]+/g, ' ')  // Seulement espaces et tabs en excès
+    // 2. SUPPRIMER LES MÉTA-DONNÉES DU DÉBUT
+    .replace(/^.*?par\s+\w+\s*$/gm, '')           // "par yacine"
+    .replace(/^.*?Généré par.*?AI\s*$/gm, '')      // "Généré par Story2book AI"
+    .replace(/^\s*\d+\s*$/gm, '')                  // Numéros de page isolés
     
-    // Nettoyer les espaces en fin de ligne
-    .replace(/[ \t]+$/gm, '')
+    // 3. CORRIGER LES MARKDOWN MAL FORMATÉS
+    .replace(/\*\*(.*?)\*\*/g, '$1')              // **texte** → texte
+    .replace(/\*([^*]+)\*/g, '$1')                // *texte* → texte
     
-    // Supprimer les lignes vides multiples (max 2 lignes vides)
-    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    // 4. 🚨 CORRECTION CRITIQUE: CONVERTIR ## EN # POUR LES TITRES PRINCIPAUX
+    .replace(/^##\s+/gm, '# ')                    // ## Titre → # Titre
+    .replace(/^###\s+/gm, '## ')                  // ### Titre → ## Titre
     
-    // S'assurer qu'il n'y a pas d'espaces avant les titres markdown
-    .replace(/^\s*(#+ )/gm, '$1')
+    // 5. CORRIGER LES BLOCS DE TEXTE SANS RETOURS À LA LIGNE
+    // Ajouter des retours à la ligne avant les titres cachés dans le texte
+    .replace(/(\w)\s*\*\*\s*(Chapitre\s+\d+[^*]*)\*\*/g, '$1\n\n# $2')
+    .replace(/(\w)\s*(Chapitre\s+\d+\s*[:\-])/g, '$1\n\n# $2')
+    .replace(/(\w)\s*(Introduction\s*:)/g, '$1\n\n# $2')
+    .replace(/(\w)\s*(Conclusion\s*:)/g, '$1\n\n# $2')
+    
+    // 🚨 CORRECTION CRITIQUE: Séparer les chapitres même sans ** - PATTERN PLUS ROBUSTE
+    .replace(/(\w|\.)\s+(Chapitre\s+\d+\s*:)/g, '$1\n\n# $2')
+    .replace(/(\w|\.)\s+(Chapitre\s+\d+\s*\-)/g, '$1\n\n# $2')
+    .replace(/(\w|\.)\s+(Conclusion\s*:)/g, '$1\n\n# $2')
+    .replace(/(\w|\.)\s+(Introduction\s*:)/g, '$1\n\n# $2')
+    
+    // 6. NETTOYER LES ESPACES (en préservant les retours à la ligne)
+    .replace(/[ \t]+/g, ' ')                      // Espaces multiples → 1 espace
+    .replace(/[ \t]+$/gm, '')                     // Espaces en fin de ligne
+    
+    // 7. NORMALISER LES LIGNES VIDES
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')           // Max 2 lignes vides
+    
+    // 8. ASSURER QUE LES TITRES SONT BIEN FORMATÉS
+    .replace(/^\s*(#+\s*)/gm, '$1')              // Supprimer espaces avant #
+    
+    // 9. SUPPRIMER LES LIGNES VIDES AU DÉBUT ET À LA FIN
+    .trim()
+  
+  // 10. 🚨 VÉRIFICATION CRITIQUE: S'assurer qu'on a du contenu structuré
+  if (!cleaned.includes('# ')) {
+    console.warn('⚠️ AUCUN TITRE DÉTECTÉ - Ajout d\'une structure minimale')
+    // Si aucun titre détecté, ajouter au moins un titre principal
+    if (cleaned.length > 0) {
+      cleaned = `# Guide Expert\n\n${cleaned}`
+    }
+  }
+  
+  console.log('✅ NETTOYAGE TERMINÉ - Longueur sortie:', cleaned.length)
+  console.log('📊 Titres détectés:', (cleaned.match(/^# /gm) || []).length)
+  
+  return cleaned
 }
 
 export async function generatePDF(ebookData: EbookData): Promise<Blob> {
