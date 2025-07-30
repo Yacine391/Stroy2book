@@ -755,7 +755,9 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
         'technique', 'conseil', 'formation', 'éducation', 'enseignement',
         'jardinage', 'cuisine', 'business', 'développement', 'science',
         'médecine', 'technologie', 'informatique', 'finance', 'marketing',
-        'chronologie', 'frise', 'documentation', 'manuel', 'cours'
+        'chronologie', 'frise', 'documentation', 'manuel', 'cours',
+        'islam', 'religion', 'coran', 'islamique', 'musulman', 'prière',
+        'enfants', 'bases', 'fondements', 'spirituel', 'foi', 'croyance'
       ]
       
       return genre === 'autres' || genre === 'developpement-personnel' || 
@@ -775,6 +777,10 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
         return "Réussir en Affaires : Stratégies Gagnantes d'Entrepreneurs"
       } else if (ideaLower.includes('programmation') || ideaLower.includes('code')) {
         return "Maîtriser la Programmation : De Débutant à Expert"
+      } else if (ideaLower.includes('islam') && ideaLower.includes('enfants')) {
+        return "Les Trésors de l'Islam : Guide Éducatif pour Enfants"
+      } else if (ideaLower.includes('islam') || ideaLower.includes('religion')) {
+        return "Découverte de l'Islam : Guide Complet et Accessible"
       } else if (ideaLower.includes('histoire')) {
         const subject = idea.match(/histoire de (la |le |les |l')?(.+)/i)?.[2] || idea.replace(/.*histoire de? /i, '')
         return `${subject.charAt(0).toUpperCase() + subject.slice(1)} : Un Voyage à Travers l'Histoire`
@@ -831,7 +837,19 @@ Si Cuisine → Techniques, ingrédients, recettes, astuces de chef
 Si Business → Stratégies, méthodes, outils, études de cas
 Si Science → Explications techniques, théories, applications
 Si Technologie → Fonctionnement, usages, évolutions
-→ Pour TOUT autre sujet : Expertise adaptée automatiquement`
+Si Islam/Religion → Enseignements fondamentaux, pratiques, valeurs, adaptés à l'âge
+Si Enfants → Langage simple, exemples concrets, approche pédagogique
+→ Pour TOUT autre sujet : Expertise adaptée automatiquement
+
+🕌 SPÉCIALISATION ISLAM POUR ENFANTS :
+Si le sujet concerne l'Islam pour enfants :
+- Utilise un langage simple et accessible
+- Explique les concepts avec des exemples du quotidien
+- Structure : Bases de la foi, Pratiques quotidiennes, Valeurs morales
+- Inclus des histoires éducatives (prophètes, exemples positifs)
+- Évite les sujets complexes ou controversés
+- Focus sur l'amour, la bonté, le respect, la famille
+- Chapitres : Les 5 piliers, La prière, Le Coran, Les bonnes actions, Les prophètes`
 
     :
 
