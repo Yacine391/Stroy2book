@@ -747,7 +747,95 @@ ${Array.from({length: lengthConfig.chaptersCount}, (_, i) =>
 
     const genreInstructions = getGenreSpecificInstructions(formData.genre, formData.idea, formData.targetAudience, uniqueElements)
 
-    const prompt = `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
+    // 🧠 SYSTÈME DE PROMPT INTELLIGENT ADAPTATIF
+    const isNonFictionRequest = (idea: string, genre: string): boolean => {
+      const ideaLower = idea.toLowerCase()
+      const nonFictionKeywords = [
+        'histoire', 'guide', 'apprendre', 'comment', 'tutoriel', 'méthode',
+        'technique', 'conseil', 'formation', 'éducation', 'enseignement',
+        'jardinage', 'cuisine', 'business', 'développement', 'science',
+        'médecine', 'technologie', 'informatique', 'finance', 'marketing',
+        'chronologie', 'frise', 'documentation', 'manuel', 'cours'
+      ]
+      
+      return genre === 'autres' || genre === 'developpement-personnel' || 
+             nonFictionKeywords.some(keyword => ideaLower.includes(keyword))
+    }
+
+    const generateSmartTitle = (idea: string): string => {
+      const ideaLower = idea.toLowerCase()
+      
+      if (ideaLower.includes('histoire') && ideaLower.includes('algerie')) {
+        return "L'Algérie à Travers les Siècles : Une Histoire Fascinante"
+      } else if (ideaLower.includes('jardinage')) {
+        return "Jardiner Comme un Pro : Guide Complet du Jardinier Moderne"
+      } else if (ideaLower.includes('cuisine')) {
+        return "Secrets de Chef : Maîtrisez l'Art Culinaire"
+      } else if (ideaLower.includes('business') || ideaLower.includes('entreprise')) {
+        return "Réussir en Affaires : Stratégies Gagnantes d'Entrepreneurs"
+      } else if (ideaLower.includes('programmation') || ideaLower.includes('code')) {
+        return "Maîtriser la Programmation : De Débutant à Expert"
+      } else if (ideaLower.includes('histoire')) {
+        const subject = idea.match(/histoire de (la |le |les |l')?(.+)/i)?.[2] || idea.replace(/.*histoire de? /i, '')
+        return `${subject.charAt(0).toUpperCase() + subject.slice(1)} : Un Voyage à Travers l'Histoire`
+      } else {
+        // Générer un titre accrocheur basé sur les mots-clés principaux
+        const words = idea.split(' ').filter(w => w.length > 3)
+        const mainTopic = words.slice(-2).join(' ')
+        return `Maîtriser ${mainTopic.charAt(0).toUpperCase() + mainTopic.slice(1)} : Guide Expert Complet`
+      }
+    }
+
+    const isNonFiction = isNonFictionRequest(formData.idea, formData.genre)
+    const smartTitle = generateSmartTitle(formData.idea)
+
+    const prompt = isNonFiction ? 
+    `🧠 Tu es un EXPERT UNIVERSEL et écrivain professionnel spécialisé dans la création de guides et contenus éducatifs de haute qualité.
+
+🎯 MISSION : Créer un guide expert complet sur le sujet demandé
+
+📋 ANALYSE DE LA DEMANDE :
+IDÉE PRINCIPALE : "${formData.idea}"
+TITRE SUGGÉRÉ : "${smartTitle}"
+${formData.genre ? `GENRE : ${formData.genre}` : ""}
+${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
+LONGUEUR REQUISE : ${targetLength}
+AUTEUR : ${formData.author || "Expert IA"}
+
+🔥 INSTRUCTIONS EXPERTES UNIVERSELLES :
+1. ANALYSE le sujet demandé pour devenir instantanément expert dans ce domaine
+2. GÉNÈRE un titre accrocheur et professionnel (suggestion: "${smartTitle}")
+3. CRÉE un contenu de qualité expert avec informations précises et utiles
+4. STRUCTURE avec Introduction + Chapitres thématiques + Conclusion pratique
+5. ADAPTE le ton au domaine (scientifique, historique, pratique, technique, etc.)
+
+✅ FORMAT EXPERT REQUIS :
+- Introduction engageante qui pose le contexte et les enjeux
+- Chapitres avec contenus techniques/informatifs approfondis
+- Conseils pratiques et actionables
+- Exemples concrets et cas d'usage
+- Informations factuelles et vérifiables
+- Conclusion avec résumé et perspectives
+
+❌ INTERDICTIONS ABSOLUES :
+- Personnages fictifs ou dialogues inventés
+- Histoires narratives avec intrigue
+- Références personnelles ("ma grand-mère", "mon expérience")
+- Contenu générique ou superficiel
+- Titres fades comme "L'Histoire de..." ou "Introduction à..."
+
+🎯 SPÉCIALISATION AUTOMATIQUE :
+Si Histoire → Chronologie détaillée avec dates, événements, personnages historiques réels
+Si Jardinage → Techniques, outils, plants, saisons, conseils pratiques
+Si Cuisine → Techniques, ingrédients, recettes, astuces de chef
+Si Business → Stratégies, méthodes, outils, études de cas
+Si Science → Explications techniques, théories, applications
+Si Technologie → Fonctionnement, usages, évolutions
+→ Pour TOUT autre sujet : Expertise adaptée automatiquement`
+
+    :
+
+    `Tu es un écrivain professionnel français expert en création d'ebooks. Crée un ebook complet et captivant basé sur cette idée :
 
 IDÉE PRINCIPALE : "${formData.idea}"
 ${formData.genre ? `GENRE : ${formData.genre}` : ""}
@@ -755,13 +843,7 @@ ${formData.targetAudience ? `PUBLIC CIBLE : ${formData.targetAudience}` : ""}
 LONGUEUR EXACTE REQUISE : ${targetLength}
 AUTEUR : ${formData.author || "Auteur IA"}
 
-${formData.genre === 'developpement-personnel' ? `
-⚠️ ATTENTION SPÉCIALE DÉVELOPPEMENT PERSONNEL ⚠️
-Tu vas créer un GUIDE PRATIQUE, PAS UNE FICTION !
-- INTERDICTION ABSOLUE de créer des personnages, dialogues ou histoires inventées
-- SEULEMENT des conseils pratiques, exercices et méthodes concrètes
-- Format : Introduction + Chapitres thématiques + Exercices + Plan d'action
-` : `🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}`}
+🔥 SIGNATURE D'UNICITÉ DE CETTE HISTOIRE : ${uniqueElements.uniqueId}
 Créée le : ${uniqueElements.timeSignature}
 
 ${genreInstructions}
