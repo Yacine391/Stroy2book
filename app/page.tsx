@@ -10,6 +10,7 @@ import { BookOpen, Palette, Upload, Sparkles, Wand2, Brain } from "lucide-react"
 import TextInputStep from "@/components/text-input-step"
 import EbookGenerator from "@/components/ebook-generator"
 import ImageUpload from "@/components/image-upload"
+import CoverGenerator from "@/components/cover-generator"
 import AIGenerationStep from "@/components/ai-generation-step"
 import EbookPreviewEditor from "@/components/ebook-preview-editor"
 
@@ -412,6 +413,16 @@ export default function HomePage() {
                   <ImageUpload onImageUpload={handleImageUpload} />
                   {formData.coverImage && (
                     <p className="text-sm text-green-600">✓ Image sélectionnée: {formData.coverImage.name}</p>
+                  )}
+                  {!formData.coverImage && (
+                    <div className="mt-4">
+                      <CoverGenerator
+                        title={generatedContent.title || 'Titre de votre ebook'}
+                        author={formData.author}
+                        hasWatermark={formData.hasWatermark}
+                        onUseAsCover={(file) => setFormData((prev) => ({ ...prev, coverImage: file }))}
+                      />
+                    </div>
                   )}
                 </div>
 
