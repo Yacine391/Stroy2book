@@ -1,15 +1,15 @@
 {
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
-    }
-  },
-  "env": {
-    "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
-  },
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
   "functions": {
-    "app/**/*.{tsx,ts,jsx,js}": {
+    "app/**/*.{js,ts,jsx,tsx}": {
       "maxDuration": 30
     }
+  },
+  "regions": ["cdg1"],
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
   }
 }

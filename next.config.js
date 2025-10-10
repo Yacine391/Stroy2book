@@ -1,17 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // App Router is stable in Next.js 15
-  output: 'standalone',
+  // Remove standalone output for Vercel (Vercel handles this automatically)
   
-  // Image optimization
+  // Image optimization for Vercel
   images: {
     domains: ['via.placeholder.com'],
-    unoptimized: true // For static export compatibility
+    // Remove unoptimized for better Vercel performance
   },
   
   // Environment variables
   env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://hb-creator.vercel.app',
   },
   
   // Webpack configuration for better builds
@@ -27,7 +26,8 @@ const nextConfig = {
     return config
   },
   
-  // Performance optimizations (swcMinify is enabled by default in Next.js 15)
+  // Transpile packages for better compatibility
+  transpilePackages: ['@radix-ui/react-progress'],
   
   // Headers for security
   async headers() {
