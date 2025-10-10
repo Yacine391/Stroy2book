@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Download, Eye } from "lucide-react"
 import EbookPreview from "@/components/ebook-preview"
 import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
+import { exportEPUB, exportDOCX } from "@/lib/epub-docx-export"
 
 interface EbookGeneratorProps {
   formData: {
@@ -24,9 +25,11 @@ interface EbookGeneratorProps {
 
 export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps) {
   const [isDownloading, setIsDownloading] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   const handleDownload = async () => {
     setIsDownloading(true)
+    setProgress(10)
 
     try {
       // Générer le PDF avec le contenu réel ET paramètres de longueur
@@ -37,21 +40,59 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
         backgroundColor: formData.backgroundColor,
         fontFamily: formData.fontFamily,
         hasWatermark: formData.hasWatermark,
+        coverImage: formData.coverImage as any,
         exactPages: formData.exactPages,
         length: formData.length
       })
 
+      setProgress(70)
       // Créer un nom de fichier propre
       const filename = `${formData.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
       
       // Télécharger le PDF
       downloadPDF(pdfBlob, filename)
+      setProgress(100)
       
     } catch (error) {
       console.error('Erreur lors de la génération du PDF:', error)
       alert('Erreur lors de la génération du PDF. Veuillez réessayer.')
     } finally {
       setIsDownloading(false)
+      setTimeout(() => setProgress(0), 800)
+    }
+  }
+
+  const handleExportEPUB = async () => {
+    setIsDownloading(true)
+    setProgress(10)
+    try {
+      const blob = await exportEPUB(formData.title, formData.author, formData.content)
+      setProgress(70)
+      downloadPDF(blob, `${formData.title.replace(/[^a-zA-Z0-9]/g, '_')}.epub` as any)
+      setProgress(100)
+    } catch (e) {
+      console.error(e)
+      alert('Erreur lors de l\'export EPUB')
+    } finally {
+      setIsDownloading(false)
+      setTimeout(() => setProgress(0), 800)
+    }
+  }
+
+  const handleExportDOCX = async () => {
+    setIsDownloading(true)
+    setProgress(10)
+    try {
+      const blob = await exportDOCX(formData.title, formData.author, formData.content)
+      setProgress(70)
+      downloadPDF(blob, `${formData.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx` as any)
+      setProgress(100)
+    } catch (e) {
+      console.error(e)
+      alert('Erreur lors de l\'export DOCX')
+    } finally {
+      setIsDownloading(false)
+      setTimeout(() => setProgress(0), 800)
     }
   }
 
@@ -85,6 +126,11 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
             Votre ebook "<strong>{formData.title}</strong>" a été généré avec succès! Vous pouvez maintenant le
             prévisualiser et le télécharger au format PDF.
           </p>
+          {isDownloading && (
+            <div className="w-full bg-green-100 h-2 rounded-full overflow-hidden mb-4">
+              <div className="h-2 bg-green-600 transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Button onClick={handleDownload} disabled={isDownloading} className="flex items-center space-x-2">
@@ -100,6 +146,9 @@ export default function EbookGenerator({ formData, onBack }: EbookGeneratorProps
                 </>
               )}
             </Button>
+
+            <Button variant="outline" onClick={handleExportEPUB} disabled={isDownloading}>Exporter EPUB</Button>
+            <Button variant="outline" onClick={handleExportDOCX} disabled={isDownloading}>Exporter DOCX</Button>
 
             <Button variant="outline" onClick={onBack}>
               Créer un nouvel ebook

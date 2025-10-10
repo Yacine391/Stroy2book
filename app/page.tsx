@@ -11,6 +11,8 @@ import EbookGenerator from "@/components/ebook-generator"
 import ImageUpload from "@/components/image-upload"
 import AIGenerationStep from "@/components/ai-generation-step"
 import EbookPreviewEditor from "@/components/ebook-preview-editor"
+import { useEffect } from "react"
+import { autosaveProject, listProjects, duplicateProject, deleteProject } from "@/lib/utils"
 
 export default function HomePage() {
   const [formData, setFormData] = useState({
@@ -32,6 +34,7 @@ export default function HomePage() {
     coverDescription: "",
   })
   const [currentStep, setCurrentStep] = useState<"form" | "generating" | "preview" | "download">("form")
+  const [projects, setProjects] = useState<Array<{ id: string; title: string; author: string; updatedAt: number }>>([])
 
   const genres = [
     { name: "Roman", value: "roman" },
@@ -130,6 +133,26 @@ export default function HomePage() {
     setCurrentStep("preview")
   }
 
+  // Barre de progression simple pour export (état local)
+  const [exportProgress, setExportProgress] = useState<number>(0)
+
+  // Autosave every 2 minutes
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (generatedContent.title || formData.idea) {
+        autosaveProject({
+          id: generatedContent.title || `projet-${Date.now()}`,
+          title: generatedContent.title || formData.idea.slice(0, 30),
+          author: formData.author,
+          content: generatedContent.content,
+          updatedAt: Date.now(),
+        })
+        setProjects(listProjects())
+      }
+    }, 120000)
+    return () => clearInterval(id)
+  }, [formData, generatedContent])
+
   const handleRegenerate = async (newIdea: string) => {
     // Mettre à jour l'idée et relancer la génération
     setFormData(prev => ({ ...prev, idea: newIdea }))
@@ -174,7 +197,7 @@ export default function HomePage() {
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Story2book AI
+                HB Creator
               </h1>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600 hidden sm:flex">
@@ -187,6 +210,38 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tableau de bord des projets sauvegardés */}
+        {projects.length > 0 && currentStep === 'form' && (
+          <Card className="mb-8 border-2 border-gray-100">
+            <CardHeader>
+              <CardTitle>Projets sauvegardés</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 text-sm">
+                {projects.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{p.title}</div>
+                      <div className="text-gray-500">{new Date(p.updatedAt).toLocaleString()}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={() => {
+                        const dup = duplicateProject(p.id)
+                        if (dup) setProjects(listProjects())
+                      }}>Dupliquer</Button>
+                      <Button size="sm" variant="destructive" onClick={() => {
+                        if (confirm('Supprimer ce projet ?')) {
+                          deleteProject(p.id)
+                          setProjects(listProjects())
+                        }
+                      }}>Supprimer</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
         {currentStep === "form" && (
           <div className="space-y-8">
             {/* Hero Section */}
@@ -380,7 +435,7 @@ export default function HomePage() {
                   <div className="space-y-2">
                     <Label className="flex items-center space-x-2">
                       <span className="text-lg">💧</span>
-                      <span>Filigrane</span>
+                      <span>Filigrane (HB Creator en gratuit)</span>
                     </Label>
                     <div className="flex items-center space-x-3">
                       <input
@@ -391,7 +446,7 @@ export default function HomePage() {
                         className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                       />
                       <label htmlFor="watermark" className="text-sm text-gray-700">
-                        Ajouter un filigrane "Story2book AI" au PDF
+                        Ajouter un filigrane "HB Creator" au PDF
                       </label>
                     </div>
                   </div>
@@ -484,7 +539,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <BookOpen className="h-6 w-6 text-purple-600" />
-                <span className="text-lg font-semibold">Story2book AI</span>
+                <span className="text-lg font-semibold">HB Creator</span>
               </div>
               <p className="text-gray-600 text-sm">
                 Le premier générateur d'ebooks français alimenté par l'Intelligence Artificielle.
@@ -521,7 +576,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t pt-8 mt-8 text-center text-sm text-gray-500">
-            <p>&copy; 2024 Story2book AI. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
+            <p>&copy; 2024 HB Creator. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
           </div>
         </div>
       </footer>

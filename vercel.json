@@ -1,11 +1,11 @@
 {
   "build": {
     "env": {
-      "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
+      "NEXT_PUBLIC_APP_URL": "https://hb-creator.vercel.app"
     }
   },
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://story2book-ai.vercel.app"
+    "NEXT_PUBLIC_APP_URL": "https://hb-creator.vercel.app"
   },
   "functions": {
     "app/**/*.{tsx,ts,jsx,js}": {
