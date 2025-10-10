@@ -149,7 +149,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     pdf.setTextColor(220, 220, 220) // Gris très clair
     
     // Calculer position centrale
-    const watermarkText = 'Story2book AI'
+    const watermarkText = 'HB Creator'
     const textWidth = pdf.getTextWidth(watermarkText)
     const x = (pageWidth - textWidth) / 2
     const y = pageHeight / 2
@@ -207,7 +207,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   pdf.setFont(selectedFont, 'italic')
   pdf.setFontSize(10)
   pdf.setTextColor(150, 150, 150)
-  const signature = 'Généré par Story2book AI'
+  const signature = 'Généré par HB Creator'
   const signatureWidth = pdf.getTextWidth(signature)
   pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
 

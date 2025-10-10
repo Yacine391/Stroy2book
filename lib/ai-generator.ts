@@ -1313,7 +1313,7 @@ Cette conclusion marque non pas une fin, mais un nouveau commencement, car chaqu
 
 ---
 
-*Ebook complet généré avec Story2book AI - Votre idée transformée en récit captivant*
+*Ebook complet généré avec HB Creator - Votre idée transformée en récit captivant*
 
 **Statistiques de cette création :**
 - ${config.chapters + 2} sections développées
