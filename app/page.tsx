@@ -174,7 +174,7 @@ export default function HomePage() {
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Story2book AI
+                HB Creator
               </h1>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600 hidden sm:flex">
@@ -391,7 +391,7 @@ export default function HomePage() {
                         className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                       />
                       <label htmlFor="watermark" className="text-sm text-gray-700">
-                        Ajouter un filigrane "Story2book AI" au PDF
+                        Ajouter un filigrane "HB Creator" au PDF
                       </label>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <BookOpen className="h-6 w-6 text-purple-600" />
-                <span className="text-lg font-semibold">Story2book AI</span>
+                <span className="text-lg font-semibold">HB Creator</span>
               </div>
               <p className="text-gray-600 text-sm">
                 Le premier générateur d'ebooks français alimenté par l'Intelligence Artificielle.
@@ -521,7 +521,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t pt-8 mt-8 text-center text-sm text-gray-500">
-            <p>&copy; 2024 Story2book AI. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
+            <p>&copy; 2024 HB Creator. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
           </div>
         </div>
       </footer>
