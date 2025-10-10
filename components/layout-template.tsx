@@ -268,7 +268,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
     setLayoutSettings(prev => ({
       ...prev,
       [category]: {
-        ...prev[category],
+        ...(prev[category] as any),
         [field]: value
       }
     }))
