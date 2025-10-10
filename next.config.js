@@ -8,10 +8,7 @@ const nextConfig = {
     // Remove unoptimized for better Vercel performance
   },
   
-  // Environment variables
-  env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'https://hb-creator.vercel.app',
-  },
+  // Environment variables - Optional, fallback handled in layout.tsx
   
   // Webpack configuration for better builds
   webpack: (config, { isServer }) => {
