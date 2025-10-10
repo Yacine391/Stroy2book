@@ -446,6 +446,7 @@ export default function HomePage() {
               title: generatedContent.title,
               author: generatedContent.author,
               content: generatedContent.content,
+              inputText: formData.inputText,
               backgroundColor: formData.backgroundColor,
               coverImage: formData.coverImage,
               idea: formData.idea,

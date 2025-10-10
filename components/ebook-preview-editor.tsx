@@ -15,6 +15,7 @@ interface EbookPreviewEditorProps {
     title: string
     author: string
     content: string
+    inputText: string
     backgroundColor: string
     fontFamily: string
     hasWatermark: boolean
