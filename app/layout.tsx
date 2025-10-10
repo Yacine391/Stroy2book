@@ -6,8 +6,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'),
-  title: 'HB Creator - Générateur d\'ebooks par IA',
-  description: 'Créez des ebooks professionnels en quelques clics grâce à l\'Intelligence Artificielle. Transformez vos idées en livres numériques.',
+  title: 'HB Creator v2.0 - Générateur d\'ebooks par IA',
+  description: 'Créez des ebooks professionnels avec interface adaptative. Transformez vos idées en livres numériques avec notre workflow intelligent.',
   keywords: 'ebook, générateur, IA, intelligence artificielle, livre numérique, écriture automatique',
   authors: [{ name: 'HB Creator' }],
   openGraph: {
