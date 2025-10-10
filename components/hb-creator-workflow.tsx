@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, Circle, ArrowRight, BookOpen, Sparkles } from "lucide-react"
+import { CheckCircle, Circle, ArrowRight, BookOpen, Sparkles, MoreVertical, User, LogOut, Settings, FolderOpen, FileText } from "lucide-react"
 
 // Import des composants d'étapes
 import TextInputStep from "./text-input-step"
@@ -63,6 +63,49 @@ interface WorkflowData {
 export default function HBCreatorWorkflow() {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('welcome')
   const [workflowData, setWorkflowData] = useState<WorkflowData>({})
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
+  // Charger l'utilisateur au démarrage
+  useEffect(() => {
+    loadCurrentUser()
+  }, [])
+
+  // Fermer le menu utilisateur quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserMenu) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showUserMenu])
+
+  // Fonction pour charger l'utilisateur connecté
+  const loadCurrentUser = () => {
+    try {
+      const savedUser = localStorage.getItem('hb-creator-user')
+      if (savedUser) {
+        const userData = JSON.parse(savedUser)
+        setCurrentUser(userData)
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement de l\'utilisateur:', err)
+    }
+  }
+
+  // Fonction de déconnexion
+  const handleLogout = () => {
+    localStorage.removeItem('hb-creator-user')
+    localStorage.removeItem('hb-creator-subscription')
+    setCurrentUser(null)
+    setShowUserMenu(false)
+    setCurrentStep('welcome')
+  }
 
   // Configuration des étapes
   const steps = [
@@ -146,6 +189,7 @@ export default function HBCreatorWorkflow() {
 
   const handleSecurityComplete = (data: any) => {
     setWorkflowData(prev => ({ ...prev, userAuth: data }))
+    setCurrentUser(data.user) // Mettre à jour l'utilisateur actuel
     goToNextStep()
   }
 
@@ -158,50 +202,132 @@ export default function HBCreatorWorkflow() {
             <BookOpen className="h-6 w-6 text-purple-600" />
             <h1 className="text-xl font-bold text-gray-900">HB Creator</h1>
           </div>
-          <div className="text-sm text-gray-600">
-            Étape {getCurrentStepIndex() + 1} sur {steps.length}
+          
+          <div className="flex items-center space-x-4">
+            {!currentUser && (
+              <>
+                <div className="text-sm text-gray-600 hidden sm:block">
+                  Étape {getCurrentStepIndex() + 1} sur {steps.length}
+                </div>
+                <Button
+                  onClick={() => goToStep('security')}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden sm:inline">Se connecter</span>
+                </Button>
+              </>
+            )}
+            
+            {currentUser && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  {currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt="Avatar" className="w-8 h-8 rounded-full" />
+                  ) : (
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-purple-600" />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium text-gray-700 hidden sm:inline">
+                    {currentUser.name}
+                  </span>
+                  <MoreVertical className="h-4 w-4 text-gray-500" />
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 animate-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{currentUser.name}</p>
+                      <p className="text-xs text-gray-500">{currentUser.email}</p>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        goToStep('project-management')
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                      <span>Projets sauvegardés</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        goToStep('security')
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Compte et sécurité</span>
+                    </button>
+                    
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Se déconnecter</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="mb-4">
-          <Progress value={getProgressPercentage()} className="h-2" />
-        </div>
+        {!currentUser && (
+          <>
+            <div className="mb-4">
+              <Progress value={getProgressPercentage()} className="h-2" />
+            </div>
 
-        <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-          {steps.map((step, index) => {
-            const isCompleted = index < getCurrentStepIndex()
-            const isCurrent = step.id === currentStep
-            const isAccessible = index <= getCurrentStepIndex()
+            <div className="flex items-center space-x-2 overflow-x-auto pb-2">
+              {steps.map((step, index) => {
+                const isCompleted = index < getCurrentStepIndex()
+                const isCurrent = step.id === currentStep
+                const isAccessible = index <= getCurrentStepIndex()
 
-            return (
-              <div key={step.id} className="flex items-center space-x-2 flex-shrink-0">
-                <button
-                  onClick={() => isAccessible && goToStep(step.id as WorkflowStep)}
-                  disabled={!isAccessible}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                    isCurrent
-                      ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                      : isCompleted
-                      ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                      : isAccessible
-                      ? 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                      : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isCompleted ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">{step.title}</span>
-                </button>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
-                )}
-              </div>
-            )
-          })}
-        </div>
+                return (
+                  <div key={step.id} className="flex items-center space-x-2 flex-shrink-0">
+                    <button
+                      onClick={() => isAccessible && goToStep(step.id as WorkflowStep)}
+                      disabled={!isAccessible}
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isCurrent
+                          ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                          : isCompleted
+                          ? 'bg-green-50 text-green-700 hover:bg-green-100'
+                          : isAccessible
+                          ? 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                          : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <Circle className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">{step.title}</span>
+                    </button>
+                    {index < steps.length - 1 && (
+                      <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -219,45 +345,102 @@ export default function HBCreatorWorkflow() {
       </div>
 
       <h1 className="text-5xl font-bold text-gray-900 mb-4">
-        Bienvenue dans HB Creator
+        {currentUser ? `Bonjour ${currentUser.name} !` : 'Bienvenue dans HB Creator'}
       </h1>
       
       <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-        Créez des ebooks professionnels en 8 étapes simples. Notre IA vous accompagne 
-        de la rédaction à la publication, en passant par les illustrations et la mise en page.
+        {currentUser 
+          ? 'Que souhaitez-vous faire aujourd\'hui ? Créez un nouvel ebook ou gérez vos projets existants.'
+          : 'Créez des ebooks professionnels en 8 étapes simples. Notre IA vous accompagne de la rédaction à la publication, en passant par les illustrations et la mise en page.'
+        }
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        {[
-          { icon: "📝", title: "Saisie du texte", desc: "Importez ou rédigez votre contenu" },
-          { icon: "🤖", title: "IA avancée", desc: "Améliorez avec l'intelligence artificielle" },
-          { icon: "🎨", title: "Illustrations", desc: "Générez des images uniques" },
-          { icon: "📚", title: "Export pro", desc: "PDF, EPUB, DOCX de qualité" }
-        ].map((feature, index) => (
-          <Card key={index} className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl mb-3">{feature.icon}</div>
-              <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-              <p className="text-sm text-gray-600">{feature.desc}</p>
+      {currentUser ? (
+        // Interface pour utilisateurs connectés
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-purple-200"
+            onClick={goToNextStep}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Créer un ebook</h3>
+              <p className="text-gray-600">Démarrez un nouveau projet d'ebook avec l'IA</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      <div className="space-y-4">
-        <Button
-          onClick={goToNextStep}
-          size="lg"
-          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg px-8 py-4"
-        >
-          <Sparkles className="h-5 w-5 mr-2" />
-          Commencer la création
-        </Button>
-        
-        <p className="text-sm text-gray-500">
-          Processus guidé étape par étape • Sauvegarde automatique • Support complet
-        </p>
-      </div>
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-blue-200"
+            onClick={() => goToStep('project-management')}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FolderOpen className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Projets sauvegardés</h3>
+              <p className="text-gray-600">Accédez à vos projets et ebooks existants</p>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-transparent hover:border-green-200"
+            onClick={() => goToStep('security')}
+          >
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Settings className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Compte configuré</h3>
+              <p className="text-gray-600">Gérez votre compte et vos paramètres</p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        // Interface pour nouveaux utilisateurs
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              { icon: "📝", title: "Saisie du texte", desc: "Importez ou rédigez votre contenu" },
+              { icon: "🤖", title: "IA avancée", desc: "Améliorez avec l'intelligence artificielle" },
+              { icon: "🎨", title: "Illustrations", desc: "Générez des images uniques" },
+              { icon: "📚", title: "Export pro", desc: "PDF, EPUB, DOCX de qualité" }
+            ].map((feature, index) => (
+              <Card key={index} className="text-center">
+                <CardContent className="p-6">
+                  <div className="text-3xl mb-3">{feature.icon}</div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-gray-600">{feature.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <Button
+              onClick={goToNextStep}
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg px-8 py-4"
+            >
+              <Sparkles className="h-5 w-5 mr-2" />
+              Commencer la création
+            </Button>
+            
+            <p className="text-sm text-gray-500">
+              Processus guidé étape par étape • Sauvegarde automatique • Support complet
+            </p>
+          </div>
+        </>
+      )}
+
+      {currentUser && (
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600">
+            💡 <strong>Astuce :</strong> Utilisez le menu en haut à droite pour accéder rapidement à vos projets et paramètres
+          </p>
+        </div>
+      )}
     </div>
   )
 
