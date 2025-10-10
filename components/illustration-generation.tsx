@@ -1,0 +1,468 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Image, Palette, RefreshCw, Download, Eye, Settings, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+
+interface ProcessedTextData {
+  processedText: string
+  history: any[]
+}
+
+interface IllustrationGenerationProps {
+  textData: ProcessedTextData
+  onNext: (data: { illustrations: GeneratedIllustration[] }) => void
+  onBack: () => void
+}
+
+interface GeneratedIllustration {
+  id: string
+  chapterIndex: number
+  chapterTitle: string
+  prompt: string
+  style: string
+  imageUrl: string
+  isGenerating: boolean
+}
+
+export default function IllustrationGeneration({ textData, onNext, onBack }: IllustrationGenerationProps) {
+  const [chapters, setChapters] = useState<string[]>([])
+  const [selectedStyle, setSelectedStyle] = useState("realistic")
+  const [illustrations, setIllustrations] = useState<GeneratedIllustration[]>([])
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+
+  // Styles d'illustration disponibles
+  const illustrationStyles = [
+    {
+      value: "realistic",
+      label: "Réaliste",
+      description: "Style photographique réaliste",
+      example: "🖼️"
+    },
+    {
+      value: "cartoon",
+      label: "Cartoon",
+      description: "Style cartoon coloré et amusant",
+      example: "🎨"
+    },
+    {
+      value: "watercolor",
+      label: "Aquarelle",
+      description: "Style aquarelle artistique",
+      example: "🎭"
+    },
+    {
+      value: "fantasy",
+      label: "Fantasy",
+      description: "Style fantastique et magique",
+      example: "🧙"
+    },
+    {
+      value: "minimalist",
+      label: "Minimaliste",
+      description: "Style épuré et moderne",
+      example: "⚪"
+    },
+    {
+      value: "vintage",
+      label: "Vintage",
+      description: "Style rétro et nostalgique",
+      example: "📜"
+    },
+    {
+      value: "digital_art",
+      label: "Art numérique",
+      description: "Style art numérique moderne",
+      example: "💻"
+    },
+    {
+      value: "sketch",
+      label: "Esquisse",
+      description: "Style dessin au crayon",
+      example: "✏️"
+    }
+  ]
+
+  // Extraire les chapitres du texte traité
+  useEffect(() => {
+    const extractChapters = (text: string): string[] => {
+      // Rechercher les marqueurs de chapitres
+      const chapterRegex = /(?:^|\n)((?:Chapitre|Chapter|#)\s*\d+[^:\n]*:?[^\n]*)/gmi
+      const matches = Array.from(text.matchAll(chapterRegex))
+      
+      if (matches.length > 0) {
+        const chapterTitles = matches.map(match => match[1].trim())
+        return chapterTitles
+      }
+      
+      // Si pas de chapitres détectés, créer des chapitres par défaut
+      const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 50)
+      const chaptersPerSection = Math.max(1, Math.floor(paragraphs.length / 5))
+      
+      const defaultChapters: string[] = []
+      for (let i = 0; i < Math.min(5, Math.ceil(paragraphs.length / chaptersPerSection)); i++) {
+        defaultChapters.push(`Chapitre ${i + 1}`)
+      }
+      
+      return defaultChapters
+    }
+
+    const extractedChapters = extractChapters(textData.processedText)
+    setChapters(extractedChapters)
+
+    // Initialiser les illustrations
+    const initialIllustrations: GeneratedIllustration[] = extractedChapters.map((chapter, index) => ({
+      id: `ill_${index}`,
+      chapterIndex: index,
+      chapterTitle: chapter,
+      prompt: `Illustration pour ${chapter}`,
+      style: selectedStyle,
+      imageUrl: "", // Sera généré
+      isGenerating: false
+    }))
+
+    setIllustrations(initialIllustrations)
+  }, [textData.processedText, selectedStyle])
+
+  // Fonction pour générer le prompt d'illustration basé sur le contenu du chapitre
+  const generatePromptForChapter = (chapterTitle: string, chapterContent: string): string => {
+    // Extraire les mots-clés du contenu du chapitre
+    const words = chapterContent.toLowerCase().split(/\s+/)
+    const keywords = words.filter(word => 
+      word.length > 4 && 
+      !['dans', 'avec', 'pour', 'cette', 'comme', 'mais', 'tout', 'plus', 'très', 'bien', 'encore', 'aussi'].includes(word)
+    ).slice(0, 5)
+
+    const basePrompt = `Illustration pour "${chapterTitle}"`
+    const keywordPrompt = keywords.length > 0 ? ` montrant ${keywords.join(', ')}` : ''
+    
+    return `${basePrompt}${keywordPrompt}, style ${selectedStyle}`
+  }
+
+  // Simulation de génération d'image (dans la vraie implémentation, on appellerait DALL-E, Stable Diffusion, etc.)
+  const generateImage = async (prompt: string, style: string): Promise<string> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Retourner une URL d'image placeholder basée sur le style
+        const styleColors: { [key: string]: string } = {
+          realistic: "4a5568",
+          cartoon: "f56565",
+          watercolor: "48bb78",
+          fantasy: "9f7aea",
+          minimalist: "718096",
+          vintage: "d69e2e",
+          digital_art: "3182ce",
+          sketch: "2d3748"
+        }
+        
+        const color = styleColors[style] || "4a5568"
+        const width = 400
+        const height = 300
+        
+        // URL d'image placeholder avec couleur basée sur le style
+        resolve(`https://via.placeholder.com/${width}x${height}/${color}/ffffff?text=${encodeURIComponent(style.replace('_', ' '))}`)
+      }, 2000)
+    })
+  }
+
+  // Fonction pour générer une illustration individuelle
+  const generateSingleIllustration = async (illustrationId: string) => {
+    setIllustrations(prev => 
+      prev.map(ill => 
+        ill.id === illustrationId 
+          ? { ...ill, isGenerating: true }
+          : ill
+      )
+    )
+
+    try {
+      const illustration = illustrations.find(ill => ill.id === illustrationId)
+      if (!illustration) return
+
+      const imageUrl = await generateImage(illustration.prompt, selectedStyle)
+      
+      setIllustrations(prev => 
+        prev.map(ill => 
+          ill.id === illustrationId 
+            ? { ...ill, imageUrl, isGenerating: false, style: selectedStyle }
+            : ill
+        )
+      )
+      
+      setSuccess(`Illustration générée pour ${illustration.chapterTitle}`)
+    } catch (err) {
+      setError(`Erreur lors de la génération de l'illustration`)
+      setIllustrations(prev => 
+        prev.map(ill => 
+          ill.id === illustrationId 
+            ? { ...ill, isGenerating: false }
+            : ill
+        )
+      )
+    }
+  }
+
+  // Fonction pour générer toutes les illustrations
+  const generateAllIllustrations = async () => {
+    setIsGeneratingAll(true)
+    setError("")
+    setSuccess("")
+
+    try {
+      // Générer les illustrations une par une pour éviter la surcharge
+      for (const illustration of illustrations) {
+        await generateSingleIllustration(illustration.id)
+        // Petit délai entre chaque génération
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+      
+      setSuccess("Toutes les illustrations ont été générées avec succès")
+    } catch (err) {
+      setError("Erreur lors de la génération des illustrations")
+    } finally {
+      setIsGeneratingAll(false)
+    }
+  }
+
+  // Fonction pour régénérer une illustration avec un nouveau style
+  const regenerateIllustration = async (illustrationId: string) => {
+    await generateSingleIllustration(illustrationId)
+  }
+
+  // Fonction pour mettre à jour le style global
+  const updateGlobalStyle = (newStyle: string) => {
+    setSelectedStyle(newStyle)
+    setIllustrations(prev => 
+      prev.map(ill => ({
+        ...ill,
+        style: newStyle,
+        prompt: generatePromptForChapter(ill.chapterTitle, ""),
+        imageUrl: "" // Reset l'image pour forcer la régénération
+      }))
+    )
+  }
+
+  // Fonction pour passer à l'étape suivante
+  const handleNext = () => {
+    const completedIllustrations = illustrations.filter(ill => ill.imageUrl)
+    onNext({
+      illustrations: completedIllustrations
+    })
+  }
+
+  const getStyleInfo = (styleValue: string) => {
+    return illustrationStyles.find(style => style.value === styleValue) || illustrationStyles[0]
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Génération d'illustrations</h2>
+        <p className="text-gray-600">Créez des illustrations uniques pour chaque chapitre avec l'IA. Personnalisez le style selon vos préférences.</p>
+      </div>
+
+      <div className="space-y-6">
+        {/* Configuration du style */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Palette className="h-5 w-5" />
+              <span>Style d'illustration</span>
+            </CardTitle>
+            <CardDescription>
+              Choisissez le style artistique pour toutes les illustrations
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Style artistique</Label>
+              <Select value={selectedStyle} onValueChange={updateGlobalStyle}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {illustrationStyles.map((style) => (
+                    <SelectItem key={style.value} value={style.value}>
+                      <div className="flex items-center space-x-2">
+                        <span>{style.example}</span>
+                        <div>
+                          <div className="font-medium">{style.label}</div>
+                          <div className="text-xs text-gray-500">{style.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex space-x-4">
+              <Button
+                onClick={generateAllIllustrations}
+                disabled={isGeneratingAll || illustrations.some(ill => ill.isGenerating)}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {isGeneratingAll ? (
+                  <div className="flex items-center space-x-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Génération en cours...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Image className="h-4 w-4" />
+                    <span>Générer toutes les illustrations</span>
+                  </div>
+                )}
+              </Button>
+
+              <div className="text-sm text-gray-600 flex items-center">
+                <Settings className="h-4 w-4 mr-1" />
+                Style actuel : {getStyleInfo(selectedStyle).label}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Grille des illustrations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {illustrations.map((illustration) => (
+            <Card key={illustration.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{illustration.chapterTitle}</CardTitle>
+                <CardDescription className="text-sm">
+                  Chapitre {illustration.chapterIndex + 1}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Zone d'image */}
+                <div className="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden relative">
+                  {illustration.isGenerating ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
+                        <p className="text-sm text-gray-600">Génération...</p>
+                      </div>
+                    </div>
+                  ) : illustration.imageUrl ? (
+                    <img
+                      src={illustration.imageUrl}
+                      alt={illustration.chapterTitle}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center text-gray-500">
+                        <Image className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm">Pas encore générée</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Informations sur l'illustration */}
+                <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                  <div><strong>Style :</strong> {getStyleInfo(illustration.style).label}</div>
+                  <div><strong>Prompt :</strong> {illustration.prompt}</div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => generateSingleIllustration(illustration.id)}
+                    disabled={illustration.isGenerating || isGeneratingAll}
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {illustration.imageUrl ? (
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                    ) : (
+                      <Image className="h-3 w-3 mr-1" />
+                    )}
+                    {illustration.imageUrl ? 'Régénérer' : 'Générer'}
+                  </Button>
+
+                  {illustration.imageUrl && (
+                    <Button
+                      onClick={() => window.open(illustration.imageUrl, '_blank')}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Messages de statut */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <span className="text-red-800 font-medium">Erreur</span>
+            </div>
+            <p className="text-red-700 mt-1">{error}</p>
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-green-800 font-medium">Succès</span>
+            </div>
+            <p className="text-green-700 mt-1">{success}</p>
+          </div>
+        )}
+
+        {/* Statistiques */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Progression</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Chapitres détectés :</span>
+                <span className="ml-2 font-medium">{chapters.length}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Illustrations générées :</span>
+                <span className="ml-2 font-medium">{illustrations.filter(ill => ill.imageUrl).length}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">En cours :</span>
+                <span className="ml-2 font-medium">{illustrations.filter(ill => ill.isGenerating).length}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Style actuel :</span>
+                <span className="ml-2 font-medium">{getStyleInfo(selectedStyle).label}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Boutons de navigation */}
+      <div className="flex justify-between pt-8">
+        <Button onClick={onBack} variant="outline">
+          Retour
+        </Button>
+        <Button 
+          onClick={handleNext}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+        >
+          Continuer vers la couverture
+        </Button>
+      </div>
+    </div>
+  )
+}
