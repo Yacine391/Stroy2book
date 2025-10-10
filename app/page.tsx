@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Palette, Upload, Sparkles, Wand2, Brain } from "lucide-react"
+import TextInputStep from "@/components/text-input-step"
 import EbookGenerator from "@/components/ebook-generator"
 import ImageUpload from "@/components/image-upload"
 import AIGenerationStep from "@/components/ai-generation-step"
@@ -15,6 +16,7 @@ import EbookPreviewEditor from "@/components/ebook-preview-editor"
 export default function HomePage() {
   const [formData, setFormData] = useState({
     idea: "",
+    inputText: "",
     author: "",
     genre: "",
     targetAudience: "",
@@ -144,6 +146,7 @@ export default function HomePage() {
     setCurrentStep("form")
     setFormData({
       idea: "",
+      inputText: "",
       author: "",
       genre: "",
       targetAudience: "",
@@ -216,22 +219,22 @@ export default function HomePage() {
                 <CardDescription>L'IA va transformer votre idée en un ebook complet et professionnel</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                {/* Main Idea */}
+                {/* Step 1: Text input/import + tools */}
                 <div className="space-y-2">
-                  <Label htmlFor="idea" className="text-lg font-medium">
-                    Votre idée d'ebook *
-                  </Label>
+                  <Label className="text-lg font-medium">Votre idée d'ebook *</Label>
                   <Textarea
-                    id="idea"
                     placeholder="Ex: Crée une frise chronologique visuelle de l'histoire de l'humanité, Ecris un conte pour enfants avec une morale sur la générosité avec des illustrations style aquarelle, Fais-moi découvrir les coutumes traditionnelles du Maroc à travers un eBook interactif..."
                     value={formData.idea}
                     onChange={(e) => handleInputChange("idea", e.target.value)}
                     className="min-h-[120px] text-lg resize-y"
                   />
-                  <p className="text-sm text-gray-500">
-                    Plus vous donnez de détails, plus l'IA pourra créer un contenu personnalisé !
-                  </p>
+                  <p className="text-sm text-gray-500">Plus vous donnez de détails, plus l'IA pourra créer un contenu personnalisé !</p>
                 </div>
+
+                <TextInputStep
+                  initialText={formData.inputText}
+                  onChange={(txt) => setFormData((prev) => ({ ...prev, inputText: txt }))}
+                />
 
                 {/* Author Name */}
                 <div className="space-y-2">
