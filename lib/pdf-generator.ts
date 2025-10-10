@@ -21,6 +21,8 @@ interface EbookData {
   coverImage?: string
   exactPages?: number
   length?: string
+  template?: 'roman' | 'essai' | 'educatif' | 'conte'
+  chapterImages?: Record<number, string>
 }
 
 // Fonction de nettoyage du contenu
@@ -89,7 +91,12 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     return fontMap[fontFamily] || 'helvetica'
   }
 
-  const selectedFont = getFontMapping(ebookData.fontFamily)
+  // Appliquer un template typographique simple
+  const template = ebookData.template || 'roman'
+  const selectedFont = getFontMapping(
+    template === 'essai' ? 'Helvetica' : template === 'educatif' ? 'Verdana' : template === 'conte' ? 'Georgia' : ebookData.fontFamily
+  )
+  const sizes = { title: 18, subtitle: 14, body: 11 }
 
   // Fonction pour ajouter une nouvelle page avec couleur de fond - AMÉLIORÉE
   const checkAndAddNewPage = (neededHeight: number) => {
@@ -149,7 +156,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     pdf.setTextColor(220, 220, 220) // Gris très clair
     
     // Calculer position centrale
-    const watermarkText = 'Story2book AI'
+    const watermarkText = 'HB Creator'
     const textWidth = pdf.getTextWidth(watermarkText)
     const x = (pageWidth - textWidth) / 2
     const y = pageHeight / 2
@@ -176,6 +183,20 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     addWatermark()
   }
 
+  // Image de couverture si fournie (base64 data URL)
+  if (ebookData.coverImage && ebookData.coverImage.startsWith('data:image')) {
+    try {
+      const base64 = ebookData.coverImage.split(',')[1]
+      const imgProps = (pdf as any).getImageProperties ? (pdf as any).getImageProperties(ebookData.coverImage) : null
+      const imgWidth = contentWidth
+      const imgHeight = imgProps ? (imgProps.height * imgWidth) / imgProps.width : 140
+      pdf.addImage(ebookData.coverImage, 'PNG', margin, margin, imgWidth, Math.min(imgHeight, pageHeight / 2))
+      currentY = Math.min(margin + Math.min(imgHeight, pageHeight / 2) + 10, pageHeight / 2)
+    } catch (e) {
+      console.warn('Impossible d\'ajouter l\'image de couverture au PDF', e)
+    }
+  }
+
   // Titre de la couverture
   pdf.setFont(selectedFont, 'bold')
   pdf.setFontSize(24)
@@ -183,7 +204,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   
   const cleanedTitle = cleanContent(ebookData.title)
   const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 24)
-  let titleY = pageHeight / 3
+  let titleY = currentY > margin ? currentY + 10 : pageHeight / 3
   
   titleLines.forEach((line, index) => {
     const textWidth = pdf.getTextWidth(line)
@@ -207,7 +228,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   pdf.setFont(selectedFont, 'italic')
   pdf.setFontSize(10)
   pdf.setTextColor(150, 150, 150)
-  const signature = 'Généré par Story2book AI'
+  const signature = 'Généré par HB Creator'
   const signatureWidth = pdf.getTextWidth(signature)
   pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
 
@@ -221,9 +242,41 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   }
   currentY = margin
 
-  // Configuration pour le contenu - Taille de police plus grande et meilleure lisibilité
+  // Sommaire (TOC)
+  try {
+    const tocTitles = (ebookData.content.match(/^#\s+.+/gmi) || []).map(t => t.replace(/^#\s+/, '').trim())
+    if (tocTitles.length > 0) {
+      pdf.setFont(selectedFont, 'bold')
+      pdf.setFontSize(16)
+      pdf.setTextColor(50, 50, 50)
+      pdf.text('Sommaire', margin, currentY)
+      currentY += 10
+      pdf.setFont(selectedFont, 'normal')
+      pdf.setFontSize(12)
+      tocTitles.forEach((t, i) => {
+        if (currentY > pageHeight - margin - 10) {
+          pdf.addPage();
+          pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+          pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+          if (ebookData.hasWatermark) addWatermark()
+          currentY = margin
+        }
+        const line = `${i + 1}. ${t}`
+        pdf.text(line.substring(0, 90), margin, currentY)
+        currentY += 6
+      })
+      // Nouvelle page pour début du contenu après sommaire
+      pdf.addPage();
+      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      if (ebookData.hasWatermark) addWatermark()
+      currentY = margin
+    }
+  } catch {}
+
+  // Configuration pour le contenu - Styles typographiques
   pdf.setFont(selectedFont, 'normal')
-  pdf.setFontSize(13) // Augmenté de 12 à 13
+  pdf.setFontSize(sizes.body)
   pdf.setTextColor(40, 40, 40)
 
   // Traitement du contenu markdown nettoyé
@@ -339,6 +392,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const maxParagraphsPerPage = pagination.maxParagraphsPerPage
   let processedLines = 0 // Compteur pour debug
   
+  let chapterIndex = 0
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
@@ -369,17 +423,18 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     lineCount++ // Incrémenter le compteur de lignes
 
-          if (line.startsWith('# ')) {
+    if (line.startsWith('# ')) {
         // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
         checkAndAddNewPageForChapter(40) // Augmenté de 30 à 40 pour plus d'espace
       lineCount = 0 // Réinitialiser le compteur pour nouveau chapitre
+      chapterIndex += 1
       
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(20) // Augmenté de 18 à 20
+      pdf.setFontSize(sizes.title)
       pdf.setTextColor(80, 80, 80)
       
       const titleText = line.substring(2)
-      const lines = splitTextToLines(titleText, contentWidth, 20)
+      const lines = splitTextToLines(titleText, contentWidth, sizes.title)
       
       lines.forEach((textLine, index) => {
         pdf.text(textLine, margin, currentY + (index * 10)) // Augmenté de 8 à 10
@@ -387,16 +442,36 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       
       currentY += lines.length * 8 + 20 // AUGMENTÉ pour plus d'espace: 12 → 20
       console.log('Added chapter title, currentY now:', currentY)
+
+      // Image de chapitre si disponible
+      if (ebookData.chapterImages && ebookData.chapterImages[chapterIndex]) {
+        try {
+          const img = ebookData.chapterImages[chapterIndex]
+          const imgWidth = contentWidth
+          const imgHeight = 70
+          if (currentY + imgHeight > pageHeight - margin - 10) {
+            pdf.addPage();
+            pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+            pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+            if (ebookData.hasWatermark) addWatermark()
+            currentY = margin
+          }
+          pdf.addImage(img, 'PNG', margin, currentY, imgWidth, imgHeight)
+          currentY += imgHeight + 8
+        } catch (e) {
+          console.warn('Chapitre image add failed', e)
+        }
+      }
       
     } else if (line.startsWith('## ')) {
       // Sous-titre (section importante) - Amélioration espacement
       checkAndAddNewPageForChapter(25) // Augmenté de 18 à 25
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(16) // Augmenté de 14 à 16
+      pdf.setFontSize(sizes.subtitle)
       pdf.setTextColor(60, 60, 60)
       
       const chapterText = line.substring(3)
-      const lines = splitTextToLines(chapterText, contentWidth, 16)
+      const lines = splitTextToLines(chapterText, contentWidth, sizes.subtitle)
       
       lines.forEach((textLine, index) => {
         pdf.text(textLine, margin, currentY + (index * 8)) // Augmenté de 6 à 8
@@ -408,7 +483,7 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       // Sous-sous-titre - Amélioration lisibilité
       checkAndAddNewPage(20) // Augmenté de 15 à 20
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(14) // Augmenté de 12 à 14
+      pdf.setFontSize(12)
       pdf.setTextColor(80, 80, 80)
       
       const subTitleText = line.substring(4)
@@ -467,10 +542,10 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     } else if (line.length > 0) {
       // Paragraphe normal - Amélioration lisibilité et espacement
       pdf.setFont(selectedFont, 'normal')
-      pdf.setFontSize(12) // Augmenté de 11 à 12
+      pdf.setFontSize(sizes.body)
       pdf.setTextColor(50, 50, 50)
       
-      const lines = splitTextToLines(line, contentWidth, 12)
+      const lines = splitTextToLines(line, contentWidth, sizes.body)
       console.log('Processing paragraph with', lines.length, 'lines, currentY:', currentY)
       
                       // DÉSACTIVATION TOTALE contrôle d'espace - ABSOLUMENT TOUT LE CONTENU

@@ -115,6 +115,14 @@ const generateUniqueElements = () => {
 
 export async function generateEbook(formData: FormData): Promise<GeneratedContent> {
   try {
+    // Gestion d'historique simple via console (la persistance sera ajoutée avec la sauvegarde)
+    console.log('[HB Creator] Nouvelle génération IA demandée pour:', {
+      idea: formData.idea?.slice(0, 80) + '...',
+      genre: formData.genre,
+      targetAudience: formData.targetAudience,
+      length: formData.length,
+      exactPages: formData.exactPages,
+    })
     // Générer des éléments uniques pour cette histoire spécifique
     const uniqueElements = generateUniqueElements()
     
@@ -1004,6 +1012,50 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
   }
 }
 
+// Affinage de texte avec actions : améliorer, raccourcir, allonger, simplifier
+export async function refineText(
+  text: string,
+  action: 'ameliorer' | 'raccourcir' | 'allonger' | 'simplifier',
+  language: string = 'fr'
+): Promise<string> {
+  const preferredAI = getPreferredAI()
+  const system = `Tu es un éditeur professionnel francophone. Réécris le texte demandé en respectant strictement l'action.`
+  const actionInstruction = {
+    ameliorer: 'Améliore la clarté, la structure et le style sans changer le sens. Conserve la langue originale. Ne raccourcis ni n’allonge excessivement.',
+    raccourcir: 'Raccourcis le texte de 25-40% en conservant toutes les idées essentielles. Style concis et fluide. Conserve la langue originale.',
+    allonger: 'Allonge le texte de 25-40% en ajoutant des détails pertinents, exemples et transitions. Conserve la langue originale.',
+    simplifier: 'Simplifie le vocabulaire et la syntaxe pour une compréhension facile (niveau B1). Conserve la langue originale.'
+  }[action]
+
+  const prompt = `LANGUE: ${language}\n\nACTION: ${action}\n\nINSTRUCTIONS: ${actionInstruction}\n\nTEXTE A REECRIRE:\n${text}`
+
+  try {
+    if (preferredAI === 'openai' && openai) {
+      const completion = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || 'gpt-4o',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4096,
+      })
+      return completion.choices[0]?.message?.content?.trim() || text
+    }
+
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: `${system}\n\n${prompt}` }] }],
+      generationConfig: { temperature: 0.8, maxOutputTokens: 8192 }
+    })
+    return result.response.text().trim() || text
+
+  } catch (e) {
+    console.warn('Refine failed, returning original text', e)
+    return text
+  }
+}
+
 // Fonction ROBUSTE pour parser le contenu généré
 function parseGeneratedContent(text: string, authorName: string): GeneratedContent {
   console.log('📝 PARSING CONTENT - Length:', text.length, 'characters')
@@ -1313,7 +1365,7 @@ Cette conclusion marque non pas une fin, mais un nouveau commencement, car chaqu
 
 ---
 
-*Ebook complet généré avec Story2book AI - Votre idée transformée en récit captivant*
+ *Ebook complet généré avec HB Creator - Votre idée transformée en récit captivant*
 
 **Statistiques de cette création :**
 - ${config.chapters + 2} sections développées

@@ -1,6 +1,6 @@
-# Story2book AI - Générateur d'ebooks par IA
+# HB Creator - Générateur d'ebooks par IA
 
-Story2book AI est une application web qui utilise l'Intelligence Artificielle pour générer automatiquement des ebooks professionnels à partir d'une simple idée.
+HB Creator est une application web qui utilise l'Intelligence Artificielle pour générer automatiquement des ebooks professionnels à partir d'une simple idée.
 
 ## ✨ Fonctionnalités
 
@@ -22,8 +22,8 @@ Story2book AI est une application web qui utilise l'Intelligence Artificielle po
 
 1. **Cloner le repository**
 ```bash
-git clone https://github.com/votre-username/story2book-ai.git
-cd story2book-ai
+git clone https://github.com/votre-username/hb-creator.git
+cd hb-creator
 ```
 
 2. **Installer les dépendances**
@@ -139,9 +139,47 @@ MIT License - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ## 🆘 Support
 
-- **Issues** : [GitHub Issues](https://github.com/votre-username/story2book-ai/issues)
+- **Issues** : [GitHub Issues](https://github.com/votre-username/hb-creator/issues)
 - **Documentation** : Ce README et commentaires dans le code
 
 ---
 
 **Propulsé par l'Intelligence Artificielle** 🤖✨
+
+## Étapes de création d’un eBook dans HB Creator
+
+1. Saisie du texte
+   - L’utilisateur peut écrire ou importer son texte (.txt, .docx, .pdf).
+   - Détection de la langue automatique (heuristique).
+   - Outils intégrés : Nettoyer le texte, Découper automatiquement en chapitres, Analyser le style d’écriture.
+
+2. Génération IA du contenu
+   - API IA pour reformuler, corriger ou enrichir le texte.
+   - Actions disponibles : Améliorer, Raccourcir, Allonger, Simplifier.
+   - Historique des versions et restauration.
+
+3. Génération d’illustrations
+   - Une image générée par chapitre via IA (OpenAI Images), styles personnalisables (réaliste, cartoon, aquarelle, fantasy, etc.).
+   - Option de régénération d’image par chapitre.
+
+4. Création de la couverture
+   - Génération automatique à partir du titre et auteur.
+   - Taille recommandée : 2048×3072 px (prévisualisation 1024×1536).
+   - Possibilité d’uploader une image manuellement.
+   - Filigrane “HB Creator” pour la version gratuite.
+
+5. Mise en page automatique
+   - Templates (roman, essai, éducatif, conte).
+   - Pagination, sommaire, insertion d’images automatiques.
+   - Styles typographiques cohérents : Titre 18 pt, Sous-titre 14 pt, Corps 11 pt.
+
+6. Export du livre
+   - Formats : PDF, EPUB, DOCX.
+   - Progression et notification “eBook prêt à télécharger”.
+
+7. Sauvegarde et gestion des projets
+   - Sauvegarde automatique toutes les 2 minutes (en mémoire pour la démo).
+   - Tableau de bord listant les projets, duplication et suppression.
+
+8. Sécurité et limites (ébauche)
+   - Préparation pour JWT/OAuth, quotas par abonnement, filtrage anti‑abus IA et chiffrement des données sensibles.
