@@ -15,14 +15,35 @@ HB Creator est une plateforme complète de création d'ebooks alimentée par l'I
 7. **💼 Gestion de projets** - Sauvegarde automatique, bibliothèque avec tags et statistiques
 8. **🔐 Sécurité** - Authentification multi-méthodes et gestion des abonnements
 
+### Expérience Utilisateur Adaptative
+
+#### 👤 Pour les Nouveaux Utilisateurs
+- **Workflow guidé** avec navigation étape par étape
+- **Barre de progression** visuelle et indicateurs d'étapes
+- **Onboarding complet** avec explications détaillées
+- **Bouton de connexion** accessible dans la navigation
+
+#### 🏠 Pour les Utilisateurs Connectés
+- **Interface épurée** sans navigation d'étapes
+- **Menu utilisateur** (3 points) en haut à droite avec :
+  - Profil utilisateur (nom, email, avatar)
+  - Accès direct aux projets sauvegardés
+  - Gestion du compte et sécurité
+  - Déconnexion rapide
+- **Dashboard personnalisé** avec raccourcis :
+  - 🆕 **Créer un ebook** - Nouveau projet
+  - 📁 **Projets sauvegardés** - Bibliothèque de projets
+  - ⚙️ **Compte configuré** - Paramètres et abonnement
+
 ### Fonctionnalités Avancées
 
-- **Interface moderne** avec navigation par étapes et progression visuelle
+- **Interface adaptative** selon le statut de connexion
 - **Sauvegarde automatique** toutes les 2 minutes avec persistance locale
 - **Design responsive** optimisé pour tous les appareils
 - **Accessibilité complète** avec support clavier et ARIA
 - **TypeScript intégral** avec sécurité des types
 - **3 plans d'abonnement** : Gratuit, Premium, Professionnel
+- **Navigation intelligente** avec état persistant
 
 ## 🛠️ Installation
 
