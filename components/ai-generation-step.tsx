@@ -9,6 +9,7 @@ import { generateEbook } from "@/lib/ai-generator"
 interface AIGenerationStepProps {
   formData: {
     idea: string
+    inputText: string
     author: string
     genre: string
     targetAudience: string
@@ -55,7 +56,10 @@ export default function AIGenerationStep({ formData, onComplete, onBack }: AIGen
         }
 
         // Génération du contenu avec l'IA
-        const content = await generateEbook(formData)
+        const content = await generateEbook({
+          ...formData,
+          idea: formData.idea || formData.inputText || formData.idea,
+        })
         setGeneratedContent(content)
         setIsGenerating(false)
 

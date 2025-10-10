@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Download, Edit3, Save, X, Palette, RefreshCw } from "lucide-react"
+import { ArrowLeft, Download, Edit3, Save, X, Palette, RefreshCw, Wand2, Minus, Plus, Gauge } from "lucide-react"
+import { refineContent, type RefineMode } from "@/lib/ai-refiner"
 import AnimatedBookPreview from "./animated-book-preview"
 
 interface EbookPreviewEditorProps {
@@ -15,6 +16,7 @@ interface EbookPreviewEditorProps {
     title: string
     author: string
     content: string
+    inputText: string
     backgroundColor: string
     fontFamily: string
     hasWatermark: boolean
@@ -40,6 +42,8 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
   })
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [regenerationIdea, setRegenerationIdea] = useState(formData.idea)
+  const [isRefining, setIsRefining] = useState<RefineMode | null>(null)
+  const [history, setHistory] = useState<{ ts: number; mode: RefineMode; content: string }[]>([])
 
   const backgroundColors = [
     { name: "Blanc", value: "#ffffff" },
@@ -86,6 +90,22 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
     if (regenerationIdea.trim()) {
       onRegenerate(regenerationIdea)
     }
+  }
+
+  const runRefine = async (mode: RefineMode) => {
+    if (!editedContent.content.trim()) return
+    setIsRefining(mode)
+    try {
+      const refined = await refineContent({ mode, text: editedContent.content, languageHint: 'fr' })
+      setHistory((h) => [{ ts: Date.now(), mode, content: editedContent.content }, ...h].slice(0, 20))
+      setEditedContent((prev) => ({ ...prev, content: refined }))
+    } finally {
+      setIsRefining(null)
+    }
+  }
+
+  const restoreVersion = (entry: { ts: number; mode: RefineMode; content: string }) => {
+    setEditedContent((prev) => ({ ...prev, content: entry.content }))
   }
 
   return (
@@ -174,6 +194,23 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
                 placeholder="Contenu de votre ebook..."
                 className="font-mono text-sm"
               />
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => runRefine('ameliorer')} disabled={!!isRefining}>
+                  <Wand2 className="h-4 w-4" /> <span>Améliorer</span>
+                </Button>
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => runRefine('raccourcir')} disabled={!!isRefining}>
+                  <Minus className="h-4 w-4" /> <span>Raccourcir</span>
+                </Button>
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => runRefine('allonger')} disabled={!!isRefining}>
+                  <Plus className="h-4 w-4" /> <span>Allonger</span>
+                </Button>
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => runRefine('simplifier')} disabled={!!isRefining}>
+                  <Gauge className="h-4 w-4" /> <span>Simplifier</span>
+                </Button>
+              </div>
+              {isRefining && (
+                <div className="text-sm text-blue-700 mt-2">Réécriture en cours...</div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3">
@@ -264,6 +301,28 @@ export default function EbookPreviewEditor({ formData, onBack, onRegenerate, onD
           </div>
         </CardContent>
       </Card>
+
+      {/* Historique des versions */}
+      {history.length > 0 && (
+        <Card className="border-2 border-gray-200">
+          <CardHeader>
+            <CardTitle className="text-base">Historique des versions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              {history.map((h) => (
+                <div key={h.ts} className="flex items-center justify-between border rounded p-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-gray-100 border">{h.mode}</span>
+                    <span className="text-gray-500">{new Date(h.ts).toLocaleString()}</span>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => restoreVersion(h)}>Restaurer</Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Aperçu de l'ebook avec animation */}
       <AnimatedBookPreview 

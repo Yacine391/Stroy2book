@@ -7,14 +7,17 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Palette, Upload, Sparkles, Wand2, Brain } from "lucide-react"
+import TextInputStep from "@/components/text-input-step"
 import EbookGenerator from "@/components/ebook-generator"
 import ImageUpload from "@/components/image-upload"
+import CoverGenerator from "@/components/cover-generator"
 import AIGenerationStep from "@/components/ai-generation-step"
 import EbookPreviewEditor from "@/components/ebook-preview-editor"
 
 export default function HomePage() {
   const [formData, setFormData] = useState({
     idea: "",
+    inputText: "",
     author: "",
     genre: "",
     targetAudience: "",
@@ -144,6 +147,7 @@ export default function HomePage() {
     setCurrentStep("form")
     setFormData({
       idea: "",
+      inputText: "",
       author: "",
       genre: "",
       targetAudience: "",
@@ -174,7 +178,7 @@ export default function HomePage() {
                 <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1" />
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Story2book AI
+                HB Creator
               </h1>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600 hidden sm:flex">
@@ -216,22 +220,22 @@ export default function HomePage() {
                 <CardDescription>L'IA va transformer votre idée en un ebook complet et professionnel</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 pt-6">
-                {/* Main Idea */}
+                {/* Step 1: Text input/import + tools */}
                 <div className="space-y-2">
-                  <Label htmlFor="idea" className="text-lg font-medium">
-                    Votre idée d'ebook *
-                  </Label>
+                  <Label className="text-lg font-medium">Votre idée d'ebook *</Label>
                   <Textarea
-                    id="idea"
                     placeholder="Ex: Crée une frise chronologique visuelle de l'histoire de l'humanité, Ecris un conte pour enfants avec une morale sur la générosité avec des illustrations style aquarelle, Fais-moi découvrir les coutumes traditionnelles du Maroc à travers un eBook interactif..."
                     value={formData.idea}
                     onChange={(e) => handleInputChange("idea", e.target.value)}
                     className="min-h-[120px] text-lg resize-y"
                   />
-                  <p className="text-sm text-gray-500">
-                    Plus vous donnez de détails, plus l'IA pourra créer un contenu personnalisé !
-                  </p>
+                  <p className="text-sm text-gray-500">Plus vous donnez de détails, plus l'IA pourra créer un contenu personnalisé !</p>
                 </div>
+
+                <TextInputStep
+                  initialText={formData.inputText}
+                  onChange={(txt) => setFormData((prev) => ({ ...prev, inputText: txt }))}
+                />
 
                 {/* Author Name */}
                 <div className="space-y-2">
@@ -391,7 +395,7 @@ export default function HomePage() {
                         className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500"
                       />
                       <label htmlFor="watermark" className="text-sm text-gray-700">
-                        Ajouter un filigrane "Story2book AI" au PDF
+                        Ajouter un filigrane "HB Creator" au PDF
                       </label>
                     </div>
                   </div>
@@ -409,6 +413,16 @@ export default function HomePage() {
                   <ImageUpload onImageUpload={handleImageUpload} />
                   {formData.coverImage && (
                     <p className="text-sm text-green-600">✓ Image sélectionnée: {formData.coverImage.name}</p>
+                  )}
+                  {!formData.coverImage && (
+                    <div className="mt-4">
+                      <CoverGenerator
+                        title={generatedContent.title || 'Titre de votre ebook'}
+                        author={formData.author}
+                        hasWatermark={formData.hasWatermark}
+                        onUseAsCover={(file) => setFormData((prev) => ({ ...prev, coverImage: file }))}
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -443,6 +457,7 @@ export default function HomePage() {
               title: generatedContent.title,
               author: generatedContent.author,
               content: generatedContent.content,
+              inputText: formData.inputText,
               backgroundColor: formData.backgroundColor,
               coverImage: formData.coverImage,
               idea: formData.idea,
@@ -484,7 +499,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <BookOpen className="h-6 w-6 text-purple-600" />
-                <span className="text-lg font-semibold">Story2book AI</span>
+                <span className="text-lg font-semibold">HB Creator</span>
               </div>
               <p className="text-gray-600 text-sm">
                 Le premier générateur d'ebooks français alimenté par l'Intelligence Artificielle.
@@ -521,7 +536,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="border-t pt-8 mt-8 text-center text-sm text-gray-500">
-            <p>&copy; 2024 Story2book AI. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
+            <p>&copy; 2024 HB Creator. Tous droits réservés. Propulsé par l'Intelligence Artificielle.</p>
           </div>
         </div>
       </footer>
