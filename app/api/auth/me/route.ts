@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer les données utilisateur
-    const user = userDb.findById(session.userId);
+    const user = await userDb.findById(session.userId);
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur introuvable' },
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer l'abonnement
-    const subscription = subscriptionDb.findByUserId(user.id);
+    const subscription = await subscriptionDb.findByUserId(user.id);
 
     // Retourner les données (sans le hash du mot de passe)
     const { password_hash, ...userWithoutPassword } = user;

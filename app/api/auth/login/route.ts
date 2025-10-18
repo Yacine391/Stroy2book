@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Trouver l'utilisateur
-    const user = userDb.findByEmail(email);
+    const user = await userDb.findByEmail(email);
     if (!user) {
       return NextResponse.json(
         { error: 'Email ou mot de passe incorrect' },

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier que l'email n'existe pas déjà
-    const existingUser = userDb.findByEmail(email);
+    const existingUser = await userDb.findByEmail(email);
     if (existingUser) {
       return NextResponse.json(
         { error: 'Cet email est déjà utilisé' },
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer l'utilisateur
-    const user = userDb.create(email, password, name);
+    const user = await userDb.create(email, password, name);
 
     // Créer la session
     await setSessionCookie(user.id, user.email);

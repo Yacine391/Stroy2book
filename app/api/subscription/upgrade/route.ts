@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Mettre à jour le plan
-    subscriptionDb.updatePlan(session.userId, plan);
+    await subscriptionDb.updatePlan(session.userId, plan);
 
     // Récupérer l'abonnement mis à jour
-    const subscription = subscriptionDb.findByUserId(session.userId);
+    const subscription = await subscriptionDb.findByUserId(session.userId);
 
     return NextResponse.json({
       success: true,

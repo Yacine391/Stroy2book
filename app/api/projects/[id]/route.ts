@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const project = projectDb.findById(parseInt(id), session.userId);
+    const project = await projectDb.findById(parseInt(id), session.userId);
 
     if (!project) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function PUT(
     const body = await request.json();
 
     // Vérifier que le projet existe et appartient à l'utilisateur
-    const project = projectDb.findById(parseInt(id), session.userId);
+    const project = await projectDb.findById(parseInt(id), session.userId);
     if (!project) {
       return NextResponse.json(
         { error: 'Projet introuvable' },
@@ -69,7 +69,7 @@ export async function PUT(
     }
 
     // Mettre à jour le projet
-    projectDb.update(parseInt(id), session.userId, body);
+    await projectDb.update(parseInt(id), session.userId, body);
 
     return NextResponse.json({
       success: true,
@@ -103,7 +103,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Vérifier que le projet existe et appartient à l'utilisateur
-    const project = projectDb.findById(parseInt(id), session.userId);
+    const project = await projectDb.findById(parseInt(id), session.userId);
     if (!project) {
       return NextResponse.json(
         { error: 'Projet introuvable' },
@@ -112,7 +112,7 @@ export async function DELETE(
     }
 
     // Supprimer le projet
-    projectDb.delete(parseInt(id), session.userId);
+    await projectDb.delete(parseInt(id), session.userId);
 
     return NextResponse.json({
       success: true,

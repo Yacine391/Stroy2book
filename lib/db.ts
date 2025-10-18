@@ -1,5 +1,4 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
+import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 
 // Types
@@ -39,117 +38,81 @@ export interface Subscription {
   updated_at: string;
 }
 
-// Créer ou récupérer l'instance de la base de données
-const dbPath = join(process.cwd(), 'hb-creator.db');
-const db = new Database(dbPath);
+// Créer le client Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Initialiser les tables
-export function initDatabase() {
-  // Table des utilisateurs
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      avatar TEXT,
-      auth_method TEXT NOT NULL DEFAULT 'email',
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `);
+// Créer le client seulement si les variables sont définies
+let supabase: any = null;
 
-  // Table des sessions
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      token TEXT UNIQUE NOT NULL,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    )
-  `);
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+} else {
+  console.warn('⚠️ Supabase credentials not found. Auth will not work. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
 
-  // Index pour améliorer les performances
-  db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
-    CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-  `);
-
-  // Table des abonnements
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER UNIQUE NOT NULL,
-      plan TEXT NOT NULL DEFAULT 'free',
-      monthly_ebooks INTEGER NOT NULL DEFAULT 3,
-      used_ebooks INTEGER NOT NULL DEFAULT 0,
-      ai_generations INTEGER NOT NULL DEFAULT 10,
-      used_generations INTEGER NOT NULL DEFAULT 0,
-      illustrations INTEGER NOT NULL DEFAULT 5,
-      used_illustrations INTEGER NOT NULL DEFAULT 0,
-      storage_gb INTEGER NOT NULL DEFAULT 1,
-      used_storage_gb INTEGER NOT NULL DEFAULT 0,
-      expires_at TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    )
-  `);
-
-  // Table des projets (pour stocker les ebooks créés)
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      title TEXT NOT NULL,
-      author TEXT,
-      content TEXT,
-      cover_data TEXT,
-      layout_settings TEXT,
-      illustrations_data TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-    )
-  `);
-
-  console.log('✅ Base de données initialisée avec succès');
+// Helper pour vérifier si Supabase est configuré
+export function isSupabaseConfigured(): boolean {
+  return supabase !== null;
 }
 
 // Fonctions pour les utilisateurs
 export const userDb = {
   // Créer un utilisateur
-  create: (email: string, password: string, name: string, authMethod: 'email' | 'google' = 'email'): User => {
+  create: async (email: string, password: string, name: string, authMethod: 'email' | 'google' = 'email'): Promise<User> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
     const passwordHash = bcrypt.hashSync(password, 10);
-    const stmt = db.prepare(`
-      INSERT INTO users (email, password_hash, name, auth_method)
-      VALUES (?, ?, ?, ?)
-    `);
-    const result = stmt.run(email, passwordHash, name, authMethod);
+    
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        email,
+        password_hash: passwordHash,
+        name,
+        auth_method: authMethod
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Error creating user: ${error.message}`);
     
     // Créer l'abonnement gratuit par défaut
-    const subStmt = db.prepare(`
-      INSERT INTO subscriptions (user_id)
-      VALUES (?)
-    `);
-    subStmt.run(result.lastInsertRowid);
+    await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: data.id
+      });
     
-    return userDb.findById(result.lastInsertRowid as number)!;
+    return data;
   },
 
   // Trouver un utilisateur par email
-  findByEmail: (email: string): User | undefined => {
-    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-    return stmt.get(email) as User | undefined;
+  findByEmail: async (email: string): Promise<User | null> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) return null;
+    return data;
   },
 
   // Trouver un utilisateur par ID
-  findById: (id: number): User | undefined => {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-    return stmt.get(id) as User | undefined;
+  findById: async (id: number): Promise<User | null> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) return null;
+    return data;
   },
 
   // Vérifier le mot de passe
@@ -158,84 +121,109 @@ export const userDb = {
   },
 
   // Mettre à jour un utilisateur
-  update: (id: number, data: Partial<Pick<User, 'name' | 'avatar'>>) => {
-    const fields = [];
-    const values = [];
+  update: async (id: number, data: Partial<Pick<User, 'name' | 'avatar'>>) => {
+    if (!supabase) throw new Error('Supabase not configured');
     
-    if (data.name) {
-      fields.push('name = ?');
-      values.push(data.name);
-    }
-    if (data.avatar) {
-      fields.push('avatar = ?');
-      values.push(data.avatar);
-    }
+    const updateData: any = { updated_at: new Date().toISOString() };
     
-    if (fields.length === 0) return;
+    if (data.name) updateData.name = data.name;
+    if (data.avatar) updateData.avatar = data.avatar;
     
-    fields.push('updated_at = datetime("now")');
-    values.push(id);
-    
-    const stmt = db.prepare(`
-      UPDATE users SET ${fields.join(', ')}
-      WHERE id = ?
-    `);
-    stmt.run(...values);
+    const { error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw new Error(`Error updating user: ${error.message}`);
   }
 };
 
 // Fonctions pour les sessions
 export const sessionDb = {
   // Créer une session
-  create: (userId: number, token: string, expiresAt: Date): Session => {
-    const stmt = db.prepare(`
-      INSERT INTO sessions (user_id, token, expires_at)
-      VALUES (?, ?, ?)
-    `);
-    const result = stmt.run(userId, token, expiresAt.toISOString());
-    return sessionDb.findByToken(token)!;
+  create: async (userId: number, token: string, expiresAt: Date): Promise<Session> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('sessions')
+      .insert({
+        user_id: userId,
+        token,
+        expires_at: expiresAt.toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Error creating session: ${error.message}`);
+    return data;
   },
 
   // Trouver une session par token
-  findByToken: (token: string): Session | undefined => {
-    const stmt = db.prepare(`
-      SELECT * FROM sessions 
-      WHERE token = ? AND datetime(expires_at) > datetime('now')
-    `);
-    return stmt.get(token) as Session | undefined;
+  findByToken: async (token: string): Promise<Session | null> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (error) return null;
+    return data;
   },
 
   // Supprimer une session
-  delete: (token: string) => {
-    const stmt = db.prepare('DELETE FROM sessions WHERE token = ?');
-    stmt.run(token);
+  delete: async (token: string) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    await supabase
+      .from('sessions')
+      .delete()
+      .eq('token', token);
   },
 
   // Nettoyer les sessions expirées
-  cleanExpired: () => {
-    const stmt = db.prepare(`
-      DELETE FROM sessions WHERE datetime(expires_at) <= datetime('now')
-    `);
-    stmt.run();
+  cleanExpired: async () => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    await supabase
+      .from('sessions')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
   },
 
   // Supprimer toutes les sessions d'un utilisateur
-  deleteByUserId: (userId: number) => {
-    const stmt = db.prepare('DELETE FROM sessions WHERE user_id = ?');
-    stmt.run(userId);
+  deleteByUserId: async (userId: number) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    await supabase
+      .from('sessions')
+      .delete()
+      .eq('user_id', userId);
   }
 };
 
 // Fonctions pour les abonnements
 export const subscriptionDb = {
   // Récupérer l'abonnement d'un utilisateur
-  findByUserId: (userId: number): Subscription | undefined => {
-    const stmt = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?');
-    return stmt.get(userId) as Subscription | undefined;
+  findByUserId: async (userId: number): Promise<Subscription | null> => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) return null;
+    return data;
   },
 
   // Mettre à jour le plan d'abonnement
-  updatePlan: (userId: number, plan: 'free' | 'premium' | 'pro') => {
+  updatePlan: async (userId: number, plan: 'free' | 'premium' | 'pro') => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
     let limits = { monthlyEbooks: 3, aiGenerations: 10, illustrations: 5, storageGb: 1 };
     
     if (plan === 'premium') {
@@ -248,53 +236,69 @@ export const subscriptionDb = {
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       : null;
     
-    const stmt = db.prepare(`
-      UPDATE subscriptions 
-      SET plan = ?, 
-          monthly_ebooks = ?,
-          ai_generations = ?,
-          illustrations = ?,
-          storage_gb = ?,
-          expires_at = ?,
-          updated_at = datetime('now')
-      WHERE user_id = ?
-    `);
-    stmt.run(plan, limits.monthlyEbooks, limits.aiGenerations, limits.illustrations, limits.storageGb, expiresAt, userId);
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({
+        plan,
+        monthly_ebooks: limits.monthlyEbooks,
+        ai_generations: limits.aiGenerations,
+        illustrations: limits.illustrations,
+        storage_gb: limits.storageGb,
+        expires_at: expiresAt,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (error) throw new Error(`Error updating plan: ${error.message}`);
   },
 
   // Incrémenter l'utilisation
-  incrementUsage: (userId: number, type: 'ebooks' | 'generations' | 'illustrations', amount: number = 1) => {
+  incrementUsage: async (userId: number, type: 'ebooks' | 'generations' | 'illustrations', amount: number = 1) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
     const field = type === 'ebooks' ? 'used_ebooks' : 
                   type === 'generations' ? 'used_generations' : 
                   'used_illustrations';
     
-    const stmt = db.prepare(`
-      UPDATE subscriptions 
-      SET ${field} = ${field} + ?,
-          updated_at = datetime('now')
-      WHERE user_id = ?
-    `);
-    stmt.run(amount, userId);
+    // Récupérer la valeur actuelle
+    const { data: current } = await supabase
+      .from('subscriptions')
+      .select(field)
+      .eq('user_id', userId)
+      .single();
+    
+    if (current) {
+      const newValue = (current[field] || 0) + amount;
+      await supabase
+        .from('subscriptions')
+        .update({
+          [field]: newValue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+    }
   },
 
   // Réinitialiser les compteurs mensuels
-  resetMonthlyUsage: (userId: number) => {
-    const stmt = db.prepare(`
-      UPDATE subscriptions 
-      SET used_ebooks = 0,
-          used_generations = 0,
-          used_illustrations = 0,
-          updated_at = datetime('now')
-      WHERE user_id = ?
-    `);
-    stmt.run(userId);
+  resetMonthlyUsage: async (userId: number) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    await supabase
+      .from('subscriptions')
+      .update({
+        used_ebooks: 0,
+        used_generations: 0,
+        used_illustrations: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
   }
 };
 
 // Fonctions pour les projets
 export const projectDb = {
   // Créer un projet
-  create: (userId: number, data: {
+  create: async (userId: number, data: {
     title: string;
     author?: string;
     content?: string;
@@ -302,74 +306,86 @@ export const projectDb = {
     layoutSettings?: any;
     illustrationsData?: any;
   }) => {
-    const stmt = db.prepare(`
-      INSERT INTO projects (user_id, title, author, content, cover_data, layout_settings, illustrations_data)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    const result = stmt.run(
-      userId,
-      data.title,
-      data.author || null,
-      data.content || null,
-      data.coverData ? JSON.stringify(data.coverData) : null,
-      data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
-      data.illustrationsData ? JSON.stringify(data.illustrationsData) : null
-    );
-    return result.lastInsertRowid;
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data: project, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: userId,
+        title: data.title,
+        author: data.author || null,
+        content: data.content || null,
+        cover_data: data.coverData ? JSON.stringify(data.coverData) : null,
+        layout_settings: data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
+        illustrations_data: data.illustrationsData ? JSON.stringify(data.illustrationsData) : null
+      })
+      .select()
+      .single();
+
+    if (error) throw new Error(`Error creating project: ${error.message}`);
+    return project.id;
   },
 
   // Récupérer tous les projets d'un utilisateur
-  findByUserId: (userId: number) => {
-    const stmt = db.prepare(`
-      SELECT * FROM projects 
-      WHERE user_id = ? 
-      ORDER BY updated_at DESC
-    `);
-    return stmt.all(userId);
+  findByUserId: async (userId: number) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false });
+
+    if (error) return [];
+    return data;
   },
 
   // Récupérer un projet par ID
-  findById: (id: number, userId: number) => {
-    const stmt = db.prepare(`
-      SELECT * FROM projects 
-      WHERE id = ? AND user_id = ?
-    `);
-    return stmt.get(id, userId);
+  findById: async (id: number, userId: number) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (error) return null;
+    return data;
   },
 
   // Mettre à jour un projet
-  update: (id: number, userId: number, data: any) => {
-    const stmt = db.prepare(`
-      UPDATE projects 
-      SET title = ?,
-          author = ?,
-          content = ?,
-          cover_data = ?,
-          layout_settings = ?,
-          illustrations_data = ?,
-          updated_at = datetime('now')
-      WHERE id = ? AND user_id = ?
-    `);
-    stmt.run(
-      data.title,
-      data.author || null,
-      data.content || null,
-      data.coverData ? JSON.stringify(data.coverData) : null,
-      data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
-      data.illustrationsData ? JSON.stringify(data.illustrationsData) : null,
-      id,
-      userId
-    );
+  update: async (id: number, userId: number, data: any) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    const { error } = await supabase
+      .from('projects')
+      .update({
+        title: data.title,
+        author: data.author || null,
+        content: data.content || null,
+        cover_data: data.coverData ? JSON.stringify(data.coverData) : null,
+        layout_settings: data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
+        illustrations_data: data.illustrationsData ? JSON.stringify(data.illustrationsData) : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('user_id', userId);
+
+    if (error) throw new Error(`Error updating project: ${error.message}`);
   },
 
   // Supprimer un projet
-  delete: (id: number, userId: number) => {
-    const stmt = db.prepare('DELETE FROM projects WHERE id = ? AND user_id = ?');
-    stmt.run(id, userId);
+  delete: async (id: number, userId: number) => {
+    if (!supabase) throw new Error('Supabase not configured');
+    
+    await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
   }
 };
 
-// Initialiser la base de données au démarrage
-initDatabase();
-
-export default db;
+export default supabase;

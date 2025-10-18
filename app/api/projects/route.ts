@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const projects = projectDb.findByUserId(session.userId);
+    const projects = await projectDb.findByUserId(session.userId);
 
     return NextResponse.json({
       success: true,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier les limites de l'abonnement
-    const subscription = subscriptionDb.findByUserId(session.userId);
+    const subscription = await subscriptionDb.findByUserId(session.userId);
     if (subscription && subscription.used_ebooks >= subscription.monthly_ebooks) {
       return NextResponse.json(
         { error: 'Limite d\'ebooks atteinte pour votre plan' },
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer le projet
-    const projectId = projectDb.create(session.userId, {
+    const projectId = await projectDb.create(session.userId, {
       title,
       author,
       content,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Incrémenter le compteur d'ebooks
-    subscriptionDb.incrementUsage(session.userId, 'ebooks');
+    await subscriptionDb.incrementUsage(session.userId, 'ebooks');
 
     return NextResponse.json({
       success: true,
