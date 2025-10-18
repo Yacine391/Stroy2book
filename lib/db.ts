@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { sql } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 
 // Types
@@ -38,81 +38,126 @@ export interface Subscription {
   updated_at: string;
 }
 
-// Créer le client Supabase
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Initialiser les tables (sera exécuté automatiquement)
+export async function initDatabase() {
+  try {
+    // Table des utilisateurs
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL,
+        avatar TEXT,
+        auth_method TEXT NOT NULL DEFAULT 'email',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
 
-// Créer le client seulement si les variables sont définies
-let supabase: any = null;
+    // Index
+    await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`;
 
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey);
-} else {
-  console.warn('⚠️ Supabase credentials not found. Auth will not work. Please configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
-}
+    // Table des sessions
+    await sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT UNIQUE NOT NULL,
+        expires_at TIMESTAMPTZ NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
 
-// Helper pour vérifier si Supabase est configuré
-export function isSupabaseConfigured(): boolean {
-  return supabase !== null;
+    await sql`CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`;
+
+    // Table des abonnements
+    await sql`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        plan TEXT NOT NULL DEFAULT 'free',
+        monthly_ebooks INTEGER NOT NULL DEFAULT 3,
+        used_ebooks INTEGER NOT NULL DEFAULT 0,
+        ai_generations INTEGER NOT NULL DEFAULT 10,
+        used_generations INTEGER NOT NULL DEFAULT 0,
+        illustrations INTEGER NOT NULL DEFAULT 5,
+        used_illustrations INTEGER NOT NULL DEFAULT 0,
+        storage_gb INTEGER NOT NULL DEFAULT 1,
+        used_storage_gb INTEGER NOT NULL DEFAULT 0,
+        expires_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`;
+
+    // Table des projets
+    await sql`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        author TEXT,
+        content TEXT,
+        cover_data JSONB,
+        layout_settings JSONB,
+        illustrations_data JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id)`;
+
+    console.log('✅ Base de données initialisée avec succès');
+  } catch (error: any) {
+    // Ignorer les erreurs "already exists"
+    if (!error.message?.includes('already exists')) {
+      console.error('Erreur initialisation DB:', error);
+    }
+  }
 }
 
 // Fonctions pour les utilisateurs
 export const userDb = {
   // Créer un utilisateur
   create: async (email: string, password: string, name: string, authMethod: 'email' | 'google' = 'email'): Promise<User> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
     const passwordHash = bcrypt.hashSync(password, 10);
     
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        email,
-        password_hash: passwordHash,
-        name,
-        auth_method: authMethod
-      })
-      .select()
-      .single();
-
-    if (error) throw new Error(`Error creating user: ${error.message}`);
+    const result = await sql`
+      INSERT INTO users (email, password_hash, name, auth_method)
+      VALUES (${email}, ${passwordHash}, ${name}, ${authMethod})
+      RETURNING *
+    `;
+    
+    const user = result.rows[0] as User;
     
     // Créer l'abonnement gratuit par défaut
-    await supabase
-      .from('subscriptions')
-      .insert({
-        user_id: data.id
-      });
+    await sql`
+      INSERT INTO subscriptions (user_id)
+      VALUES (${user.id})
+    `;
     
-    return data;
+    return user;
   },
 
   // Trouver un utilisateur par email
   findByEmail: async (email: string): Promise<User | null> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error) return null;
-    return data;
+    const result = await sql`
+      SELECT * FROM users WHERE email = ${email}
+    `;
+    return result.rows[0] as User || null;
   },
 
   // Trouver un utilisateur par ID
   findById: async (id: number): Promise<User | null> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) return null;
-    return data;
+    const result = await sql`
+      SELECT * FROM users WHERE id = ${id}
+    `;
+    return result.rows[0] as User || null;
   },
 
   // Vérifier le mot de passe
@@ -122,19 +167,28 @@ export const userDb = {
 
   // Mettre à jour un utilisateur
   update: async (id: number, data: Partial<Pick<User, 'name' | 'avatar'>>) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const updateData: any = { updated_at: new Date().toISOString() };
-    
-    if (data.name) updateData.name = data.name;
-    if (data.avatar) updateData.avatar = data.avatar;
-    
-    const { error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', id);
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
-    if (error) throw new Error(`Error updating user: ${error.message}`);
+    if (data.name) {
+      updates.push(`name = $${paramIndex++}`);
+      values.push(data.name);
+    }
+    if (data.avatar) {
+      updates.push(`avatar = $${paramIndex++}`);
+      values.push(data.avatar);
+    }
+
+    if (updates.length === 0) return;
+
+    updates.push('updated_at = NOW()');
+    values.push(id);
+
+    await sql.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
+      values
+    );
   }
 };
 
@@ -142,65 +196,36 @@ export const userDb = {
 export const sessionDb = {
   // Créer une session
   create: async (userId: number, token: string, expiresAt: Date): Promise<Session> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('sessions')
-      .insert({
-        user_id: userId,
-        token,
-        expires_at: expiresAt.toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) throw new Error(`Error creating session: ${error.message}`);
-    return data;
+    const result = await sql`
+      INSERT INTO sessions (user_id, token, expires_at)
+      VALUES (${userId}, ${token}, ${expiresAt.toISOString()})
+      RETURNING *
+    `;
+    return result.rows[0] as Session;
   },
 
   // Trouver une session par token
   findByToken: async (token: string): Promise<Session | null> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*')
-      .eq('token', token)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    if (error) return null;
-    return data;
+    const result = await sql`
+      SELECT * FROM sessions 
+      WHERE token = ${token} AND expires_at > NOW()
+    `;
+    return result.rows[0] as Session || null;
   },
 
   // Supprimer une session
   delete: async (token: string) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    await supabase
-      .from('sessions')
-      .delete()
-      .eq('token', token);
+    await sql`DELETE FROM sessions WHERE token = ${token}`;
   },
 
   // Nettoyer les sessions expirées
   cleanExpired: async () => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    await supabase
-      .from('sessions')
-      .delete()
-      .lt('expires_at', new Date().toISOString());
+    await sql`DELETE FROM sessions WHERE expires_at <= NOW()`;
   },
 
   // Supprimer toutes les sessions d'un utilisateur
   deleteByUserId: async (userId: number) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    await supabase
-      .from('sessions')
-      .delete()
-      .eq('user_id', userId);
+    await sql`DELETE FROM sessions WHERE user_id = ${userId}`;
   }
 };
 
@@ -208,22 +233,14 @@ export const sessionDb = {
 export const subscriptionDb = {
   // Récupérer l'abonnement d'un utilisateur
   findByUserId: async (userId: number): Promise<Subscription | null> => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (error) return null;
-    return data;
+    const result = await sql`
+      SELECT * FROM subscriptions WHERE user_id = ${userId}
+    `;
+    return result.rows[0] as Subscription || null;
   },
 
   // Mettre à jour le plan d'abonnement
   updatePlan: async (userId: number, plan: 'free' | 'premium' | 'pro') => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
     let limits = { monthlyEbooks: 3, aiGenerations: 10, illustrations: 5, storageGb: 1 };
     
     if (plan === 'premium') {
@@ -236,62 +253,43 @@ export const subscriptionDb = {
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       : null;
     
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({
-        plan,
-        monthly_ebooks: limits.monthlyEbooks,
-        ai_generations: limits.aiGenerations,
-        illustrations: limits.illustrations,
-        storage_gb: limits.storageGb,
-        expires_at: expiresAt,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
-
-    if (error) throw new Error(`Error updating plan: ${error.message}`);
+    await sql`
+      UPDATE subscriptions 
+      SET plan = ${plan},
+          monthly_ebooks = ${limits.monthlyEbooks},
+          ai_generations = ${limits.aiGenerations},
+          illustrations = ${limits.illustrations},
+          storage_gb = ${limits.storageGb},
+          expires_at = ${expiresAt},
+          updated_at = NOW()
+      WHERE user_id = ${userId}
+    `;
   },
 
   // Incrémenter l'utilisation
   incrementUsage: async (userId: number, type: 'ebooks' | 'generations' | 'illustrations', amount: number = 1) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
     const field = type === 'ebooks' ? 'used_ebooks' : 
                   type === 'generations' ? 'used_generations' : 
                   'used_illustrations';
     
-    // Récupérer la valeur actuelle
-    const { data: current } = await supabase
-      .from('subscriptions')
-      .select(field)
-      .eq('user_id', userId)
-      .single();
-    
-    if (current) {
-      const newValue = (current[field] || 0) + amount;
-      await supabase
-        .from('subscriptions')
-        .update({
-          [field]: newValue,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-    }
+    await sql.query(
+      `UPDATE subscriptions 
+       SET ${field} = ${field} + $1, updated_at = NOW()
+       WHERE user_id = $2`,
+      [amount, userId]
+    );
   },
 
   // Réinitialiser les compteurs mensuels
   resetMonthlyUsage: async (userId: number) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    await supabase
-      .from('subscriptions')
-      .update({
-        used_ebooks: 0,
-        used_generations: 0,
-        used_illustrations: 0,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_id', userId);
+    await sql`
+      UPDATE subscriptions 
+      SET used_ebooks = 0,
+          used_generations = 0,
+          used_illustrations = 0,
+          updated_at = NOW()
+      WHERE user_id = ${userId}
+    `;
   }
 };
 
@@ -306,86 +304,71 @@ export const projectDb = {
     layoutSettings?: any;
     illustrationsData?: any;
   }) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data: project, error } = await supabase
-      .from('projects')
-      .insert({
-        user_id: userId,
-        title: data.title,
-        author: data.author || null,
-        content: data.content || null,
-        cover_data: data.coverData ? JSON.stringify(data.coverData) : null,
-        layout_settings: data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
-        illustrations_data: data.illustrationsData ? JSON.stringify(data.illustrationsData) : null
-      })
-      .select()
-      .single();
-
-    if (error) throw new Error(`Error creating project: ${error.message}`);
-    return project.id;
+    const result = await sql`
+      INSERT INTO projects (
+        user_id, title, author, content,
+        cover_data, layout_settings, illustrations_data
+      )
+      VALUES (
+        ${userId},
+        ${data.title},
+        ${data.author || null},
+        ${data.content || null},
+        ${data.coverData ? JSON.stringify(data.coverData) : null},
+        ${data.layoutSettings ? JSON.stringify(data.layoutSettings) : null},
+        ${data.illustrationsData ? JSON.stringify(data.illustrationsData) : null}
+      )
+      RETURNING id
+    `;
+    return result.rows[0].id;
   },
 
   // Récupérer tous les projets d'un utilisateur
   findByUserId: async (userId: number) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false });
-
-    if (error) return [];
-    return data;
+    const result = await sql`
+      SELECT * FROM projects 
+      WHERE user_id = ${userId}
+      ORDER BY updated_at DESC
+    `;
+    return result.rows;
   },
 
   // Récupérer un projet par ID
   findById: async (id: number, userId: number) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .eq('id', id)
-      .eq('user_id', userId)
-      .single();
-
-    if (error) return null;
-    return data;
+    const result = await sql`
+      SELECT * FROM projects 
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
+    return result.rows[0] || null;
   },
 
   // Mettre à jour un projet
   update: async (id: number, userId: number, data: any) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    const { error } = await supabase
-      .from('projects')
-      .update({
-        title: data.title,
-        author: data.author || null,
-        content: data.content || null,
-        cover_data: data.coverData ? JSON.stringify(data.coverData) : null,
-        layout_settings: data.layoutSettings ? JSON.stringify(data.layoutSettings) : null,
-        illustrations_data: data.illustrationsData ? JSON.stringify(data.illustrationsData) : null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .eq('user_id', userId);
-
-    if (error) throw new Error(`Error updating project: ${error.message}`);
+    await sql`
+      UPDATE projects 
+      SET title = ${data.title},
+          author = ${data.author || null},
+          content = ${data.content || null},
+          cover_data = ${data.coverData ? JSON.stringify(data.coverData) : null},
+          layout_settings = ${data.layoutSettings ? JSON.stringify(data.layoutSettings) : null},
+          illustrations_data = ${data.illustrationsData ? JSON.stringify(data.illustrationsData) : null},
+          updated_at = NOW()
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
   },
 
   // Supprimer un projet
   delete: async (id: number, userId: number) => {
-    if (!supabase) throw new Error('Supabase not configured');
-    
-    await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
+    await sql`
+      DELETE FROM projects 
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
   }
 };
 
-export default supabase;
+// Initialiser la base de données au démarrage (seulement en production/Vercel)
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  initDatabase().catch(console.error);
+}
+
+export default sql;
