@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Brain, Wand2, RotateCcw, History, Save, Trash2, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface TextData {
   text: string
@@ -266,6 +267,17 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                   </div>
                 )}
               </Button>
+
+              {/* Timer IA */}
+              {isProcessing && (
+                <div className="mt-4">
+                  <AITimer 
+                    isGenerating={isProcessing} 
+                    estimatedSeconds={10}
+                    onComplete={() => console.log('⏰ Timer terminé')}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -285,36 +297,31 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                 placeholder="Votre texte apparaîtra ici..."
               />
               
-              {/* Statistiques du texte ACTUEL */}
+              {/* Statistiques du texte ACTUEL - INFORMATIVES */}
               {currentText.trim() && (
-                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Statistiques du texte actuel</h4>
+                <div className="mt-4 bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-2">📊 Statistiques actuelles (informatives)</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-gray-600">Caractères :</span>
-                      <span className="ml-2 font-medium">{currentText.length.toLocaleString()}</span>
+                      <span className="text-green-700">Caractères :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.length.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Mots :</span>
-                      <span className="ml-2 font-medium">{currentText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
+                      <span className="text-green-700">Mots :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Paragraphes :</span>
-                      <span className="ml-2 font-medium">{currentText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
+                      <span className="text-green-700">Paragraphes :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Pages estimées :</span>
-                      <span className="ml-2 font-medium">{Math.max(1, Math.ceil(currentText.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
+                      <span className="text-green-700">Pages estimées :</span>
+                      <span className="ml-2 font-medium text-green-900">{Math.max(1, Math.ceil(currentText.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="text-sm">
-                      <span className="text-gray-600">Objectif pages ebook final :</span>
-                      <span className="ml-2 font-medium text-blue-600">{textData.desiredPages} pages</span>
-                      <span className="ml-2 text-gray-500">(≈ {(textData.desiredPages * 250).toLocaleString()} mots)</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      💡 Utilisez les actions IA pour ajuster le contenu à l'objectif
+                  <div className="mt-3 pt-3 border-t border-green-300">
+                    <p className="text-xs text-green-700">
+                      🎯 <strong>Objectif final : {textData.desiredPages} pages</strong> - L'IA générera exactement ce nombre de pages pour l'ebook final.
                     </p>
                   </div>
                 </div>

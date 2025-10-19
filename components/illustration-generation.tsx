@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Image, Palette, RefreshCw, Download, Eye, Settings, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface ProcessedTextData {
   processedText: string
@@ -310,29 +311,40 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
               </Select>
             </div>
 
-            <div className="flex space-x-4">
-              <Button
-                onClick={generateAllIllustrations}
-                disabled={isGeneratingAll || illustrations.some(ill => ill.isGenerating)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {isGeneratingAll ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Génération en cours...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Image className="h-4 w-4" />
-                    <span>Générer toutes les illustrations</span>
-                  </div>
-                )}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <Button
+                  onClick={generateAllIllustrations}
+                  disabled={isGeneratingAll || illustrations.some(ill => ill.isGenerating)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {isGeneratingAll ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Génération en cours...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Image className="h-4 w-4" />
+                      <span>Générer toutes les illustrations</span>
+                    </div>
+                  )}
+                </Button>
 
-              <div className="text-sm text-gray-600 flex items-center">
-                <Settings className="h-4 w-4 mr-1" />
-                Style actuel : {getStyleInfo(selectedStyle).label}
+                <div className="text-sm text-gray-600 flex items-center">
+                  <Settings className="h-4 w-4 mr-1" />
+                  Style actuel : {getStyleInfo(selectedStyle).label}
+                </div>
               </div>
+
+              {/* Timer IA pour génération multiple */}
+              {isGeneratingAll && (
+                <AITimer 
+                  isGenerating={isGeneratingAll} 
+                  estimatedSeconds={illustrations.length * 8}
+                  onComplete={() => console.log('⏰ Toutes les illustrations générées')}
+                />
+              )}
             </div>
           </CardContent>
         </Card>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Upload, Wand2, RefreshCw, Download, Eye, Palette, Type, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface GeneratedIllustration {
   id: string
@@ -274,28 +275,49 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
         // Utiliser la description personnalisée (SANS TEXTE)
         coverPrompt = `Beautiful book cover illustration without any text or letters: ${coverDescription}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, no text, no words, no typography, pure visual art, professional book cover illustration, high quality, detailed, 4k`;
       } else {
-        // Génération automatique basée sur le titre (SANS TEXTE)
-        // Extraire le thème du titre pour créer une illustration visuelle
-        const theme = title.toLowerCase();
-        let visualTheme = 'abstract elegant design';
+        // Génération automatique basée sur le titre et les chapitres
+        const theme = (title + ' ' + illustrations.map(i => i.chapterTitle).join(' ')).toLowerCase();
+        let visualTheme = '';
+        let additionalDetails = '';
         
-        if (theme.includes('space') || theme.includes('étoile') || theme.includes('galaxy')) {
-          visualTheme = 'beautiful space scene with stars, planets, nebula';
-        } else if (theme.includes('dragon') || theme.includes('fantasy')) {
-          visualTheme = 'fantasy scene with magical elements';
-        } else if (theme.includes('love') || theme.includes('amour') || theme.includes('coeur')) {
-          visualTheme = 'romantic scene with warm atmosphere';
-        } else if (theme.includes('mystery') || theme.includes('mystère') || theme.includes('secret')) {
-          visualTheme = 'mysterious atmospheric scene with shadows';
-        } else if (theme.includes('adventure') || theme.includes('aventure')) {
-          visualTheme = 'adventurous epic scene with dramatic landscape';
-        } else if (theme.includes('tech') || theme.includes('future') || theme.includes('cyber')) {
-          visualTheme = 'futuristic technological scene with digital elements';
+        // Détection avancée du thème avec plus de mots-clés
+        if (theme.match(/space|étoile|star|galaxy|galaxie|cosmos|univers|planet|planète|astronaut|astronaute/)) {
+          visualTheme = 'stunning cosmic space scene with colorful nebula, distant planets, stars';
+          additionalDetails = 'deep space background, vibrant colors, sci-fi atmosphere';
+        } else if (theme.match(/dragon|fantasy|magic|magie|sorcier|wizard|château|castle|médiéval|medieval|knight|chevalier/)) {
+          visualTheme = 'epic fantasy scene with mythical creatures, magical atmosphere';
+          additionalDetails = 'dramatic fantasy landscape, mystical elements, heroic composition';
+        } else if (theme.match(/love|amour|coeur|heart|romance|couple|passion|relationship/)) {
+          visualTheme = 'romantic scene with warm sunset colors, dreamy atmosphere';
+          additionalDetails = 'soft lighting, emotional mood, intimate setting';
+        } else if (theme.match(/mystery|mystère|secret|detective|enquête|crime|investigation|suspense/)) {
+          visualTheme = 'mysterious dark atmospheric scene with dramatic shadows';
+          additionalDetails = 'noir style, moody lighting, suspenseful composition';
+        } else if (theme.match(/adventure|aventure|journey|voyage|exploration|discover|découverte|treasure|trésor/)) {
+          visualTheme = 'epic adventure scene with dramatic landscape, heroic journey';
+          additionalDetails = 'dynamic composition, action-packed, cinematic vista';
+        } else if (theme.match(/tech|technology|future|futur|cyber|digital|robot|AI|science|computer/)) {
+          visualTheme = 'futuristic technological scene with digital elements, neon lights';
+          additionalDetails = 'cyberpunk aesthetic, high-tech environment, modern sci-fi';
+        } else if (theme.match(/nature|forest|forêt|ocean|océan|mountain|montagne|tree|arbre|flower|fleur/)) {
+          visualTheme = 'beautiful natural landscape with vibrant colors';
+          additionalDetails = 'scenic view, natural beauty, outdoor atmosphere';
+        } else if (theme.match(/war|guerre|battle|bataille|soldier|soldat|military|militaire|conflict/)) {
+          visualTheme = 'dramatic war scene with intense atmosphere';
+          additionalDetails = 'epic scale, historical setting, dramatic composition';
+        } else if (theme.match(/business|entreprise|success|succès|money|argent|corporate|professionnel/)) {
+          visualTheme = 'modern business scene with professional atmosphere';
+          additionalDetails = 'corporate aesthetic, clean design, professional look';
+        } else if (theme.match(/horror|horreur|scary|effrayant|ghost|fantôme|dark|sombre|fear|peur/)) {
+          visualTheme = 'dark horror scene with eerie atmosphere';
+          additionalDetails = 'creepy mood, unsettling composition, gothic style';
         } else {
-          visualTheme = 'beautiful artistic abstract composition';
+          // Utiliser le titre lui-même comme inspiration
+          visualTheme = `artistic interpretation of "${title.substring(0, 100)}", creative visual metaphor`;
+          additionalDetails = 'colorful composition, imaginative design, eye-catching';
         }
         
-        coverPrompt = `Professional book cover illustration without any text or letters: ${visualTheme}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, no text, no words, no typography, no title, no author name, pure visual illustration, book cover art style, high quality, detailed, cinematic lighting, 4k`;
+        coverPrompt = `Professional book cover illustration, NO TEXT OR LETTERS: ${visualTheme}, ${additionalDetails}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, absolutely no text, no words, no typography, no letters, no title visible, no author name, pure visual art, book cover style, highly detailed, cinematic lighting, vibrant colors, 4k quality, trending on artstation`;
       }
       
       console.log('🎨 Génération couverture (sans texte):', coverPrompt);
