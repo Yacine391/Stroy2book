@@ -285,28 +285,40 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                 placeholder="Votre texte apparaîtra ici..."
               />
               
-              {/* Statistiques */}
-              <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Statistiques actuelles</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Caractères :</span>
-                    <span className="ml-2 font-medium">{currentText.length.toLocaleString()}</span>
+              {/* Statistiques du texte ACTUEL */}
+              {currentText.trim() && (
+                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Statistiques du texte actuel</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Caractères :</span>
+                      <span className="ml-2 font-medium">{currentText.length.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Mots :</span>
+                      <span className="ml-2 font-medium">{currentText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Paragraphes :</span>
+                      <span className="ml-2 font-medium">{currentText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Pages estimées :</span>
+                      <span className="ml-2 font-medium">{Math.max(1, Math.ceil(currentText.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Mots :</span>
-                    <span className="ml-2 font-medium">{currentText.trim().split(/\s+/).length.toLocaleString()}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Paragraphes :</span>
-                    <span className="ml-2 font-medium">{currentText.split(/\n\s*\n/).filter(p => p.trim()).length}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Pages estimées :</span>
-                    <span className="ml-2 font-medium">{Math.ceil(currentText.trim().split(/\s+/).length / 250)}</span>
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-sm">
+                      <span className="text-gray-600">Objectif pages ebook final :</span>
+                      <span className="ml-2 font-medium text-blue-600">{textData.desiredPages} pages</span>
+                      <span className="ml-2 text-gray-500">(≈ {(textData.desiredPages * 250).toLocaleString()} mots)</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Utilisez les actions IA pour ajuster le contenu à l'objectif
+                    </p>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

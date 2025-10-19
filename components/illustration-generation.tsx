@@ -348,26 +348,38 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Zone d'image */}
-                <div className="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden relative">
+                {/* Zone d'image avec aperçu */}
+                <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden relative border-2 border-gray-200">
                   {illustration.isGenerating ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
                       <div className="text-center">
-                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
-                        <p className="text-sm text-gray-600">Génération...</p>
+                        <Loader2 className="h-10 w-10 animate-spin mx-auto mb-3 text-blue-600" />
+                        <p className="text-sm font-medium text-gray-700">Génération en cours...</p>
+                        <p className="text-xs text-gray-500 mt-1">Cela peut prendre quelques secondes</p>
                       </div>
                     </div>
                   ) : illustration.imageUrl ? (
-                    <img
-                      src={illustration.imageUrl}
-                      alt={illustration.chapterTitle}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={illustration.imageUrl}
+                        alt={illustration.chapterTitle}
+                        className="w-full h-full object-cover"
+                        onLoad={() => console.log('✅ Image chargée:', illustration.chapterTitle)}
+                        onError={(e) => {
+                          console.error('❌ Erreur chargement image:', illustration.chapterTitle);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
+                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        ✓ Généré
+                      </div>
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-gray-500">
-                        <Image className="h-12 w-12 mx-auto mb-2" />
-                        <p className="text-sm">Pas encore générée</p>
+                        <Image className="h-16 w-16 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm font-medium">Pas encore générée</p>
+                        <p className="text-xs mt-1">Cliquez sur "Générer"</p>
                       </div>
                     </div>
                   )}

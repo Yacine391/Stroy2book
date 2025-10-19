@@ -181,9 +181,9 @@ export const subscriptionDb = {
     const userIdStr = String(userId);
     const subscriptions = JSON.parse(storage.getItem('hb-subscriptions') || '{}');
     const limits = {
-      free: { monthlyEbooks: 3, aiGenerations: 10, illustrations: 5, storageGb: 1 },
-      premium: { monthlyEbooks: 25, aiGenerations: 100, illustrations: 50, storageGb: 10 },
-      pro: { monthlyEbooks: 100, aiGenerations: 500, illustrations: 200, storageGb: 50 }
+      free: { monthlyEbooks: 3, aiGenerations: 10, illustrations: 5, storageGb: 1, maxPages: 20 },
+      premium: { monthlyEbooks: 25, aiGenerations: 100, illustrations: 50, storageGb: 10, maxPages: 100 },
+      pro: { monthlyEbooks: 100, aiGenerations: 500, illustrations: 200, storageGb: 50, maxPages: 200 }
     };
     
     const limit = limits[plan];
@@ -194,6 +194,7 @@ export const subscriptionDb = {
       ai_generations: limit.aiGenerations,
       illustrations: limit.illustrations,
       storage_gb: limit.storageGb,
+      max_pages: limit.maxPages,
       expires_at: plan !== 'free' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined
     };
     storage.setItem('hb-subscriptions', JSON.stringify(subscriptions));

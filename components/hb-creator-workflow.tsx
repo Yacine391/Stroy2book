@@ -556,6 +556,7 @@ export default function HBCreatorWorkflow() {
           <TextInputStep
             onNext={handleTextInputComplete}
             onBack={goToPreviousStep}
+            currentUser={currentUser}
           />
         )}
         

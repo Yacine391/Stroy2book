@@ -8,32 +8,40 @@ const genAI = new GoogleGenerativeAI(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content, genre, style } = body;
+    const { content, genre, style, chapters } = body;
 
-    if (!content) {
+    console.log('📚 Demande génération titre:', { content: content?.substring(0, 100), genre, style, chaptersCount: chapters?.length });
+
+    if (!content && (!chapters || chapters.length === 0)) {
       return NextResponse.json(
-        { error: 'Contenu requis' },
+        { error: 'Contenu ou chapitres requis' },
         { status: 400 }
       );
     }
 
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Basé sur ce contenu d'ebook, génère UN SEUL titre accrocheur et professionnel. 
-Genre: ${genre || 'Fiction'}
-Style: ${style || 'Standard'}
+    // Construire le contenu à analyser
+    let textToAnalyze = content || '';
+    if (chapters && chapters.length > 0) {
+      textToAnalyze = chapters.join('. ') + '. ' + textToAnalyze;
+    }
 
-Contenu (extrait):
-${content.substring(0, 1000)}
+    const prompt = `Basé sur ce contenu d'ebook, génère UN SEUL titre accrocheur et professionnel en français. 
 
-Réponds UNIQUEMENT avec le titre, rien d'autre. Pas de guillemets, pas d'explication, juste le titre.`;
+Contenu des chapitres/idées:
+${textToAnalyze.substring(0, 1500)}
+
+Génère un titre court (max 8 mots), impactant et mémorable qui capture l'essence du contenu.
+Réponds UNIQUEMENT avec le titre, sans guillemets ni explications.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     let title = response.text().trim();
 
-    // Nettoyer le titre (enlever guillemets, etc.)
-    title = title.replace(/^["']|["']$/g, '').trim();
+    // Nettoyer le titre (enlever guillemets, astérisques, etc.)
+    title = title.replace(/^["'*]+|["'*]+$/g, '').trim();
+    title = title.replace(/^Titre\s*:\s*/i, '').trim();
 
     console.log('✨ Titre généré:', title);
 
@@ -43,9 +51,9 @@ Réponds UNIQUEMENT avec le titre, rien d'autre. Pas de guillemets, pas d'explic
     });
 
   } catch (error: any) {
-    console.error('Erreur génération titre:', error);
+    console.error('❌ Erreur génération titre:', error);
     return NextResponse.json(
-      { error: error.message || 'Erreur lors de la génération' },
+      { error: error.message || 'Erreur lors de la génération du titre' },
       { status: 500 }
     );
   }

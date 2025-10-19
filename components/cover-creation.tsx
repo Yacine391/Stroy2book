@@ -195,13 +195,16 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
     try {
       // Utiliser le contenu des illustrations pour générer un titre
-      const content = illustrations.map(ill => ill.chapterTitle).join('. ');
+      const chapters = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+      
+      console.log('🪄 Génération titre avec', chapters.length, 'chapitres');
       
       const response = await fetch('/api/generate-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content,
+          chapters,
+          content: chapters.join('. '),
           genre: selectedStyle,
           style: selectedLayout
         })
@@ -213,12 +216,18 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
         throw new Error(data.error || 'Erreur API');
       }
 
-      setTitle(data.title);
-      setSuccess("Titre généré avec l'IA !");
+      if (data.title) {
+        setTitle(data.title);
+        setSuccess("✨ Titre généré avec l'IA !");
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        throw new Error('Pas de titre reçu');
+      }
       
     } catch (err: any) {
-      console.error('Erreur génération titre:', err);
-      setError("Erreur lors de la génération du titre");
+      console.error('❌ Erreur génération titre:', err);
+      setError("Erreur lors de la génération du titre. Réessayez.");
+      setTimeout(() => setError(""), 3000);
     } finally {
       setIsGeneratingTitle(false);
     }
@@ -241,35 +250,55 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     setSuccess("")
 
     try {
-      // Créer un prompt détaillé pour la couverture
+      // Créer un prompt SANS TEXTE (les IA d'images ne peuvent pas écrire du texte lisible)
       const styleDescriptions: Record<string, string> = {
-        professional: 'professional design, clean and corporate',
-        creative: 'creative artistic design, imaginative and colorful',
-        academic: 'academic scholarly design, formal and serious',
-        popular: 'popular commercial design, attractive and eye-catching',
-        luxury: 'luxury premium design, sophisticated and elegant'
+        professional: 'professional corporate style, clean modern aesthetic',
+        creative: 'creative artistic style, vibrant imaginative colors',
+        academic: 'scholarly formal style, serious academic look',
+        popular: 'popular commercial style, eye-catching attractive design',
+        luxury: 'luxury premium style, sophisticated elegant appearance'
       };
 
       const layoutDescriptions: Record<string, string> = {
-        classic: 'classic traditional book cover layout',
-        modern: 'modern minimalist layout with clean lines',
-        artistic: 'artistic creative layout with unique composition',
-        minimalist: 'minimalist simple layout with lots of whitespace',
-        bold: 'bold striking layout with large typography',
-        elegant: 'elegant refined layout with decorative ornamental elements'
+        classic: 'classic traditional composition',
+        modern: 'modern minimalist composition with geometric shapes',
+        artistic: 'artistic creative composition with abstract elements',
+        minimalist: 'minimalist simple composition with negative space',
+        bold: 'bold striking composition with strong visual impact',
+        elegant: 'elegant refined composition with ornamental decorative elements'
       };
 
       let coverPrompt = '';
       
       if (useCustomDescription && coverDescription.trim()) {
-        // Utiliser la description personnalisée
-        coverPrompt = `Book cover image: ${coverDescription}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, professional book cover art, high quality`;
+        // Utiliser la description personnalisée (SANS TEXTE)
+        coverPrompt = `Beautiful book cover illustration without any text or letters: ${coverDescription}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, no text, no words, no typography, pure visual art, professional book cover illustration, high quality, detailed, 4k`;
       } else {
-        // Génération automatique
-        coverPrompt = `Professional book cover for "${title}" by ${author}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, book cover art, high quality, detailed illustration`;
+        // Génération automatique basée sur le titre (SANS TEXTE)
+        // Extraire le thème du titre pour créer une illustration visuelle
+        const theme = title.toLowerCase();
+        let visualTheme = 'abstract elegant design';
+        
+        if (theme.includes('space') || theme.includes('étoile') || theme.includes('galaxy')) {
+          visualTheme = 'beautiful space scene with stars, planets, nebula';
+        } else if (theme.includes('dragon') || theme.includes('fantasy')) {
+          visualTheme = 'fantasy scene with magical elements';
+        } else if (theme.includes('love') || theme.includes('amour') || theme.includes('coeur')) {
+          visualTheme = 'romantic scene with warm atmosphere';
+        } else if (theme.includes('mystery') || theme.includes('mystère') || theme.includes('secret')) {
+          visualTheme = 'mysterious atmospheric scene with shadows';
+        } else if (theme.includes('adventure') || theme.includes('aventure')) {
+          visualTheme = 'adventurous epic scene with dramatic landscape';
+        } else if (theme.includes('tech') || theme.includes('future') || theme.includes('cyber')) {
+          visualTheme = 'futuristic technological scene with digital elements';
+        } else {
+          visualTheme = 'beautiful artistic abstract composition';
+        }
+        
+        coverPrompt = `Professional book cover illustration without any text or letters: ${visualTheme}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, no text, no words, no typography, no title, no author name, pure visual illustration, book cover art style, high quality, detailed, cinematic lighting, 4k`;
       }
       
-      console.log('🎨 Génération couverture:', coverPrompt);
+      console.log('🎨 Génération couverture (sans texte):', coverPrompt);
 
       // Appeler l'API de génération d'image
       const response = await fetch('/api/generate-image', {
@@ -288,11 +317,13 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
       }
 
       setGeneratedCoverUrl(data.imageUrl);
-      setSuccess("Couverture générée avec succès !");
+      setSuccess("✨ Couverture générée avec succès ! (Le titre et l'auteur seront ajoutés lors de l'export)");
+      setTimeout(() => setSuccess(""), 4000);
       
     } catch (err: any) {
-      console.error('Erreur génération couverture:', err);
+      console.error('❌ Erreur génération couverture:', err);
       setError(err.message || "Erreur lors de la génération de la couverture");
+      setTimeout(() => setError(""), 3000);
     } finally {
       setIsGenerating(false)
     }
@@ -441,7 +472,10 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   className="mt-1 min-h-[100px]"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  💡 Plus votre description est détaillée, meilleure sera l'image générée
+                  💡 Décrivez uniquement l'IMAGE (pas le texte). Plus c'est détaillé, mieux c'est !
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ N'incluez PAS le titre ou l'auteur dans la description - ils seront ajoutés automatiquement lors de l'export
                 </p>
               </div>
             </CardContent>

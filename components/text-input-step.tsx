@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -18,9 +18,10 @@ interface TextInputStepProps {
     desiredPages: number
   }) => void
   onBack: () => void
+  currentUser?: any
 }
 
-export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
+export default function TextInputStep({ onNext, onBack, currentUser }: TextInputStepProps) {
   const [text, setText] = useState("")
   const [detectedLanguage, setDetectedLanguage] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
@@ -28,7 +29,23 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
   const [detectedStyle, setDetectedStyle] = useState("")
   const [error, setError] = useState("")
   const [desiredPages, setDesiredPages] = useState(20) // Nouveau : nombre de pages désiré
+  const [pageLimit, setPageLimit] = useState(200) // Limite selon l'abonnement
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Déterminer la limite de pages selon l'abonnement
+  useEffect(() => {
+    if (currentUser && currentUser.subscription) {
+      const plan = currentUser.subscription.plan || 'free';
+      const limits = {
+        free: 20,
+        premium: 100,
+        pro: 200
+      };
+      setPageLimit(limits[plan as keyof typeof limits] || 20);
+    } else {
+      setPageLimit(20); // Par défaut: Free (20 pages)
+    }
+  }, [currentUser])
 
   // Fonction pour détecter la langue automatiquement
   const detectLanguage = (text: string): string => {
@@ -212,6 +229,15 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
       return
     }
 
+    // Vérifier la limite de pages selon l'abonnement
+    if (desiredPages > pageLimit) {
+      const planName = currentUser?.subscription?.plan || 'free';
+      const planDisplay = planName === 'free' ? 'Gratuit' : planName === 'premium' ? 'Premium' : 'Pro';
+      setError(`❌ Votre abonnement ${planDisplay} vous permet de créer des ebooks jusqu'à ${pageLimit} pages maximum. Vous avez demandé ${desiredPages} pages. Veuillez réduire le nombre de pages ou mettre à niveau votre abonnement pour continuer.`);
+      return;
+    }
+
+    setError(""); // Effacer les erreurs
     onNext({
       text: text.trim(),
       language: detectedLanguage || 'fr',
@@ -316,9 +342,22 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
                   pages (≈ {(desiredPages * 250).toLocaleString()} mots)
                 </span>
               </div>
-              <p className="text-xs text-gray-500">
-                💡 L'IA générera exactement {desiredPages} pages de contenu
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">
+                  💡 L'IA générera exactement {desiredPages} pages de contenu
+                </p>
+                <p className={`text-xs font-medium ${desiredPages > pageLimit ? 'text-red-600' : 'text-green-600'}`}>
+                  Limite : {pageLimit} pages max
+                </p>
+              </div>
+              {desiredPages > pageLimit && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-red-800">
+                    ⚠️ Vous avez dépassé la limite de votre abonnement ({pageLimit} pages max). 
+                    Réduisez le nombre de pages ou passez à un abonnement supérieur.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Statistiques du texte */}
