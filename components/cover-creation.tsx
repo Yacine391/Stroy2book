@@ -186,7 +186,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     }
   }
 
-  // Fonction pour générer automatiquement la couverture
+  // Fonction pour générer automatiquement la couverture avec l'IA
   const generateCover = async () => {
     if (!title.trim()) {
       setError("Veuillez saisir un titre")
@@ -203,23 +203,50 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     setSuccess("")
 
     try {
-      // Simulation de génération de couverture
-      // Dans la vraie implémentation, on appellerait une API de génération d'image
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Créer un prompt détaillé pour la couverture
+      const styleDescriptions: Record<string, string> = {
+        professional: 'professional design, clean and corporate',
+        creative: 'creative artistic design, imaginative',
+        academic: 'academic scholarly design, formal',
+        popular: 'popular commercial design, attractive',
+        luxury: 'luxury premium design, sophisticated elegant'
+      };
 
-      // Générer une URL de couverture simulée
-      const coverPrompt = `Book cover for "${title}" by ${author}, ${selectedStyle} style, ${selectedLayout} layout`
-      const encodedPrompt = encodeURIComponent(coverPrompt)
+      const layoutDescriptions: Record<string, string> = {
+        classic: 'classic book cover layout',
+        modern: 'modern minimalist layout',
+        artistic: 'artistic creative layout',
+        minimalist: 'minimalist simple layout',
+        bold: 'bold striking typography layout',
+        elegant: 'elegant refined layout with decorative elements'
+      };
+
+      const coverPrompt = `Professional book cover design for "${title}" by ${author}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, high quality, detailed, book cover art`;
       
-      // Utiliser une couleur basée sur la palette sélectionnée
-      const colorHex = primaryColor.replace('#', '')
-      const mockCoverUrl = `https://via.placeholder.com/400x600/${colorHex}/ffffff?text=${encodedPrompt.substring(0, 20)}`
+      console.log('🎨 Génération couverture:', coverPrompt);
+
+      // Appeler l'API de génération d'image
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: coverPrompt,
+          style: 'realistic' // Pour les couvertures, on utilise un style réaliste/professionnel
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      setGeneratedCoverUrl(data.imageUrl);
+      setSuccess("Couverture générée avec succès !");
       
-      setGeneratedCoverUrl(mockCoverUrl)
-      setSuccess("Couverture générée avec succès")
-      
-    } catch (err) {
-      setError("Erreur lors de la génération de la couverture")
+    } catch (err: any) {
+      console.error('Erreur génération couverture:', err);
+      setError(err.message || "Erreur lors de la génération de la couverture");
     } finally {
       setIsGenerating(false)
     }
@@ -338,7 +365,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Layout de couverture</Label>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Label>Layout de couverture</Label>
+                  <div className="group relative">
+                    <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 cursor-help hover:bg-gray-300 transition">
+                      i
+                    </div>
+                    <div className="hidden group-hover:block absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg left-5 top-0">
+                      Le layout définit la disposition des éléments sur votre couverture (titre, image, auteur). Choisissez celui qui correspond le mieux à votre style de livre.
+                    </div>
+                  </div>
+                </div>
                 <Select value={selectedLayout} onValueChange={setSelectedLayout}>
                   <SelectTrigger>
                     <SelectValue />
@@ -419,59 +456,50 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                 </div>
               </div>
 
-              {/* Couleurs personnalisées */}
+              {/* Couleurs personnalisées - Color Pickers */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="primary-color" className="text-sm">Couleur principale</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="primary-color"
                       type="color"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur principale"
                     />
-                    <Input
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="text-xs"
-                    />
+                    <p className="text-xs text-gray-500 mt-1">{primaryColor}</p>
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="secondary-color" className="text-sm">Couleur secondaire</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="secondary-color"
                       type="color"
                       value={secondaryColor}
                       onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur secondaire"
                     />
-                    <Input
-                      value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="text-xs"
-                    />
+                    <p className="text-xs text-gray-500 mt-1">{secondaryColor}</p>
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="text-color" className="text-sm">Couleur du texte</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="text-color"
                       type="color"
                       value={textColor}
                       onChange={(e) => setTextColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur du texte"
                     />
-                    <Input
-                      value={textColor}
-                      onChange={(e) => setTextColor(e.target.value)}
-                      className="text-xs"
-                    />
+                    <p className="text-xs text-gray-500 mt-1">{textColor}</p>
                   </div>
                 </div>
               </div>

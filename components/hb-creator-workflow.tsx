@@ -34,6 +34,7 @@ interface WorkflowData {
     language: string
     chapters: string[]
     style: string
+    desiredPages: number
   }
   processedText?: {
     processedText: string

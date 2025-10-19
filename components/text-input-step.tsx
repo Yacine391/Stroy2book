@@ -14,6 +14,7 @@ interface TextInputStepProps {
     language: string
     chapters: string[]
     style: string
+    desiredPages: number
   }) => void
   onBack: () => void
 }
@@ -25,6 +26,7 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
   const [chapters, setChapters] = useState<string[]>([])
   const [detectedStyle, setDetectedStyle] = useState("")
   const [error, setError] = useState("")
+  const [desiredPages, setDesiredPages] = useState(20) // Nouveau : nombre de pages désiré
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fonction pour détecter la langue automatiquement
@@ -213,7 +215,8 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
       text: text.trim(),
       language: detectedLanguage || 'fr',
       chapters: chapters.length > 0 ? chapters : [text.trim()],
-      style: detectedStyle || 'Standard'
+      style: detectedStyle || 'Standard',
+      desiredPages: desiredPages
     })
   }
 
@@ -289,42 +292,26 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
               className="min-h-[300px] text-base"
             />
             
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={analyzeText}
-                disabled={!text.trim() || isProcessing}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Languages className="h-4 w-4" />
-                <span>Analyser le texte</span>
-              </Button>
-              
-              <Button
-                onClick={handleCleanText}
-                disabled={!text.trim()}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Wand2 className="h-4 w-4" />
-                <span>Nettoyer le texte</span>
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  const autoChapters = autoSplitChapters(text)
-                  setChapters(autoChapters)
-                }}
-                disabled={!text.trim()}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Scissors className="h-4 w-4" />
-                <span>Découper en chapitres</span>
-              </Button>
+            {/* Champ nombre de pages désiré */}
+            <div className="space-y-2">
+              <Label htmlFor="desired-pages">Nombre de pages souhaité pour l'ebook final</Label>
+              <div className="flex items-center space-x-4">
+                <input
+                  id="desired-pages"
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={desiredPages}
+                  onChange={(e) => setDesiredPages(Math.max(1, Math.min(200, parseInt(e.target.value) || 20)))}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600">
+                  pages (environ {desiredPages * 250} mots)
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                💡 L'IA ajustera le contenu pour atteindre exactement ce nombre de pages
+              </p>
             </div>
 
             {/* Statistiques du texte */}

@@ -13,6 +13,7 @@ interface TextData {
   language: string
   chapters: string[]
   style: string
+  desiredPages: number
 }
 
 interface HistoryEntry {

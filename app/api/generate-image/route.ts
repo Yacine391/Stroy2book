@@ -14,29 +14,31 @@ export async function POST(request: NextRequest) {
 
     // Construire le prompt complet avec le style
     const stylePrompts: Record<string, string> = {
-      realistic: 'photorealistic, highly detailed, 4k quality',
-      cartoon: 'cartoon style, colorful, fun illustration',
-      watercolor: 'watercolor painting, artistic, soft colors',
-      fantasy: 'fantasy art, magical, epic fantasy style',
-      minimalist: 'minimalist design, clean, simple, modern',
-      vintage: 'vintage style, retro, nostalgic atmosphere',
-      digital_art: 'digital art, modern illustration, vibrant',
-      sketch: 'pencil sketch, hand-drawn, artistic'
+      realistic: 'photorealistic, highly detailed, professional photography, 4k quality, cinematic lighting',
+      cartoon: 'cartoon style illustration, colorful, fun, playful, animated style, vibrant colors',
+      watercolor: 'watercolor painting, artistic, soft flowing colors, traditional art, delicate brush strokes',
+      fantasy: 'fantasy art, magical atmosphere, mystical, epic fantasy illustration, enchanted',
+      minimalist: 'minimalist design, clean lines, simple composition, modern art, geometric, elegant',
+      vintage: 'vintage style, retro aesthetic, nostalgic atmosphere, classic art, aged paper texture',
+      digital_art: 'digital art, modern illustration, vibrant colors, contemporary style, digital painting',
+      sketch: 'pencil sketch, hand-drawn, artistic line work, detailed shading, traditional drawing'
     };
 
     const fullPrompt = `${prompt}, ${stylePrompts[style] || stylePrompts.realistic}`;
 
-    // Utiliser Pollinations AI (gratuit et sans API key)
-    // Alternative gratuite à DALL-E / Midjourney
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&nologo=true`;
+    // Ajouter un seed aléatoire pour assurer l'unicité de chaque image
+    const uniqueSeed = Date.now() + Math.random();
 
-    // Attendre 2 secondes pour laisser l'image se générer
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Utiliser Pollinations AI avec seed pour unicité
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&seed=${uniqueSeed}&nologo=true`;
+
+    console.log(`🎨 Génération image : ${style} - ${prompt.substring(0, 50)}...`);
 
     return NextResponse.json({
       success: true,
       imageUrl,
-      prompt: fullPrompt
+      prompt: fullPrompt,
+      style
     });
 
   } catch (error: any) {
