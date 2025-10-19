@@ -193,42 +193,52 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   const generateTitleWithAI = async () => {
     setIsGeneratingTitle(true);
     setError("");
+    setSuccess("");
 
     try {
       // Utiliser le contenu des illustrations pour générer un titre
       const chapters = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
       
-      console.log('🪄 Génération titre avec', chapters.length, 'chapitres');
+      // Si pas de chapitres depuis les illustrations, utiliser des données de base
+      let contentToSend = chapters.join('. ');
+      if (!contentToSend || contentToSend.length < 10) {
+        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
+      }
+      
+      console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));
       
       const response = await fetch('/api/generate-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chapters,
-          content: chapters.join('. '),
+          chapters: chapters.length > 0 ? chapters : [`Ebook ${selectedStyle}`],
+          content: contentToSend,
           genre: selectedStyle,
           style: selectedLayout
         })
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📦 Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur API');
       }
 
-      if (data.title) {
+      if (data.title && data.title.trim()) {
         setTitle(data.title);
         setSuccess("✨ Titre généré avec l'IA !");
+        console.log('✅ Titre appliqué:', data.title);
         setTimeout(() => setSuccess(""), 3000);
       } else {
-        throw new Error('Pas de titre reçu');
+        throw new Error('Pas de titre reçu de l\'API');
       }
       
     } catch (err: any) {
       console.error('❌ Erreur génération titre:', err);
-      setError("Erreur lors de la génération du titre. Réessayez.");
-      setTimeout(() => setError(""), 3000);
+      setError(`Erreur : ${err.message}`);
+      setTimeout(() => setError(""), 5000);
     } finally {
       setIsGeneratingTitle(false);
     }
@@ -272,52 +282,40 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
       let coverPrompt = '';
       
       if (useCustomDescription && coverDescription.trim()) {
-        // Utiliser la description personnalisée (SANS TEXTE)
-        coverPrompt = `Beautiful book cover illustration without any text or letters: ${coverDescription}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, no text, no words, no typography, pure visual art, professional book cover illustration, high quality, detailed, 4k`;
+        // Utiliser la description personnalisée - SIMPLE ET DIRECT
+        coverPrompt = `book cover art: ${coverDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
       } else {
-        // Génération automatique basée sur le titre et les chapitres
-        const theme = (title + ' ' + illustrations.map(i => i.chapterTitle).join(' ')).toLowerCase();
-        let visualTheme = '';
-        let additionalDetails = '';
+        // Génération automatique SIMPLIFIÉE basée sur le titre
+        const titleLower = title.toLowerCase();
+        let visualDescription = '';
         
-        // Détection avancée du thème avec plus de mots-clés
-        if (theme.match(/space|étoile|star|galaxy|galaxie|cosmos|univers|planet|planète|astronaut|astronaute/)) {
-          visualTheme = 'stunning cosmic space scene with colorful nebula, distant planets, stars';
-          additionalDetails = 'deep space background, vibrant colors, sci-fi atmosphere';
-        } else if (theme.match(/dragon|fantasy|magic|magie|sorcier|wizard|château|castle|médiéval|medieval|knight|chevalier/)) {
-          visualTheme = 'epic fantasy scene with mythical creatures, magical atmosphere';
-          additionalDetails = 'dramatic fantasy landscape, mystical elements, heroic composition';
-        } else if (theme.match(/love|amour|coeur|heart|romance|couple|passion|relationship/)) {
-          visualTheme = 'romantic scene with warm sunset colors, dreamy atmosphere';
-          additionalDetails = 'soft lighting, emotional mood, intimate setting';
-        } else if (theme.match(/mystery|mystère|secret|detective|enquête|crime|investigation|suspense/)) {
-          visualTheme = 'mysterious dark atmospheric scene with dramatic shadows';
-          additionalDetails = 'noir style, moody lighting, suspenseful composition';
-        } else if (theme.match(/adventure|aventure|journey|voyage|exploration|discover|découverte|treasure|trésor/)) {
-          visualTheme = 'epic adventure scene with dramatic landscape, heroic journey';
-          additionalDetails = 'dynamic composition, action-packed, cinematic vista';
-        } else if (theme.match(/tech|technology|future|futur|cyber|digital|robot|AI|science|computer/)) {
-          visualTheme = 'futuristic technological scene with digital elements, neon lights';
-          additionalDetails = 'cyberpunk aesthetic, high-tech environment, modern sci-fi';
-        } else if (theme.match(/nature|forest|forêt|ocean|océan|mountain|montagne|tree|arbre|flower|fleur/)) {
-          visualTheme = 'beautiful natural landscape with vibrant colors';
-          additionalDetails = 'scenic view, natural beauty, outdoor atmosphere';
-        } else if (theme.match(/war|guerre|battle|bataille|soldier|soldat|military|militaire|conflict/)) {
-          visualTheme = 'dramatic war scene with intense atmosphere';
-          additionalDetails = 'epic scale, historical setting, dramatic composition';
-        } else if (theme.match(/business|entreprise|success|succès|money|argent|corporate|professionnel/)) {
-          visualTheme = 'modern business scene with professional atmosphere';
-          additionalDetails = 'corporate aesthetic, clean design, professional look';
-        } else if (theme.match(/horror|horreur|scary|effrayant|ghost|fantôme|dark|sombre|fear|peur/)) {
-          visualTheme = 'dark horror scene with eerie atmosphere';
-          additionalDetails = 'creepy mood, unsettling composition, gothic style';
+        // Détection SIMPLE et PRÉCISE
+        if (titleLower.includes('space') || titleLower.includes('étoile') || titleLower.includes('galaxy') || titleLower.includes('cosmos')) {
+          visualDescription = 'space galaxy nebula stars planets cosmic';
+        } else if (titleLower.includes('dragon') || titleLower.includes('fantasy') || titleLower.includes('magic') || titleLower.includes('magie')) {
+          visualDescription = 'fantasy dragon castle magical mythical';
+        } else if (titleLower.includes('love') || titleLower.includes('amour') || titleLower.includes('romance')) {
+          visualDescription = 'romantic sunset couple love hearts warm';
+        } else if (titleLower.includes('mystery') || titleLower.includes('mystère') || titleLower.includes('detective')) {
+          visualDescription = 'mysterious dark noir detective shadows';
+        } else if (titleLower.includes('adventure') || titleLower.includes('aventure') || titleLower.includes('treasure')) {
+          visualDescription = 'adventure epic landscape mountain journey';
+        } else if (titleLower.includes('tech') || titleLower.includes('cyber') || titleLower.includes('robot') || titleLower.includes('future')) {
+          visualDescription = 'futuristic technology cyber neon digital';
+        } else if (titleLower.includes('ocean') || titleLower.includes('océan') || titleLower.includes('sea') || titleLower.includes('mer')) {
+          visualDescription = 'ocean sea waves water blue';
+        } else if (titleLower.includes('forest') || titleLower.includes('forêt') || titleLower.includes('tree') || titleLower.includes('nature')) {
+          visualDescription = 'forest trees nature green woodland';
+        } else if (titleLower.includes('city') || titleLower.includes('ville') || titleLower.includes('urban')) {
+          visualDescription = 'city urban skyline buildings modern';
         } else {
-          // Utiliser le titre lui-même comme inspiration
-          visualTheme = `artistic interpretation of "${title.substring(0, 100)}", creative visual metaphor`;
-          additionalDetails = 'colorful composition, imaginative design, eye-catching';
+          // Fallback : utiliser les premiers mots du titre comme description
+          const words = title.split(' ').slice(0, 5).join(' ');
+          visualDescription = words;
         }
         
-        coverPrompt = `Professional book cover illustration, NO TEXT OR LETTERS: ${visualTheme}, ${additionalDetails}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, absolutely no text, no words, no typography, no letters, no title visible, no author name, pure visual art, book cover style, highly detailed, cinematic lighting, vibrant colors, 4k quality, trending on artstation`;
+        // Prompt SIMPLE et DIRECT
+        coverPrompt = `book cover art: ${visualDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
       }
       
       console.log('🎨 Génération couverture (sans texte):', coverPrompt);
@@ -431,10 +429,11 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   />
                   <Button
                     onClick={generateTitleWithAI}
-                    disabled={isGeneratingTitle}
+                    disabled={isGeneratingTitle || isGenerating}
                     variant="outline"
                     size="sm"
                     title="Générer un titre avec l'IA"
+                    className="shrink-0"
                   >
                     {isGeneratingTitle ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -443,9 +442,23 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Cliquez sur la baguette magique pour générer un titre avec l'IA
-                </p>
+                
+                {/* Mini timer pour génération titre */}
+                {isGeneratingTitle && (
+                  <div className="mt-2">
+                    <AITimer 
+                      isGenerating={isGeneratingTitle} 
+                      estimatedSeconds={5}
+                      onComplete={() => console.log('⏰ Titre généré')}
+                    />
+                  </div>
+                )}
+                
+                {!isGeneratingTitle && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Cliquez sur la baguette magique 🪄 pour générer un titre avec l'IA
+                  </p>
+                )}
               </div>
 
               <div>
@@ -778,11 +791,22 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                 )}
               </div>
 
+              {/* Mini timer dans l'encadré */}
+              {isGenerating && (
+                <div className="mt-4 mb-2">
+                  <AITimer 
+                    isGenerating={isGenerating} 
+                    estimatedSeconds={12}
+                    onComplete={() => console.log('⏰ Couverture générée')}
+                  />
+                </div>
+              )}
+
               {/* Actions sur la couverture */}
               <div className="space-y-2 mt-4">
                 <Button
                   onClick={() => generateCover(false)}
-                  disabled={isGenerating || !title.trim() || !author.trim()}
+                  disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim()}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
                   {isGenerating ? (
@@ -796,7 +820,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                 {coverDescription.trim() && (
                   <Button
                     onClick={() => generateCover(true)}
-                    disabled={isGenerating || !title.trim() || !author.trim()}
+                    disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim()}
                     variant="outline"
                     className="w-full"
                   >
@@ -805,7 +829,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   </Button>
                 )}
 
-                {generatedCoverUrl && (
+                {generatedCoverUrl && !isGenerating && (
                   <div className="flex justify-center space-x-2 pt-2">
                     <Button onClick={regenerateCover} variant="outline" size="sm">
                       <RefreshCw className="h-4 w-4 mr-1" />
