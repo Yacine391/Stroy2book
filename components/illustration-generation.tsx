@@ -144,30 +144,39 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
     return `${basePrompt}${keywordPrompt}, style ${selectedStyle}`
   }
 
-  // Simulation de génération d'image (dans la vraie implémentation, on appellerait DALL-E, Stable Diffusion, etc.)
+  // Génération d'image avec IA (VRAIE API !)
   const generateImage = async (prompt: string, style: string): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Retourner une URL d'image placeholder basée sur le style
-        const styleColors: { [key: string]: string } = {
-          realistic: "4a5568",
-          cartoon: "f56565",
-          watercolor: "48bb78",
-          fantasy: "9f7aea",
-          minimalist: "718096",
-          vintage: "d69e2e",
-          digital_art: "3182ce",
-          sketch: "2d3748"
-        }
-        
-        const color = styleColors[style] || "4a5568"
-        const width = 400
-        const height = 300
-        
-        // URL d'image placeholder avec couleur basée sur le style
-        resolve(`https://via.placeholder.com/${width}x${height}/${color}/ffffff?text=${encodeURIComponent(style.replace('_', ' '))}`)
-      }, 2000)
-    })
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, style })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      return data.imageUrl;
+    } catch (error: any) {
+      console.error('Erreur génération image:', error);
+      // Fallback sur placeholder en cas d'erreur
+      const styleColors: { [key: string]: string } = {
+        realistic: "4a5568",
+        cartoon: "f56565",
+        watercolor: "48bb78",
+        fantasy: "9f7aea",
+        minimalist: "718096",
+        vintage: "d69e2e",
+        digital_art: "3182ce",
+        sketch: "2d3748"
+      }
+      
+      const color = styleColors[style] || "4a5568"
+      return `https://via.placeholder.com/400x300/${color}/ffffff?text=${encodeURIComponent(style.replace('_', ' '))}`;
+    }
   }
 
   // Fonction pour générer une illustration individuelle

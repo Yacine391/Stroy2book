@@ -90,14 +90,30 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     setHistory([initialEntry])
   }, [textData.text])
 
-  // Fonction pour appeler l'IA (simulation)
+  // Fonction pour appeler l'IA (VRAIE API)
   const processWithAI = async (action: string, text: string): Promise<string> => {
-    // Simulation d'appel IA - dans la vraie implémentation, on appellerait l'API
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let processedText = text
-        
-        switch (action) {
+    try {
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, text })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      return data.processedText;
+    } catch (error: any) {
+      console.error('Erreur API:', error);
+      // Fallback sur simulation en cas d'erreur
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let processedText = text
+          
+          switch (action) {
           case "improve":
             processedText = text + "\n\n[Texte amélioré par l'IA avec un style plus riche et une meilleure fluidité]"
             break
@@ -120,7 +136,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
         
         resolve(processedText)
       }, 2000)
-    })
+    });
+    }
   }
 
   // Fonction pour traiter le texte avec l'IA

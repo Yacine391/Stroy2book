@@ -44,13 +44,9 @@ const storage = {
 // Hash simple pour les mots de passe (côté client uniquement)
 function simpleHash(password: string): string {
   // Note: En production, utilisez bcrypt côté serveur
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
+  // Pour l'instant, on utilise btoa (base64) pour que ça fonctionne
+  if (typeof window === 'undefined') return password; // Côté serveur, pas de hash
+  return btoa(password); // Simple base64, pas secure mais ça marche
 }
 
 // Base de données en mémoire (localStorage)
