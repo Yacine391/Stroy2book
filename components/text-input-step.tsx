@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, FileText, Languages, Scissors, Wand2, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
@@ -296,28 +297,34 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
             <div className="space-y-2">
               <Label htmlFor="desired-pages">Nombre de pages souhaité pour l'ebook final</Label>
               <div className="flex items-center space-x-4">
-                <input
+                <Input
                   id="desired-pages"
-                  type="number"
-                  min="1"
-                  max="200"
+                  type="text"
                   value={desiredPages}
-                  onChange={(e) => setDesiredPages(Math.max(1, Math.min(200, parseInt(e.target.value) || 20)))}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    const num = parseInt(val) || 1;
+                    setDesiredPages(Math.max(1, Math.min(200, num)));
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) setDesiredPages(20);
+                  }}
+                  placeholder="20"
+                  className="w-24"
                 />
                 <span className="text-sm text-gray-600">
-                  pages (environ {desiredPages * 250} mots)
+                  pages (≈ {(desiredPages * 250).toLocaleString()} mots)
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                💡 L'IA ajustera le contenu pour atteindre exactement ce nombre de pages
+                💡 L'IA générera exactement {desiredPages} pages de contenu
               </p>
             </div>
 
             {/* Statistiques du texte */}
             {text.trim() && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Statistiques</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Statistiques du texte actuel</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Caractères :</span>
@@ -325,16 +332,26 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
                   </div>
                   <div>
                     <span className="text-gray-600">Mots :</span>
-                    <span className="ml-2 font-medium">{text.trim().split(/\s+/).length.toLocaleString()}</span>
+                    <span className="ml-2 font-medium">{text.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Paragraphes :</span>
-                    <span className="ml-2 font-medium">{text.split(/\n\s*\n/).filter(p => p.trim()).length}</span>
+                    <span className="ml-2 font-medium">{text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Pages estimées :</span>
-                    <span className="ml-2 font-medium">{Math.ceil(text.trim().split(/\s+/).length / 250)}</span>
+                    <span className="ml-2 font-medium">{Math.max(1, Math.ceil(text.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
                   </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Pages souhaitées pour l'ebook final :</span>
+                    <span className="ml-2 font-medium text-blue-600">{desiredPages} pages</span>
+                    <span className="ml-2 text-gray-500">(≈ {desiredPages * 250} mots)</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 L'IA ajustera automatiquement le contenu pour atteindre exactement {desiredPages} pages
+                  </p>
                 </div>
               </div>
             )}

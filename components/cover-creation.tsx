@@ -44,6 +44,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   const [title, setTitle] = useState("")
   const [subtitle, setSubtitle] = useState("")
   const [author, setAuthor] = useState("")
+  const [coverDescription, setCoverDescription] = useState("") // Nouveau : description de couverture
   const [selectedLayout, setSelectedLayout] = useState("classic")
   const [selectedStyle, setSelectedStyle] = useState("professional")
   const [primaryColor, setPrimaryColor] = useState("#2563eb")
@@ -53,6 +54,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   const [customImage, setCustomImage] = useState<File | null>(null)
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false) // Nouveau
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -186,8 +188,44 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     }
   }
 
+  // Fonction pour générer le titre avec l'IA
+  const generateTitleWithAI = async () => {
+    setIsGeneratingTitle(true);
+    setError("");
+
+    try {
+      // Utiliser le contenu des illustrations pour générer un titre
+      const content = illustrations.map(ill => ill.chapterTitle).join('. ');
+      
+      const response = await fetch('/api/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content,
+          genre: selectedStyle,
+          style: selectedLayout
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      setTitle(data.title);
+      setSuccess("Titre généré avec l'IA !");
+      
+    } catch (err: any) {
+      console.error('Erreur génération titre:', err);
+      setError("Erreur lors de la génération du titre");
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
+
   // Fonction pour générer automatiquement la couverture avec l'IA
-  const generateCover = async () => {
+  const generateCover = async (useCustomDescription = false) => {
     if (!title.trim()) {
       setError("Veuillez saisir un titre")
       return
@@ -206,22 +244,30 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
       // Créer un prompt détaillé pour la couverture
       const styleDescriptions: Record<string, string> = {
         professional: 'professional design, clean and corporate',
-        creative: 'creative artistic design, imaginative',
-        academic: 'academic scholarly design, formal',
-        popular: 'popular commercial design, attractive',
-        luxury: 'luxury premium design, sophisticated elegant'
+        creative: 'creative artistic design, imaginative and colorful',
+        academic: 'academic scholarly design, formal and serious',
+        popular: 'popular commercial design, attractive and eye-catching',
+        luxury: 'luxury premium design, sophisticated and elegant'
       };
 
       const layoutDescriptions: Record<string, string> = {
-        classic: 'classic book cover layout',
-        modern: 'modern minimalist layout',
-        artistic: 'artistic creative layout',
-        minimalist: 'minimalist simple layout',
-        bold: 'bold striking typography layout',
-        elegant: 'elegant refined layout with decorative elements'
+        classic: 'classic traditional book cover layout',
+        modern: 'modern minimalist layout with clean lines',
+        artistic: 'artistic creative layout with unique composition',
+        minimalist: 'minimalist simple layout with lots of whitespace',
+        bold: 'bold striking layout with large typography',
+        elegant: 'elegant refined layout with decorative ornamental elements'
       };
 
-      const coverPrompt = `Professional book cover design for "${title}" by ${author}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, high quality, detailed, book cover art`;
+      let coverPrompt = '';
+      
+      if (useCustomDescription && coverDescription.trim()) {
+        // Utiliser la description personnalisée
+        coverPrompt = `Book cover image: ${coverDescription}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, professional book cover art, high quality`;
+      } else {
+        // Génération automatique
+        coverPrompt = `Professional book cover for "${title}" by ${author}, ${styleDescriptions[selectedStyle]}, ${layoutDescriptions[selectedLayout]}, book cover art, high quality, detailed illustration`;
+      }
       
       console.log('🎨 Génération couverture:', coverPrompt);
 
@@ -231,7 +277,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: coverPrompt,
-          style: 'realistic' // Pour les couvertures, on utilise un style réaliste/professionnel
+          style: 'realistic' // Pour les couvertures
         })
       });
 
@@ -262,8 +308,8 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
   // Fonction pour régénérer la couverture
   const regenerateCover = async () => {
-    setGeneratedCoverUrl("")
-    await generateCover()
+    const useCustom = coverDescription.trim().length > 0;
+    await generateCover(useCustom);
   }
 
   // Fonction pour passer à l'étape suivante
@@ -322,13 +368,31 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="title">Titre *</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Le titre de votre ebook"
-                  className="mt-1"
-                />
+                <div className="flex space-x-2 mt-1">
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Le titre de votre ebook"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={generateTitleWithAI}
+                    disabled={isGeneratingTitle}
+                    variant="outline"
+                    size="sm"
+                    title="Générer un titre avec l'IA"
+                  >
+                    {isGeneratingTitle ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Cliquez sur la baguette magique pour générer un titre avec l'IA
+                </p>
               </div>
 
               <div>
@@ -351,6 +415,34 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   placeholder="Nom de l'auteur"
                   className="mt-1"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Description personnalisée de couverture */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Wand2 className="h-5 w-5" />
+                <span>Description de la couverture (optionnel)</span>
+              </CardTitle>
+              <CardDescription>
+                Décrivez l'image que vous voulez pour votre couverture, ou laissez vide pour une génération automatique
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="cover-description">Description visuelle de la couverture</Label>
+                <Textarea
+                  id="cover-description"
+                  value={coverDescription}
+                  onChange={(e) => setCoverDescription(e.target.value)}
+                  placeholder="Ex: Un vaisseau spatial dans l'espace avec des étoiles, couleurs bleues et violettes, ambiance mystérieuse..."
+                  className="mt-1 min-h-[100px]"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Plus votre description est détaillée, meilleure sera l'image générée
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -469,7 +561,6 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                       className="w-full h-12 rounded border cursor-pointer"
                       title="Choisir la couleur principale"
                     />
-                    <p className="text-xs text-gray-500 mt-1">{primaryColor}</p>
                   </div>
                 </div>
 
@@ -484,7 +575,6 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                       className="w-full h-12 rounded border cursor-pointer"
                       title="Choisir la couleur secondaire"
                     />
-                    <p className="text-xs text-gray-500 mt-1">{secondaryColor}</p>
                   </div>
                 </div>
 
@@ -499,7 +589,6 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                       className="w-full h-12 rounded border cursor-pointer"
                       title="Choisir la couleur du texte"
                     />
-                    <p className="text-xs text-gray-500 mt-1">{textColor}</p>
                   </div>
                 </div>
               </div>
@@ -623,11 +712,11 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
               </div>
 
               {/* Actions sur la couverture */}
-              <div className="flex justify-center space-x-2 mt-4">
+              <div className="space-y-2 mt-4">
                 <Button
-                  onClick={generateCover}
+                  onClick={() => generateCover(false)}
                   disabled={isGenerating || !title.trim() || !author.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
                   {isGenerating ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -637,18 +726,33 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   Générer automatiquement
                 </Button>
 
+                {coverDescription.trim() && (
+                  <Button
+                    onClick={() => generateCover(true)}
+                    disabled={isGenerating || !title.trim() || !author.trim()}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Générer selon ma description
+                  </Button>
+                )}
+
                 {generatedCoverUrl && (
-                  <>
+                  <div className="flex justify-center space-x-2 pt-2">
                     <Button onClick={regenerateCover} variant="outline" size="sm">
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Régénérer
                     </Button>
                     <Button onClick={() => window.open(generatedCoverUrl, '_blank')} variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 mr-1" />
+                      Voir
                     </Button>
                     <Button onClick={downloadCover} variant="outline" size="sm">
-                      <Download className="h-4 w-4" />
+                      <Download className="h-4 w-4 mr-1" />
+                      Télécharger
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </CardContent>
