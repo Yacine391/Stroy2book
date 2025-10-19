@@ -691,6 +691,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Message important pour les utilisateurs */}
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 font-medium flex items-center">
+                  <span className="mr-2">💡</span>
+                  Information importante
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  L'image générée ne contient pas de texte. Le titre et l'auteur seront ajoutés automatiquement lors de l'export PDF/EPUB !
+                </p>
+              </div>
+
               <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
                 {isGenerating ? (
                   <div className="absolute inset-0 flex items-center justify-center">
