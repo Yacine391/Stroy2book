@@ -791,17 +791,6 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                 )}
               </div>
 
-              {/* Mini timer dans l'encadré */}
-              {isGenerating && (
-                <div className="mt-4 mb-2">
-                  <AITimer 
-                    isGenerating={isGenerating} 
-                    estimatedSeconds={12}
-                    onComplete={() => console.log('⏰ Couverture générée')}
-                  />
-                </div>
-              )}
-
               {/* Actions sur la couverture */}
               <div className="space-y-2 mt-4">
                 <Button
