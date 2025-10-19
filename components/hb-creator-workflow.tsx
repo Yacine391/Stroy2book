@@ -20,9 +20,9 @@ type WorkflowStep =
   | 'welcome'
   | 'text-input'
   | 'ai-generation'
-  | 'illustrations'
   | 'cover'
   | 'layout'
+  | 'illustrations'  // ✅ DÉPLACÉ APRÈS LAYOUT
   | 'export'
   | 'project-management'
   | 'security'
@@ -568,17 +568,9 @@ export default function HBCreatorWorkflow() {
           />
         )}
         
-        {currentStep === 'illustrations' && workflowData.processedText && (
-          <IllustrationGeneration
-            textData={workflowData.processedText}
-            onNext={handleIllustrationsComplete}
-            onBack={goToPreviousStep}
-          />
-        )}
-        
-        {currentStep === 'cover' && workflowData.illustrations && (
+        {currentStep === 'cover' && workflowData.processedText && (
           <CoverCreation
-            illustrations={workflowData.illustrations.illustrations}
+            illustrations={[]}
             onNext={handleCoverComplete}
             onBack={goToPreviousStep}
           />
@@ -589,6 +581,17 @@ export default function HBCreatorWorkflow() {
             coverData={workflowData.coverData.coverData}
             processedText={workflowData.processedText.processedText}
             onNext={handleLayoutComplete}
+            onBack={goToPreviousStep}
+          />
+        )}
+        
+        {currentStep === 'illustrations' && workflowData.layoutSettings && workflowData.processedText && workflowData.coverData && (
+          <IllustrationGeneration
+            textData={workflowData.textData!}
+            processedText={workflowData.processedText}
+            coverData={workflowData.coverData}
+            currentUser={currentUser}
+            onNext={handleIllustrationsComplete}
             onBack={goToPreviousStep}
           />
         )}

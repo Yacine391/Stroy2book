@@ -13,8 +13,23 @@ interface ProcessedTextData {
   history: any[]
 }
 
+interface TextData {
+  text: string
+  language: string
+  chapters: string[]
+  style: string
+  desiredPages: number
+}
+
+interface CoverData {
+  coverData: any
+}
+
 interface IllustrationGenerationProps {
-  textData: ProcessedTextData
+  textData: TextData  // Données texte initial
+  processedText: ProcessedTextData  // Texte traité par IA
+  coverData: CoverData  // Données couverture
+  currentUser?: any  // Pour limites abonnement
   onNext: (data: { illustrations: GeneratedIllustration[] }) => void
   onBack: () => void
 }
@@ -29,7 +44,9 @@ interface GeneratedIllustration {
   isGenerating: boolean
 }
 
-export default function IllustrationGeneration({ textData, onNext, onBack }: IllustrationGenerationProps) {
+export default function IllustrationGeneration({ textData, processedText, coverData, currentUser, onNext, onBack }: IllustrationGenerationProps) {
+  const [numberOfIllustrations, setNumberOfIllustrations] = useState(5)
+  const maxIllustrations = currentUser?.subscription?.max_illustrations || 10
   const [chapters, setChapters] = useState<string[]>([])
   const [selectedStyle, setSelectedStyle] = useState("realistic")
   const [illustrations, setIllustrations] = useState<GeneratedIllustration[]>([])
@@ -113,7 +130,7 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
       return defaultChapters
     }
 
-    const extractedChapters = extractChapters(textData.processedText)
+    const extractedChapters = extractChapters(processedText.processedText)
     setChapters(extractedChapters)
 
     // Initialiser les illustrations
@@ -128,7 +145,7 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
     }))
 
     setIllustrations(initialIllustrations)
-  }, [textData.processedText, selectedStyle])
+  }, [processedText.processedText, selectedStyle])
 
   // Fonction pour générer le prompt d'illustration basé sur le contenu du chapitre
   const generatePromptForChapter = (chapterTitle: string, chapterContent: string): string => {
