@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearSessionCookie, getSession } from '@/lib/auth';
-import { sessionDb } from '@/lib/db';
+import { sessionDb } from '@/lib/db-simple';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     
     if (session) {
       // Nettoyer les sessions de la base de données
-      sessionDb.deleteByUserId(session.userId);
+      sessionDb.deleteByUserId(session.userId as any);
     }
 
     // Supprimer le cookie

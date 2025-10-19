@@ -29,7 +29,7 @@ export async function verifyJWT(token: string): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return {
-      userId: payload.userId as number,
+      userId: payload.userId as any,
       email: payload.email as string
     };
   } catch (error) {

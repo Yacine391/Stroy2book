@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { userDb, subscriptionDb } from '@/lib/db';
+import { userDb, subscriptionDb } from '@/lib/db-simple';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer les données utilisateur
-    const user = await userDb.findById(session.userId);
+    const user = await userDb.findById(session.userId as any);
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur introuvable' },
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Récupérer l'abonnement
-    const subscription = await subscriptionDb.findByUserId(user.id);
+    const subscription = await subscriptionDb.findByUserId(user.id as any);
 
     // Retourner les données (sans le hash du mot de passe)
     const { password_hash, ...userWithoutPassword } = user;

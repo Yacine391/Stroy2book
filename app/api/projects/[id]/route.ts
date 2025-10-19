@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { projectDb } from '@/lib/db';
+import { projectDb } from '@/lib/db-simple';
 
 // GET - Récupérer un projet spécifique
 export async function GET(

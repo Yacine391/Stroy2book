@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { projectDb, subscriptionDb } from '@/lib/db';
+import { projectDb, subscriptionDb } from '@/lib/db-simple';
 
 // GET - Récupérer tous les projets de l'utilisateur
 export async function GET(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const projects = await projectDb.findByUserId(session.userId);
+    const projects = await projectDb.findByUserId(session.userId as any);
 
     return NextResponse.json({
       success: true,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Vérifier les limites de l'abonnement
-    const subscription = await subscriptionDb.findByUserId(session.userId);
+    const subscription = await subscriptionDb.findByUserId(session.userId as any);
     if (subscription && subscription.used_ebooks >= subscription.monthly_ebooks) {
       return NextResponse.json(
         { error: 'Limite d\'ebooks atteinte pour votre plan' },
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Créer le projet
-    const projectId = await projectDb.create(session.userId, {
+    const projectId = await projectDb.create(session.userId as any, {
       title,
       author,
       content,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Incrémenter le compteur d'ebooks
-    await subscriptionDb.incrementUsage(session.userId, 'ebooks');
+    await subscriptionDb.incrementUsage(session.userId as any, 'ebooks');
 
     return NextResponse.json({
       success: true,

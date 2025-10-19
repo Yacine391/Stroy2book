@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { userDb } from '@/lib/db';
+import { userDb } from '@/lib/db-simple';
 import { setSessionCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const user = await userDb.create(email, password, name);
 
     // Créer la session
-    await setSessionCookie(user.id, user.email);
+    await setSessionCookie(user.id as any, user.email);
 
     // Retourner les données utilisateur (sans le hash du mot de passe)
     const { password_hash, ...userWithoutPassword } = user;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { subscriptionDb } from '@/lib/db';
+import { subscriptionDb } from '@/lib/db-simple';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Mettre à jour le plan
-    await subscriptionDb.updatePlan(session.userId, plan);
+    await subscriptionDb.updatePlan(session.userId as any, plan);
 
     // Récupérer l'abonnement mis à jour
-    const subscription = await subscriptionDb.findByUserId(session.userId);
+    const subscription = await subscriptionDb.findByUserId(session.userId as any);
 
     return NextResponse.json({
       success: true,
