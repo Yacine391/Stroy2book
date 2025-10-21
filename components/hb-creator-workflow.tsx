@@ -20,9 +20,9 @@ type WorkflowStep =
   | 'welcome'
   | 'text-input'
   | 'ai-generation'
-  | 'illustrations'
   | 'cover'
   | 'layout'
+  | 'illustrations'  // ✅ DÉPLACÉ APRÈS LAYOUT
   | 'export'
   | 'project-management'
   | 'security'
@@ -34,6 +34,7 @@ interface WorkflowData {
     language: string
     chapters: string[]
     style: string
+    desiredPages: number
   }
   processedText?: {
     processedText: string
@@ -86,12 +87,26 @@ export default function HBCreatorWorkflow() {
   }, [showUserMenu])
 
   // Fonction pour charger l'utilisateur connecté
-  const loadCurrentUser = () => {
+  const loadCurrentUser = async () => {
     try {
-      const savedUser = localStorage.getItem('hb-creator-user')
-      if (savedUser) {
-        const userData = JSON.parse(savedUser)
-        setCurrentUser(userData)
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          const userData = {
+            id: data.user.id.toString(),
+            email: data.user.email,
+            name: data.user.name,
+            avatar: data.user.avatar,
+            isAuthenticated: true,
+            authMethod: data.user.auth_method,
+            createdAt: new Date(data.user.created_at)
+          }
+          setCurrentUser(userData)
+        }
       }
     } catch (err) {
       console.error('Erreur lors du chargement de l\'utilisateur:', err)
@@ -99,12 +114,25 @@ export default function HBCreatorWorkflow() {
   }
 
   // Fonction de déconnexion
-  const handleLogout = () => {
-    localStorage.removeItem('hb-creator-user')
-    localStorage.removeItem('hb-creator-subscription')
-    setCurrentUser(null)
-    setShowUserMenu(false)
-    setCurrentStep('welcome')
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        setCurrentUser(null)
+        setShowUserMenu(false)
+        setCurrentStep('welcome')
+      }
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion:", err)
+      // Même en cas d'erreur, on déconnecte côté client
+      setCurrentUser(null)
+      setShowUserMenu(false)
+      setCurrentStep('welcome')
+    }
   }
 
   // Configuration des étapes
@@ -528,6 +556,7 @@ export default function HBCreatorWorkflow() {
           <TextInputStep
             onNext={handleTextInputComplete}
             onBack={goToPreviousStep}
+            currentUser={currentUser}
           />
         )}
         
@@ -539,17 +568,9 @@ export default function HBCreatorWorkflow() {
           />
         )}
         
-        {currentStep === 'illustrations' && workflowData.processedText && (
-          <IllustrationGeneration
-            textData={workflowData.processedText}
-            onNext={handleIllustrationsComplete}
-            onBack={goToPreviousStep}
-          />
-        )}
-        
-        {currentStep === 'cover' && workflowData.illustrations && (
+        {currentStep === 'cover' && workflowData.processedText && (
           <CoverCreation
-            illustrations={workflowData.illustrations.illustrations}
+            illustrations={[]}
             onNext={handleCoverComplete}
             onBack={goToPreviousStep}
           />
@@ -560,6 +581,17 @@ export default function HBCreatorWorkflow() {
             coverData={workflowData.coverData.coverData}
             processedText={workflowData.processedText.processedText}
             onNext={handleLayoutComplete}
+            onBack={goToPreviousStep}
+          />
+        )}
+        
+        {currentStep === 'illustrations' && workflowData.layoutSettings && workflowData.processedText && workflowData.coverData && (
+          <IllustrationGeneration
+            textData={workflowData.textData!}
+            processedText={workflowData.processedText}
+            coverData={workflowData.coverData}
+            currentUser={currentUser}
+            onNext={handleIllustrationsComplete}
             onBack={goToPreviousStep}
           />
         )}

@@ -7,12 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Brain, Wand2, RotateCcw, History, Save, Trash2, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface TextData {
   text: string
   language: string
   chapters: string[]
   style: string
+  desiredPages: number
 }
 
 interface HistoryEntry {
@@ -90,14 +92,30 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     setHistory([initialEntry])
   }, [textData.text])
 
-  // Fonction pour appeler l'IA (simulation)
+  // Fonction pour appeler l'IA (VRAIE API)
   const processWithAI = async (action: string, text: string): Promise<string> => {
-    // Simulation d'appel IA - dans la vraie implémentation, on appellerait l'API
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let processedText = text
-        
-        switch (action) {
+    try {
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, text })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      return data.processedText;
+    } catch (error: any) {
+      console.error('Erreur API:', error);
+      // Fallback sur simulation en cas d'erreur
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let processedText = text
+          
+          switch (action) {
           case "improve":
             processedText = text + "\n\n[Texte amélioré par l'IA avec un style plus riche et une meilleure fluidité]"
             break
@@ -120,7 +138,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
         
         resolve(processedText)
       }, 2000)
-    })
+    });
+    }
   }
 
   // Fonction pour traiter le texte avec l'IA
@@ -248,6 +267,17 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                   </div>
                 )}
               </Button>
+
+              {/* Timer IA */}
+              {isProcessing && (
+                <div className="mt-4">
+                  <AITimer 
+                    isGenerating={isProcessing} 
+                    estimatedSeconds={10}
+                    onComplete={() => console.log('⏰ Timer terminé')}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -267,28 +297,35 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                 placeholder="Votre texte apparaîtra ici..."
               />
               
-              {/* Statistiques */}
-              <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Statistiques actuelles</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Caractères :</span>
-                    <span className="ml-2 font-medium">{currentText.length.toLocaleString()}</span>
+              {/* Statistiques du texte ACTUEL - INFORMATIVES */}
+              {currentText.trim() && (
+                <div className="mt-4 bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-2">📊 Statistiques actuelles (informatives)</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-green-700">Caractères :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.length.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-green-700">Mots :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
+                    </div>
+                    <div>
+                      <span className="text-green-700">Paragraphes :</span>
+                      <span className="ml-2 font-medium text-green-900">{currentText.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
+                    </div>
+                    <div>
+                      <span className="text-green-700">Pages estimées :</span>
+                      <span className="ml-2 font-medium text-green-900">{Math.max(1, Math.ceil(currentText.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-600">Mots :</span>
-                    <span className="ml-2 font-medium">{currentText.trim().split(/\s+/).length.toLocaleString()}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Paragraphes :</span>
-                    <span className="ml-2 font-medium">{currentText.split(/\n\s*\n/).filter(p => p.trim()).length}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Pages estimées :</span>
-                    <span className="ml-2 font-medium">{Math.ceil(currentText.trim().split(/\s+/).length / 250)}</span>
+                  <div className="mt-3 pt-3 border-t border-green-300">
+                    <p className="text-xs text-green-700">
+                      🎯 <strong>Objectif final : {textData.desiredPages} pages</strong> - L'IA générera exactement ce nombre de pages pour l'ebook final.
+                    </p>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

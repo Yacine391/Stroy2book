@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BookOpen, Upload, Wand2, RefreshCw, Download, Eye, Palette, Type, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface GeneratedIllustration {
   id: string
@@ -44,6 +45,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   const [title, setTitle] = useState("")
   const [subtitle, setSubtitle] = useState("")
   const [author, setAuthor] = useState("")
+  const [coverDescription, setCoverDescription] = useState("") // Nouveau : description de couverture
   const [selectedLayout, setSelectedLayout] = useState("classic")
   const [selectedStyle, setSelectedStyle] = useState("professional")
   const [primaryColor, setPrimaryColor] = useState("#2563eb")
@@ -53,6 +55,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   const [customImage, setCustomImage] = useState<File | null>(null)
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false) // Nouveau
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -186,8 +189,63 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     }
   }
 
-  // Fonction pour générer automatiquement la couverture
-  const generateCover = async () => {
+  // Fonction pour générer le titre avec l'IA
+  const generateTitleWithAI = async () => {
+    setIsGeneratingTitle(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Utiliser le contenu des illustrations pour générer un titre
+      const chapters = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+      
+      // Si pas de chapitres depuis les illustrations, utiliser des données de base
+      let contentToSend = chapters.join('. ');
+      if (!contentToSend || contentToSend.length < 10) {
+        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
+      }
+      
+      console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));
+      
+      const response = await fetch('/api/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chapters: chapters.length > 0 ? chapters : [`Ebook ${selectedStyle}`],
+          content: contentToSend,
+          genre: selectedStyle,
+          style: selectedLayout
+        })
+      });
+
+      console.log('📡 Response status:', response.status);
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      if (data.title && data.title.trim()) {
+        setTitle(data.title);
+        setSuccess("✨ Titre généré avec l'IA !");
+        console.log('✅ Titre appliqué:', data.title);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        throw new Error('Pas de titre reçu de l\'API');
+      }
+      
+    } catch (err: any) {
+      console.error('❌ Erreur génération titre:', err);
+      setError(`Erreur : ${err.message}`);
+      setTimeout(() => setError(""), 5000);
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
+
+  // Fonction pour générer automatiquement la couverture avec l'IA
+  const generateCover = async (useCustomDescription = false) => {
     if (!title.trim()) {
       setError("Veuillez saisir un titre")
       return
@@ -203,23 +261,89 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     setSuccess("")
 
     try {
-      // Simulation de génération de couverture
-      // Dans la vraie implémentation, on appellerait une API de génération d'image
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Créer un prompt SANS TEXTE (les IA d'images ne peuvent pas écrire du texte lisible)
+      const styleDescriptions: Record<string, string> = {
+        professional: 'professional corporate style, clean modern aesthetic',
+        creative: 'creative artistic style, vibrant imaginative colors',
+        academic: 'scholarly formal style, serious academic look',
+        popular: 'popular commercial style, eye-catching attractive design',
+        luxury: 'luxury premium style, sophisticated elegant appearance'
+      };
 
-      // Générer une URL de couverture simulée
-      const coverPrompt = `Book cover for "${title}" by ${author}, ${selectedStyle} style, ${selectedLayout} layout`
-      const encodedPrompt = encodeURIComponent(coverPrompt)
+      const layoutDescriptions: Record<string, string> = {
+        classic: 'classic traditional composition',
+        modern: 'modern minimalist composition with geometric shapes',
+        artistic: 'artistic creative composition with abstract elements',
+        minimalist: 'minimalist simple composition with negative space',
+        bold: 'bold striking composition with strong visual impact',
+        elegant: 'elegant refined composition with ornamental decorative elements'
+      };
+
+      let coverPrompt = '';
       
-      // Utiliser une couleur basée sur la palette sélectionnée
-      const colorHex = primaryColor.replace('#', '')
-      const mockCoverUrl = `https://via.placeholder.com/400x600/${colorHex}/ffffff?text=${encodedPrompt.substring(0, 20)}`
+      if (useCustomDescription && coverDescription.trim()) {
+        // Utiliser la description personnalisée - SIMPLE ET DIRECT
+        coverPrompt = `book cover art: ${coverDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
+      } else {
+        // Génération automatique SIMPLIFIÉE basée sur le titre
+        const titleLower = title.toLowerCase();
+        let visualDescription = '';
+        
+        // Détection SIMPLE et PRÉCISE
+        if (titleLower.includes('space') || titleLower.includes('étoile') || titleLower.includes('galaxy') || titleLower.includes('cosmos')) {
+          visualDescription = 'space galaxy nebula stars planets cosmic';
+        } else if (titleLower.includes('dragon') || titleLower.includes('fantasy') || titleLower.includes('magic') || titleLower.includes('magie')) {
+          visualDescription = 'fantasy dragon castle magical mythical';
+        } else if (titleLower.includes('love') || titleLower.includes('amour') || titleLower.includes('romance')) {
+          visualDescription = 'romantic sunset couple love hearts warm';
+        } else if (titleLower.includes('mystery') || titleLower.includes('mystère') || titleLower.includes('detective')) {
+          visualDescription = 'mysterious dark noir detective shadows';
+        } else if (titleLower.includes('adventure') || titleLower.includes('aventure') || titleLower.includes('treasure')) {
+          visualDescription = 'adventure epic landscape mountain journey';
+        } else if (titleLower.includes('tech') || titleLower.includes('cyber') || titleLower.includes('robot') || titleLower.includes('future')) {
+          visualDescription = 'futuristic technology cyber neon digital';
+        } else if (titleLower.includes('ocean') || titleLower.includes('océan') || titleLower.includes('sea') || titleLower.includes('mer')) {
+          visualDescription = 'ocean sea waves water blue';
+        } else if (titleLower.includes('forest') || titleLower.includes('forêt') || titleLower.includes('tree') || titleLower.includes('nature')) {
+          visualDescription = 'forest trees nature green woodland';
+        } else if (titleLower.includes('city') || titleLower.includes('ville') || titleLower.includes('urban')) {
+          visualDescription = 'city urban skyline buildings modern';
+        } else {
+          // Fallback : utiliser les premiers mots du titre comme description
+          const words = title.split(' ').slice(0, 5).join(' ');
+          visualDescription = words;
+        }
+        
+        // Prompt SIMPLE et DIRECT
+        coverPrompt = `book cover art: ${visualDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
+      }
       
-      setGeneratedCoverUrl(mockCoverUrl)
-      setSuccess("Couverture générée avec succès")
+      console.log('🎨 Génération couverture (sans texte):', coverPrompt);
+
+      // Appeler l'API de génération d'image
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: coverPrompt,
+          style: 'realistic' // Pour les couvertures
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      setGeneratedCoverUrl(data.imageUrl);
+      setSuccess("✨ Couverture générée avec succès ! (Le titre et l'auteur seront ajoutés lors de l'export)");
+      setTimeout(() => setSuccess(""), 4000);
       
-    } catch (err) {
-      setError("Erreur lors de la génération de la couverture")
+    } catch (err: any) {
+      console.error('❌ Erreur génération couverture:', err);
+      setError(err.message || "Erreur lors de la génération de la couverture");
+      setTimeout(() => setError(""), 3000);
     } finally {
       setIsGenerating(false)
     }
@@ -235,8 +359,8 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
   // Fonction pour régénérer la couverture
   const regenerateCover = async () => {
-    setGeneratedCoverUrl("")
-    await generateCover()
+    const useCustom = coverDescription.trim().length > 0;
+    await generateCover(useCustom);
   }
 
   // Fonction pour passer à l'étape suivante
@@ -295,13 +419,46 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="title">Titre *</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Le titre de votre ebook"
-                  className="mt-1"
-                />
+                <div className="flex space-x-2 mt-1">
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Le titre de votre ebook"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={generateTitleWithAI}
+                    disabled={isGeneratingTitle || isGenerating}
+                    variant="outline"
+                    size="sm"
+                    title="Générer un titre avec l'IA"
+                    className="shrink-0"
+                  >
+                    {isGeneratingTitle ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Mini timer pour génération titre */}
+                {isGeneratingTitle && (
+                  <div className="mt-2">
+                    <AITimer 
+                      isGenerating={isGeneratingTitle} 
+                      estimatedSeconds={5}
+                      onComplete={() => console.log('⏰ Titre généré')}
+                    />
+                  </div>
+                )}
+                
+                {!isGeneratingTitle && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Cliquez sur la baguette magique 🪄 pour générer un titre avec l'IA
+                  </p>
+                )}
               </div>
 
               <div>
@@ -328,6 +485,37 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
             </CardContent>
           </Card>
 
+          {/* Description personnalisée de couverture */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Wand2 className="h-5 w-5" />
+                <span>Description de la couverture (optionnel)</span>
+              </CardTitle>
+              <CardDescription>
+                Décrivez l'image que vous voulez pour votre couverture, ou laissez vide pour une génération automatique
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="cover-description">Description visuelle de la couverture</Label>
+                <Textarea
+                  id="cover-description"
+                  value={coverDescription}
+                  onChange={(e) => setCoverDescription(e.target.value)}
+                  placeholder="Ex: Un vaisseau spatial dans l'espace avec des étoiles, couleurs bleues et violettes, ambiance mystérieuse..."
+                  className="mt-1 min-h-[100px]"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Décrivez uniquement l'IMAGE (pas le texte). Plus c'est détaillé, mieux c'est !
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ N'incluez PAS le titre ou l'auteur dans la description - ils seront ajoutés automatiquement lors de l'export
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Style et mise en page */}
           <Card>
             <CardHeader>
@@ -338,7 +526,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Layout de couverture</Label>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Label>Layout de couverture</Label>
+                  <div className="group relative">
+                    <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600 cursor-help hover:bg-gray-300 transition">
+                      i
+                    </div>
+                    <div className="hidden group-hover:block absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg left-5 top-0">
+                      Le layout définit la disposition des éléments sur votre couverture (titre, image, auteur). Choisissez celui qui correspond le mieux à votre style de livre.
+                    </div>
+                  </div>
+                </div>
                 <Select value={selectedLayout} onValueChange={setSelectedLayout}>
                   <SelectTrigger>
                     <SelectValue />
@@ -419,58 +617,46 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                 </div>
               </div>
 
-              {/* Couleurs personnalisées */}
+              {/* Couleurs personnalisées - Color Pickers */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="primary-color" className="text-sm">Couleur principale</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="primary-color"
                       type="color"
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
-                    />
-                    <Input
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="text-xs"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur principale"
                     />
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="secondary-color" className="text-sm">Couleur secondaire</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="secondary-color"
                       type="color"
                       value={secondaryColor}
                       onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
-                    />
-                    <Input
-                      value={secondaryColor}
-                      onChange={(e) => setSecondaryColor(e.target.value)}
-                      className="text-xs"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur secondaire"
                     />
                   </div>
                 </div>
 
                 <div>
                   <Label htmlFor="text-color" className="text-sm">Couleur du texte</Label>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <div className="mt-2">
                     <input
                       id="text-color"
                       type="color"
                       value={textColor}
                       onChange={(e) => setTextColor(e.target.value)}
-                      className="w-8 h-8 rounded border"
-                    />
-                    <Input
-                      value={textColor}
-                      onChange={(e) => setTextColor(e.target.value)}
-                      className="text-xs"
+                      className="w-full h-12 rounded border cursor-pointer"
+                      title="Choisir la couleur du texte"
                     />
                   </div>
                 </div>
@@ -540,6 +726,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Message important pour les utilisateurs */}
+              <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 font-medium flex items-center">
+                  <span className="mr-2">💡</span>
+                  Information importante
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  L'image générée ne contient pas de texte. Le titre et l'auteur seront ajoutés automatiquement lors de l'export PDF/EPUB !
+                </p>
+              </div>
+
               <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
                 {isGenerating ? (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -595,11 +792,11 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
               </div>
 
               {/* Actions sur la couverture */}
-              <div className="flex justify-center space-x-2 mt-4">
+              <div className="space-y-2 mt-4">
                 <Button
-                  onClick={generateCover}
-                  disabled={isGenerating || !title.trim() || !author.trim()}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  onClick={() => generateCover(false)}
+                  disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim()}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                 >
                   {isGenerating ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -609,18 +806,33 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
                   Générer automatiquement
                 </Button>
 
-                {generatedCoverUrl && (
-                  <>
+                {coverDescription.trim() && (
+                  <Button
+                    onClick={() => generateCover(true)}
+                    disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim()}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Générer selon ma description
+                  </Button>
+                )}
+
+                {generatedCoverUrl && !isGenerating && (
+                  <div className="flex justify-center space-x-2 pt-2">
                     <Button onClick={regenerateCover} variant="outline" size="sm">
-                      <RefreshCw className="h-4 w-4" />
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Régénérer
                     </Button>
                     <Button onClick={() => window.open(generatedCoverUrl, '_blank')} variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 mr-1" />
+                      Voir
                     </Button>
                     <Button onClick={downloadCover} variant="outline" size="sm">
-                      <Download className="h-4 w-4" />
+                      <Download className="h-4 w-4 mr-1" />
+                      Télécharger
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </CardContent>

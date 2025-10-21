@@ -141,49 +141,67 @@ export default function SecurityAuth({ onComplete }: SecurityAuthProps) {
     loadUserData()
   }, [])
 
-  // Fonction pour charger les données utilisateur depuis le stockage local
-  const loadUserData = () => {
+  // Fonction pour charger les données utilisateur depuis l'API
+  const loadUserData = async () => {
     try {
-      const savedUser = localStorage.getItem('hb-creator-user')
-      const savedSubscription = localStorage.getItem('hb-creator-subscription')
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include'
+      })
       
-      if (savedUser) {
-        const userData = JSON.parse(savedUser)
-        setCurrentUser({
-          ...userData,
-          createdAt: new Date(userData.createdAt)
-        })
-      }
-      
-      if (savedSubscription) {
-        const subData = JSON.parse(savedSubscription)
-        setSubscription({
-          ...subData,
-          expiresAt: subData.expiresAt ? new Date(subData.expiresAt) : undefined
-        })
-      } else {
-        // Plan gratuit par défaut
-        setSubscription(subscriptionPlans[0])
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          const userData: UserData = {
+            id: data.user.id.toString(),
+            email: data.user.email,
+            name: data.user.name,
+            avatar: data.user.avatar,
+            isAuthenticated: true,
+            authMethod: data.user.auth_method,
+            createdAt: new Date(data.user.created_at)
+          }
+          setCurrentUser(userData)
+          
+          if (data.subscription) {
+            const sub: SubscriptionData = {
+              plan: data.subscription.plan,
+              limits: {
+                monthlyEbooks: data.subscription.monthly_ebooks,
+                usedEbooks: data.subscription.used_ebooks,
+                aiGenerations: data.subscription.ai_generations,
+                usedGenerations: data.subscription.used_generations,
+                illustrations: data.subscription.illustrations,
+                usedIllustrations: data.subscription.used_illustrations,
+                storageGB: data.subscription.storage_gb,
+                usedStorageGB: data.subscription.used_storage_gb
+              },
+              features: getFeaturesByPlan(data.subscription.plan),
+              expiresAt: data.subscription.expires_at ? new Date(data.subscription.expires_at) : undefined
+            }
+            setSubscription(sub)
+          }
+        }
       }
     } catch (err) {
       console.error('Erreur lors du chargement des données utilisateur:', err)
     }
   }
 
-  // Fonction pour sauvegarder les données utilisateur
-  const saveUserData = (user: UserData, sub: SubscriptionData) => {
-    try {
-      localStorage.setItem('hb-creator-user', JSON.stringify(user))
-      localStorage.setItem('hb-creator-subscription', JSON.stringify(sub))
-    } catch (err) {
-      console.error('Erreur lors de la sauvegarde:', err)
-    }
+  // Fonction pour obtenir les fonctionnalités par plan
+  const getFeaturesByPlan = (plan: string) => {
+    const planConfig = subscriptionPlans.find(p => p.plan === plan)
+    return planConfig?.features || []
   }
 
   // Fonction de connexion par email
   const handleEmailAuth = async () => {
-    if (!email.trim() || (!password.trim() && authMode !== 'guest')) {
+    if (!email.trim() || !password.trim()) {
       setError("Veuillez remplir tous les champs")
+      return
+    }
+
+    if (authMode === 'register' && !name.trim()) {
+      setError("Le nom est requis pour l'inscription")
       return
     }
 
@@ -191,58 +209,50 @@ export default function SecurityAuth({ onComplete }: SecurityAuthProps) {
     setError("")
 
     try {
-      // Simulation d'authentification
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const endpoint = authMode === 'register' ? '/api/auth/register' : '/api/auth/login'
+      const body = authMode === 'register' 
+        ? { email, password, name } 
+        : { email, password }
 
-      const userData: UserData = {
-        id: `user_${Date.now()}`,
-        email: email,
-        name: name || email.split('@')[0],
-        isAuthenticated: true,
-        authMethod: 'email',
-        createdAt: new Date()
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Erreur lors de l'authentification")
+        return
       }
 
-      const defaultSubscription = subscriptionPlans[0] // Plan gratuit
-
-      setCurrentUser(userData)
-      setSubscription(defaultSubscription)
-      saveUserData(userData, defaultSubscription)
-      setSuccess(`${authMode === 'register' ? 'Compte créé' : 'Connexion réussie'} !`)
+      if (data.success && data.user) {
+        // Recharger les données utilisateur depuis l'API
+        await loadUserData()
+        setSuccess(`${authMode === 'register' ? 'Compte créé' : 'Connexion réussie'} !`)
+      }
 
     } catch (err) {
       setError("Erreur lors de l'authentification")
+      console.error(err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Fonction de connexion Google (simulation)
+  // Fonction de connexion Google (à implémenter avec OAuth)
   const handleGoogleAuth = async () => {
     setIsLoading(true)
     setError("")
 
     try {
-      // Simulation d'authentification Google
-      await new Promise(resolve => setTimeout(resolve, 2000))
-
-      const userData: UserData = {
-        id: `google_${Date.now()}`,
-        email: "utilisateur@gmail.com",
-        name: "Utilisateur Google",
-        avatar: "https://via.placeholder.com/40/4285f4/ffffff?text=G",
-        isAuthenticated: true,
-        authMethod: 'google',
-        createdAt: new Date()
-      }
-
-      const defaultSubscription = subscriptionPlans[0] // Plan gratuit
-
-      setCurrentUser(userData)
-      setSubscription(defaultSubscription)
-      saveUserData(userData, defaultSubscription)
-      setSuccess("Connexion Google réussie !")
-
+      // TODO: Implémenter l'authentification Google OAuth
+      setError("La connexion Google sera disponible prochainement")
+      
     } catch (err) {
       setError("Erreur lors de la connexion Google")
     } finally {
@@ -265,31 +275,67 @@ export default function SecurityAuth({ onComplete }: SecurityAuthProps) {
 
     setCurrentUser(guestData)
     setSubscription(guestSubscription)
-    setSuccess("Mode invité activé")
+    setSuccess("Mode invité activé - Vos données ne seront pas sauvegardées")
   }
 
   // Fonction pour changer d'abonnement
-  const upgradePlan = (planType: 'free' | 'premium' | 'pro') => {
+  const upgradePlan = async (planType: 'free' | 'premium' | 'pro') => {
     const newPlan = subscriptionPlans.find(p => p.plan === planType)
     if (!newPlan || !currentUser) return
 
-    const updatedSubscription: SubscriptionData = {
-      ...newPlan,
-      expiresAt: planType !== 'free' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined // 30 jours
-    }
+    setIsLoading(true)
+    setError("")
 
-    setSubscription(updatedSubscription)
-    saveUserData(currentUser, updatedSubscription)
-    setSuccess(`Abonnement ${newPlan.name} activé !`)
+    try {
+      const response = await fetch('/api/subscription/upgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ plan: planType })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Erreur lors de la mise à jour du plan")
+        return
+      }
+
+      if (data.success && data.subscription) {
+        // Recharger les données
+        await loadUserData()
+        setSuccess(`Abonnement ${newPlan.name} activé !`)
+      }
+
+    } catch (err) {
+      setError("Erreur lors de la mise à jour du plan")
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Fonction pour se déconnecter
-  const handleLogout = () => {
-    localStorage.removeItem('hb-creator-user')
-    localStorage.removeItem('hb-creator-subscription')
-    setCurrentUser(null)
-    setSubscription(null)
-    setSuccess("Déconnexion réussie")
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        setCurrentUser(null)
+        setSubscription(null)
+        setSuccess("Déconnexion réussie")
+      }
+    } catch (err) {
+      console.error("Erreur lors de la déconnexion:", err)
+      // Même en cas d'erreur, on déconnecte côté client
+      setCurrentUser(null)
+      setSubscription(null)
+    }
   }
 
   // Fonction pour terminer la configuration

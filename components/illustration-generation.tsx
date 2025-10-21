@@ -6,14 +6,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Image, Palette, RefreshCw, Download, Eye, Settings, Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import AITimer from "./ai-timer"
 
 interface ProcessedTextData {
   processedText: string
   history: any[]
 }
 
+interface TextData {
+  text: string
+  language: string
+  chapters: string[]
+  style: string
+  desiredPages: number
+}
+
+interface CoverData {
+  coverData: any
+}
+
 interface IllustrationGenerationProps {
-  textData: ProcessedTextData
+  textData: TextData  // Données texte initial
+  processedText: ProcessedTextData  // Texte traité par IA
+  coverData: CoverData  // Données couverture
+  currentUser?: any  // Pour limites abonnement
   onNext: (data: { illustrations: GeneratedIllustration[] }) => void
   onBack: () => void
 }
@@ -28,7 +44,9 @@ interface GeneratedIllustration {
   isGenerating: boolean
 }
 
-export default function IllustrationGeneration({ textData, onNext, onBack }: IllustrationGenerationProps) {
+export default function IllustrationGeneration({ textData, processedText, coverData, currentUser, onNext, onBack }: IllustrationGenerationProps) {
+  const [numberOfIllustrations, setNumberOfIllustrations] = useState(5)
+  const maxIllustrations = currentUser?.subscription?.max_illustrations || 10
   const [chapters, setChapters] = useState<string[]>([])
   const [selectedStyle, setSelectedStyle] = useState("realistic")
   const [illustrations, setIllustrations] = useState<GeneratedIllustration[]>([])
@@ -112,7 +130,7 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
       return defaultChapters
     }
 
-    const extractedChapters = extractChapters(textData.processedText)
+    const extractedChapters = extractChapters(processedText.processedText)
     setChapters(extractedChapters)
 
     // Initialiser les illustrations
@@ -127,7 +145,7 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
     }))
 
     setIllustrations(initialIllustrations)
-  }, [textData.processedText, selectedStyle])
+  }, [processedText.processedText, selectedStyle])
 
   // Fonction pour générer le prompt d'illustration basé sur le contenu du chapitre
   const generatePromptForChapter = (chapterTitle: string, chapterContent: string): string => {
@@ -144,30 +162,39 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
     return `${basePrompt}${keywordPrompt}, style ${selectedStyle}`
   }
 
-  // Simulation de génération d'image (dans la vraie implémentation, on appellerait DALL-E, Stable Diffusion, etc.)
+  // Génération d'image avec IA (VRAIE API !)
   const generateImage = async (prompt: string, style: string): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Retourner une URL d'image placeholder basée sur le style
-        const styleColors: { [key: string]: string } = {
-          realistic: "4a5568",
-          cartoon: "f56565",
-          watercolor: "48bb78",
-          fantasy: "9f7aea",
-          minimalist: "718096",
-          vintage: "d69e2e",
-          digital_art: "3182ce",
-          sketch: "2d3748"
-        }
-        
-        const color = styleColors[style] || "4a5568"
-        const width = 400
-        const height = 300
-        
-        // URL d'image placeholder avec couleur basée sur le style
-        resolve(`https://via.placeholder.com/${width}x${height}/${color}/ffffff?text=${encodeURIComponent(style.replace('_', ' '))}`)
-      }, 2000)
-    })
+    try {
+      const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, style })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erreur API');
+      }
+
+      return data.imageUrl;
+    } catch (error: any) {
+      console.error('Erreur génération image:', error);
+      // Fallback sur placeholder en cas d'erreur
+      const styleColors: { [key: string]: string } = {
+        realistic: "4a5568",
+        cartoon: "f56565",
+        watercolor: "48bb78",
+        fantasy: "9f7aea",
+        minimalist: "718096",
+        vintage: "d69e2e",
+        digital_art: "3182ce",
+        sketch: "2d3748"
+      }
+      
+      const color = styleColors[style] || "4a5568"
+      return `https://via.placeholder.com/400x300/${color}/ffffff?text=${encodeURIComponent(style.replace('_', ' '))}`;
+    }
   }
 
   // Fonction pour générer une illustration individuelle
@@ -301,29 +328,40 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
               </Select>
             </div>
 
-            <div className="flex space-x-4">
-              <Button
-                onClick={generateAllIllustrations}
-                disabled={isGeneratingAll || illustrations.some(ill => ill.isGenerating)}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {isGeneratingAll ? (
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Génération en cours...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Image className="h-4 w-4" />
-                    <span>Générer toutes les illustrations</span>
-                  </div>
-                )}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <Button
+                  onClick={generateAllIllustrations}
+                  disabled={isGeneratingAll || illustrations.some(ill => ill.isGenerating)}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {isGeneratingAll ? (
+                    <div className="flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Génération en cours...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Image className="h-4 w-4" />
+                      <span>Générer toutes les illustrations</span>
+                    </div>
+                  )}
+                </Button>
 
-              <div className="text-sm text-gray-600 flex items-center">
-                <Settings className="h-4 w-4 mr-1" />
-                Style actuel : {getStyleInfo(selectedStyle).label}
+                <div className="text-sm text-gray-600 flex items-center">
+                  <Settings className="h-4 w-4 mr-1" />
+                  Style actuel : {getStyleInfo(selectedStyle).label}
+                </div>
               </div>
+
+              {/* Timer IA pour génération multiple */}
+              {isGeneratingAll && (
+                <AITimer 
+                  isGenerating={isGeneratingAll} 
+                  estimatedSeconds={illustrations.length * 8}
+                  onComplete={() => console.log('⏰ Toutes les illustrations générées')}
+                />
+              )}
             </div>
           </CardContent>
         </Card>
@@ -339,26 +377,38 @@ export default function IllustrationGeneration({ textData, onNext, onBack }: Ill
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Zone d'image */}
-                <div className="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden relative">
+                {/* Zone d'image avec aperçu */}
+                <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden relative border-2 border-gray-200">
                   {illustration.isGenerating ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
                       <div className="text-center">
-                        <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-blue-600" />
-                        <p className="text-sm text-gray-600">Génération...</p>
+                        <Loader2 className="h-10 w-10 animate-spin mx-auto mb-3 text-blue-600" />
+                        <p className="text-sm font-medium text-gray-700">Génération en cours...</p>
+                        <p className="text-xs text-gray-500 mt-1">Cela peut prendre quelques secondes</p>
                       </div>
                     </div>
                   ) : illustration.imageUrl ? (
-                    <img
-                      src={illustration.imageUrl}
-                      alt={illustration.chapterTitle}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={illustration.imageUrl}
+                        alt={illustration.chapterTitle}
+                        className="w-full h-full object-cover"
+                        onLoad={() => console.log('✅ Image chargée:', illustration.chapterTitle)}
+                        onError={(e) => {
+                          console.error('❌ Erreur chargement image:', illustration.chapterTitle);
+                          e.currentTarget.src = '/placeholder.svg';
+                        }}
+                      />
+                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        ✓ Généré
+                      </div>
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center text-gray-500">
-                        <Image className="h-12 w-12 mx-auto mb-2" />
-                        <p className="text-sm">Pas encore générée</p>
+                        <Image className="h-16 w-16 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm font-medium">Pas encore générée</p>
+                        <p className="text-xs mt-1">Cliquez sur "Générer"</p>
                       </div>
                     </div>
                   )}

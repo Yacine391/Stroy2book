@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Upload, FileText, Languages, Scissors, Wand2, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
@@ -14,18 +15,37 @@ interface TextInputStepProps {
     language: string
     chapters: string[]
     style: string
+    desiredPages: number
   }) => void
   onBack: () => void
+  currentUser?: any
 }
 
-export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
+export default function TextInputStep({ onNext, onBack, currentUser }: TextInputStepProps) {
   const [text, setText] = useState("")
   const [detectedLanguage, setDetectedLanguage] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [chapters, setChapters] = useState<string[]>([])
   const [detectedStyle, setDetectedStyle] = useState("")
   const [error, setError] = useState("")
+  const [desiredPages, setDesiredPages] = useState(20) // Nouveau : nombre de pages désiré
+  const [pageLimit, setPageLimit] = useState(200) // Limite selon l'abonnement
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Déterminer la limite de pages selon l'abonnement
+  useEffect(() => {
+    if (currentUser && currentUser.subscription) {
+      const plan = currentUser.subscription.plan || 'free';
+      const limits = {
+        free: 20,
+        premium: 100,
+        pro: 200
+      };
+      setPageLimit(limits[plan as keyof typeof limits] || 20);
+    } else {
+      setPageLimit(20); // Par défaut: Free (20 pages)
+    }
+  }, [currentUser])
 
   // Fonction pour détecter la langue automatiquement
   const detectLanguage = (text: string): string => {
@@ -209,11 +229,21 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
       return
     }
 
+    // Vérifier la limite de pages selon l'abonnement
+    if (desiredPages > pageLimit) {
+      const planName = currentUser?.subscription?.plan || 'free';
+      const planDisplay = planName === 'free' ? 'Gratuit' : planName === 'premium' ? 'Premium' : 'Pro';
+      setError(`❌ Votre abonnement ${planDisplay} vous permet de créer des ebooks jusqu'à ${pageLimit} pages maximum. Vous avez demandé ${desiredPages} pages. Veuillez réduire le nombre de pages ou mettre à niveau votre abonnement pour continuer.`);
+      return;
+    }
+
+    setError(""); // Effacer les erreurs
     onNext({
       text: text.trim(),
       language: detectedLanguage || 'fr',
       chapters: chapters.length > 0 ? chapters : [text.trim()],
-      style: detectedStyle || 'Standard'
+      style: detectedStyle || 'Standard',
+      desiredPages: desiredPages
     })
   }
 
@@ -289,48 +319,51 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
               className="min-h-[300px] text-base"
             />
             
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={analyzeText}
-                disabled={!text.trim() || isProcessing}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Languages className="h-4 w-4" />
-                <span>Analyser le texte</span>
-              </Button>
-              
-              <Button
-                onClick={handleCleanText}
-                disabled={!text.trim()}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Wand2 className="h-4 w-4" />
-                <span>Nettoyer le texte</span>
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  const autoChapters = autoSplitChapters(text)
-                  setChapters(autoChapters)
-                }}
-                disabled={!text.trim()}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Scissors className="h-4 w-4" />
-                <span>Découper en chapitres</span>
-              </Button>
+            {/* Champ nombre de pages désiré */}
+            <div className="space-y-2">
+              <Label htmlFor="desired-pages">Nombre de pages souhaité pour l'ebook final</Label>
+              <div className="flex items-center space-x-4">
+                <Input
+                  id="desired-pages"
+                  type="text"
+                  value={desiredPages}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    const num = parseInt(val) || 1;
+                    setDesiredPages(Math.max(1, Math.min(200, num)));
+                  }}
+                  onBlur={(e) => {
+                    if (!e.target.value) setDesiredPages(20);
+                  }}
+                  placeholder="20"
+                  className="w-24"
+                />
+                <span className="text-sm text-gray-600">
+                  pages (≈ {(desiredPages * 250).toLocaleString()} mots)
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-gray-500">
+                  💡 L'IA générera exactement {desiredPages} pages de contenu
+                </p>
+                <p className={`text-xs font-medium ${desiredPages > pageLimit ? 'text-red-600' : 'text-green-600'}`}>
+                  Limite : {pageLimit} pages max
+                </p>
+              </div>
+              {desiredPages > pageLimit && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-red-800">
+                    ⚠️ Vous avez dépassé la limite de votre abonnement ({pageLimit} pages max). 
+                    Réduisez le nombre de pages ou passez à un abonnement supérieur.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Statistiques du texte */}
             {text.trim() && (
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Statistiques</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Statistiques du texte actuel</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Caractères :</span>
@@ -338,16 +371,26 @@ export default function TextInputStep({ onNext, onBack }: TextInputStepProps) {
                   </div>
                   <div>
                     <span className="text-gray-600">Mots :</span>
-                    <span className="ml-2 font-medium">{text.trim().split(/\s+/).length.toLocaleString()}</span>
+                    <span className="ml-2 font-medium">{text.trim().split(/\s+/).filter(w => w.length > 0).length.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Paragraphes :</span>
-                    <span className="ml-2 font-medium">{text.split(/\n\s*\n/).filter(p => p.trim()).length}</span>
+                    <span className="ml-2 font-medium">{text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Pages estimées :</span>
-                    <span className="ml-2 font-medium">{Math.ceil(text.trim().split(/\s+/).length / 250)}</span>
+                    <span className="ml-2 font-medium">{Math.max(1, Math.ceil(text.trim().split(/\s+/).filter(w => w.length > 0).length / 250))}</span>
                   </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Pages souhaitées pour l'ebook final :</span>
+                    <span className="ml-2 font-medium text-blue-600">{desiredPages} pages</span>
+                    <span className="ml-2 text-gray-500">(≈ {desiredPages * 250} mots)</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 L'IA ajustera automatiquement le contenu pour atteindre exactement {desiredPages} pages
+                  </p>
                 </div>
               </div>
             )}
