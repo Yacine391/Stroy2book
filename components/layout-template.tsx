@@ -326,7 +326,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Mise en page automatique</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Mise en page automatique</h2>
         <p className="text-gray-600">Choisissez un template et personnalisez la mise en page de votre ebook. Tous les styles sont optimisés pour une lecture agréable.</p>
       </div>
 
