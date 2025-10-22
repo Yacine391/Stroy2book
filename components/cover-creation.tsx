@@ -22,6 +22,17 @@ interface GeneratedIllustration {
 
 interface CoverCreationProps {
   illustrations: GeneratedIllustration[]
+  textData?: {
+    text: string
+    language: string
+    chapters: string[]
+    style: string
+    desiredPages: number
+  }
+  processedText?: {
+    processedText: string
+    history: any[]
+  }
   onNext: (data: { coverData: CoverData }) => void
   onBack: () => void
 }
@@ -41,7 +52,7 @@ interface CoverData {
   hasWatermark: boolean
 }
 
-export default function CoverCreation({ illustrations, onNext, onBack }: CoverCreationProps) {
+export default function CoverCreation({ illustrations, textData, processedText, onNext, onBack }: CoverCreationProps) {
   const [title, setTitle] = useState("")
   const [subtitle, setSubtitle] = useState("")
   const [author, setAuthor] = useState("")
@@ -196,11 +207,26 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     setSuccess("");
 
     try {
-      // Utiliser le contenu des illustrations pour générer un titre
-      const chapters = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+      // Utiliser le contenu réel du texte traité ou du texte original
+      let contentToSend = '';
+      let chaptersToSend: string[] = [];
       
-      // Si pas de chapitres depuis les illustrations, utiliser des données de base
-      let contentToSend = chapters.join('. ');
+      // Priorité 1: Texte traité par l'IA
+      if (processedText && processedText.processedText) {
+        contentToSend = processedText.processedText.substring(0, 2000);
+      }
+      // Priorité 2: Texte original et chapitres
+      else if (textData) {
+        contentToSend = textData.text.substring(0, 2000);
+        chaptersToSend = textData.chapters || [];
+      }
+      // Priorité 3: Illustrations
+      else if (illustrations && illustrations.length > 0) {
+        chaptersToSend = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+        contentToSend = chaptersToSend.join('. ');
+      }
+      
+      // Si vraiment aucun contenu, utiliser un fallback
       if (!contentToSend || contentToSend.length < 10) {
         contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
       }
@@ -211,9 +237,9 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chapters: chapters.length > 0 ? chapters : [`Ebook ${selectedStyle}`],
+          chapters: chaptersToSend.length > 0 ? chaptersToSend : undefined,
           content: contentToSend,
-          genre: selectedStyle,
+          genre: textData?.style || selectedStyle,
           style: selectedLayout
         })
       });
@@ -244,6 +270,61 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     }
   };
 
+  // Fonction pour extraire des mots-clés pertinents du contenu
+  const extractKeywords = (text: string): string[] => {
+    const lowerText = text.toLowerCase();
+    const keywords: string[] = [];
+    
+    // Mots-clés géographiques et historiques
+    const locations: Record<string, string[]> = {
+      'algérie': ['algerian landscape', 'north africa', 'sahara desert', 'mediterranean coast', 'algiers casbah'],
+      'algeria': ['algerian landscape', 'north africa', 'sahara desert', 'mediterranean coast'],
+      'france': ['french countryside', 'eiffel tower', 'paris', 'provence lavender'],
+      'maroc': ['moroccan architecture', 'marrakech', 'atlas mountains', 'sahara'],
+      'egypt': ['pyramids', 'sphinx', 'nile river', 'ancient egypt'],
+      'égypte': ['pyramides', 'sphinks', 'nil', 'égypte antique']
+    };
+    
+    // Événements historiques
+    const historical: Record<string, string[]> = {
+      'indépendance': ['independence celebration', 'freedom', 'national flags waving', 'liberation'],
+      'guerre': ['war memorial', 'historical battle', 'soldiers monument', 'conflict history'],
+      'révolution': ['revolution symbols', 'uprising', 'historical change', 'freedom fighters'],
+      'colonisation': ['historical colonial era', 'historical period', 'vintage historical scene']
+    };
+    
+    // Thèmes généraux
+    const themes: Record<string, string[]> = {
+      'amour': ['romantic scene', 'love hearts', 'couples', 'romance'],
+      'aventure': ['epic adventure', 'journey landscape', 'exploration', 'discovery'],
+      'mystère': ['mysterious atmosphere', 'shadows', 'enigma', 'detective noir'],
+      'science': ['scientific laboratory', 'research', 'innovation', 'technology'],
+      'nature': ['natural landscape', 'wilderness', 'flora fauna', 'ecosystem']
+    };
+    
+    // Chercher correspondances
+    for (const [key, values] of Object.entries(locations)) {
+      if (lowerText.includes(key)) {
+        keywords.push(...values);
+        break;
+      }
+    }
+    
+    for (const [key, values] of Object.entries(historical)) {
+      if (lowerText.includes(key)) {
+        keywords.push(...values);
+      }
+    }
+    
+    for (const [key, values] of Object.entries(themes)) {
+      if (lowerText.includes(key)) {
+        keywords.push(...values);
+      }
+    }
+    
+    return keywords;
+  };
+
   // Fonction pour générer automatiquement la couverture avec l'IA
   const generateCover = async (useCustomDescription = false) => {
     if (!title.trim()) {
@@ -261,61 +342,43 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     setSuccess("")
 
     try {
-      // Créer un prompt SANS TEXTE (les IA d'images ne peuvent pas écrire du texte lisible)
-      const styleDescriptions: Record<string, string> = {
-        professional: 'professional corporate style, clean modern aesthetic',
-        creative: 'creative artistic style, vibrant imaginative colors',
-        academic: 'scholarly formal style, serious academic look',
-        popular: 'popular commercial style, eye-catching attractive design',
-        luxury: 'luxury premium style, sophisticated elegant appearance'
-      };
-
-      const layoutDescriptions: Record<string, string> = {
-        classic: 'classic traditional composition',
-        modern: 'modern minimalist composition with geometric shapes',
-        artistic: 'artistic creative composition with abstract elements',
-        minimalist: 'minimalist simple composition with negative space',
-        bold: 'bold striking composition with strong visual impact',
-        elegant: 'elegant refined composition with ornamental decorative elements'
-      };
-
       let coverPrompt = '';
       
       if (useCustomDescription && coverDescription.trim()) {
-        // Utiliser la description personnalisée - SIMPLE ET DIRECT
-        coverPrompt = `book cover art: ${coverDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
+        // Utiliser la description personnalisée
+        coverPrompt = `professional book cover illustration: ${coverDescription}, artistic, high quality, detailed, vibrant colors, no text, no letters, no words`;
       } else {
-        // Génération automatique SIMPLIFIÉE basée sur le titre
-        const titleLower = title.toLowerCase();
-        let visualDescription = '';
+        // Analyse intelligente du contenu
+        let contentToAnalyze = title + ' ';
         
-        // Détection SIMPLE et PRÉCISE
-        if (titleLower.includes('space') || titleLower.includes('étoile') || titleLower.includes('galaxy') || titleLower.includes('cosmos')) {
-          visualDescription = 'space galaxy nebula stars planets cosmic';
-        } else if (titleLower.includes('dragon') || titleLower.includes('fantasy') || titleLower.includes('magic') || titleLower.includes('magie')) {
-          visualDescription = 'fantasy dragon castle magical mythical';
-        } else if (titleLower.includes('love') || titleLower.includes('amour') || titleLower.includes('romance')) {
-          visualDescription = 'romantic sunset couple love hearts warm';
-        } else if (titleLower.includes('mystery') || titleLower.includes('mystère') || titleLower.includes('detective')) {
-          visualDescription = 'mysterious dark noir detective shadows';
-        } else if (titleLower.includes('adventure') || titleLower.includes('aventure') || titleLower.includes('treasure')) {
-          visualDescription = 'adventure epic landscape mountain journey';
-        } else if (titleLower.includes('tech') || titleLower.includes('cyber') || titleLower.includes('robot') || titleLower.includes('future')) {
-          visualDescription = 'futuristic technology cyber neon digital';
-        } else if (titleLower.includes('ocean') || titleLower.includes('océan') || titleLower.includes('sea') || titleLower.includes('mer')) {
-          visualDescription = 'ocean sea waves water blue';
-        } else if (titleLower.includes('forest') || titleLower.includes('forêt') || titleLower.includes('tree') || titleLower.includes('nature')) {
-          visualDescription = 'forest trees nature green woodland';
-        } else if (titleLower.includes('city') || titleLower.includes('ville') || titleLower.includes('urban')) {
-          visualDescription = 'city urban skyline buildings modern';
-        } else {
-          // Fallback : utiliser les premiers mots du titre comme description
-          const words = title.split(' ').slice(0, 5).join(' ');
-          visualDescription = words;
+        if (processedText && processedText.processedText) {
+          contentToAnalyze += processedText.processedText.substring(0, 1000);
+        } else if (textData && textData.text) {
+          contentToAnalyze += textData.text.substring(0, 1000);
+          if (textData.chapters && textData.chapters.length > 0) {
+            contentToAnalyze += ' ' + textData.chapters.join(' ').substring(0, 500);
+          }
         }
         
-        // Prompt SIMPLE et DIRECT
-        coverPrompt = `book cover art: ${visualDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
+        // Extraire mots-clés intelligents
+        const keywords = extractKeywords(contentToAnalyze);
+        
+        let visualDescription = '';
+        if (keywords.length > 0) {
+          // Utiliser les mots-clés extraits (max 4)
+          visualDescription = keywords.slice(0, 4).join(', ');
+        } else {
+          // Fallback basé sur le titre
+          const titleWords = title.split(' ').filter(w => w.length > 3).slice(0, 3).join(' ');
+          visualDescription = titleWords || 'book cover art';
+        }
+        
+        const styleHint = selectedStyle === 'professional' ? 'corporate elegant' :
+                         selectedStyle === 'creative' ? 'artistic imaginative' :
+                         selectedStyle === 'academic' ? 'scholarly formal' :
+                         selectedStyle === 'popular' ? 'modern attractive' : 'sophisticated';
+        
+        coverPrompt = `professional book cover illustration: ${visualDescription}, ${styleHint}, artistic composition, vibrant professional colors, high quality detailed artwork, no text, no letters, no words, no symbols`;
       }
       
       console.log('🎨 Génération couverture (sans texte):', coverPrompt);
@@ -401,7 +464,7 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Création de la couverture</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Création de la couverture</h2>
         <p className="text-gray-600">Créez une couverture professionnelle automatiquement ou uploadez votre propre image. Taille recommandée : 2048×3072 px.</p>
       </div>
 
@@ -739,10 +802,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
               <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
                 {isGenerating ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+                    <div className="text-center p-6">
                       <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-sm text-gray-600">Génération de la couverture...</p>
+                      <p className="text-sm text-gray-700 font-medium mb-4">Génération de la couverture...</p>
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <AITimer 
+                          isGenerating={isGenerating} 
+                          estimatedSeconds={10}
+                          onComplete={() => console.log('⏰ Couverture générée')}
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : generatedCoverUrl ? (

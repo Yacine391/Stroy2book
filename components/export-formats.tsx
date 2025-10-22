@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
-import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye } from "lucide-react"
+import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye, Info } from "lucide-react"
+import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
 
 interface LayoutSettings {
   template: string
@@ -231,13 +232,20 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
 
   // Fonction pour télécharger un fichier
   const downloadFile = (file: ExportedFile) => {
-    // Dans une vraie implémentation, ceci téléchargerait le fichier réel
-    const link = document.createElement('a')
-    link.href = file.url
-    link.download = file.filename
-    link.click()
-    
-    setSuccess(`Téléchargement de ${file.filename} démarré`)
+    if (file.url.startsWith('blob:')) {
+      // Vrai fichier généré (PDF)
+      const link = document.createElement('a')
+      link.href = file.url
+      link.download = file.filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      setSuccess(`✅ Téléchargement de ${file.filename} démarré`)
+    } else {
+      // Format non encore implémenté
+      setError(`Le format ${file.format} n'est pas encore disponible au téléchargement. Utilisez PDF pour l'instant.`)
+    }
   }
 
   // Fonction pour télécharger tous les fichiers
@@ -509,7 +517,21 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm">Qualité PDF</Label>
+                <div className="flex items-center space-x-2 mb-1">
+                  <Label className="text-sm">Qualité PDF</Label>
+                  <div className="group relative">
+                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg -top-2 left-6">
+                      <strong>DPI (Dots Per Inch)</strong> = Points par pouce
+                      <div className="mt-1">
+                        • <strong>300 DPI</strong>: Qualité professionnelle pour l'impression<br/>
+                        • <strong>150 DPI</strong>: Bon compromis taille/qualité pour le web<br/>
+                        • <strong>72 DPI</strong>: Optimisé pour liseuses électroniques (plus léger)
+                      </div>
+                      <div className="absolute w-2 h-2 bg-gray-900 transform rotate-45 -left-1 top-4"></div>
+                    </div>
+                  </div>
+                </div>
                 <Select defaultValue="print">
                   <SelectTrigger className="text-sm mt-1">
                     <SelectValue />
