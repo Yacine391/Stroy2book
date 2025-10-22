@@ -505,38 +505,39 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
 
               <div>
                 <Label className="text-sm font-medium">Marges (mm)</Label>
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                  <div>
-                    <Label className="text-xs">Haut</Label>
-                    <Input
-                      type="number"
-                      min="10"
-                      max="40"
-                      value={layoutSettings.spacing.margins.top}
-                      onChange={(e) => updateMargin('top', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Bas</Label>
-                    <Input
-                      type="number"
-                      min="10"
-                      max="40"
-                      value={layoutSettings.spacing.margins.bottom}
-                      onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Gauche</Label>
-                    <Input
-                      type="number"
-                      min="10"
-                      max="40"
-                      value={layoutSettings.spacing.margins.left}
-                      onChange={(e) => updateMargin('left', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
+                <div className="flex gap-4">
+                  <div className="grid grid-cols-4 gap-2 mt-2 flex-1">
+                    <div>
+                      <Label className="text-xs">Haut</Label>
+                      <Input
+                        type="number"
+                        min="10"
+                        max="40"
+                        value={layoutSettings.spacing.margins.top}
+                        onChange={(e) => updateMargin('top', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Bas</Label>
+                      <Input
+                        type="number"
+                        min="10"
+                        max="40"
+                        value={layoutSettings.spacing.margins.bottom}
+                        onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Gauche</Label>
+                      <Input
+                        type="number"
+                        min="10"
+                        max="40"
+                        value={layoutSettings.spacing.margins.left}
+                        onChange={(e) => updateMargin('left', parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div>
                     <Label className="text-xs">Droite</Label>
                     <Input
                       type="number"
@@ -545,6 +546,62 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                       value={layoutSettings.spacing.margins.right}
                       onChange={(e) => updateMargin('right', parseInt(e.target.value))}
                     />
+                  </div>
+                </div>
+                  
+                  {/* Prévisualisation visuelle des marges */}
+                  <div className="bg-gray-50 rounded-lg p-4 flex-shrink-0" style={{width: '180px'}}>
+                    <div className="text-xs text-gray-600 mb-2 text-center">Prévisualisation</div>
+                    <div className="bg-white border-2 border-gray-300 relative" style={{
+                      width: '120px',
+                      height: '160px',
+                      marginLeft: 'auto',
+                      marginRight: 'auto'
+                    }}>
+                      {/* Zones de marges colorées */}
+                      <div className="absolute bg-blue-100 opacity-40" style={{
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${(layoutSettings.spacing.margins.top / 40) * 30}%`
+                      }} title={`Haut: ${layoutSettings.spacing.margins.top}mm`}></div>
+                      
+                      <div className="absolute bg-blue-100 opacity-40" style={{
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`
+                      }} title={`Bas: ${layoutSettings.spacing.margins.bottom}mm`}></div>
+                      
+                      <div className="absolute bg-blue-100 opacity-40" style={{
+                        top: 0,
+                        left: 0,
+                        bottom: 0,
+                        width: `${(layoutSettings.spacing.margins.left / 40) * 30}%`
+                      }} title={`Gauche: ${layoutSettings.spacing.margins.left}mm`}></div>
+                      
+                      <div className="absolute bg-blue-100 opacity-40" style={{
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
+                      }} title={`Droite: ${layoutSettings.spacing.margins.right}mm`}></div>
+                      
+                      {/* Zone de contenu */}
+                      <div className="absolute flex items-center justify-center" style={{
+                        top: `${(layoutSettings.spacing.margins.top / 40) * 30}%`,
+                        bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`,
+                        left: `${(layoutSettings.spacing.margins.left / 40) * 30}%`,
+                        right: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
+                      }}>
+                        <div className="text-[6px] text-gray-400 leading-tight">
+                          Lorem ipsum dolor sit amet...
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-center mt-2">
+                      Zones bleues = Marges
+                    </div>
                   </div>
                 </div>
               </div>

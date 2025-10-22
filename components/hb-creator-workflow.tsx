@@ -571,6 +571,8 @@ export default function HBCreatorWorkflow() {
         {currentStep === 'cover' && workflowData.processedText && (
           <CoverCreation
             illustrations={[]}
+            textData={workflowData.textData}
+            processedText={workflowData.processedText}
             onNext={handleCoverComplete}
             onBack={goToPreviousStep}
           />
