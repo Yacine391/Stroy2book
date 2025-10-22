@@ -224,25 +224,54 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
           size: `${sizeMB} MB`,
           generatedAt: new Date()
         }
-      } else {
-        // Pour EPUB et DOCX, simulation pour l'instant
+      } else if (format === 'epub' || format === 'docx') {
+        // Génération EPUB et DOCX
         for (let i = 0; i < steps.length; i++) {
           currentStep = i + 1
           updateProgress()
-          await new Promise(resolve => setTimeout(resolve, 600))
+          await new Promise(resolve => setTimeout(resolve, 400))
         }
         
-        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${format}`
-        const mockUrl = `#${format}-not-implemented`
-        const fileSize = format === 'epub' ? '1.8 MB' : '1.2 MB'
+        // Créer le contenu du fichier
+        let fileContent = '';
+        if (format === 'epub') {
+          // Format EPUB simplifié (HTML)
+          fileContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>${coverData.title}</title>
+  <meta charset="UTF-8"/>
+</head>
+<body>
+  <h1>${coverData.title}</h1>
+  <h2>par ${coverData.author}</h2>
+  <hr/>
+  ${processedText.split('\n\n').map(p => `<p>${p}</p>`).join('\n')}
+</body>
+</html>`;
+        } else {
+          // Format DOCX simplifié (texte brut pour l'instant)
+          fileContent = `${coverData.title}\n\npar ${coverData.author}\n\n${'='.repeat(50)}\n\n${processedText}`;
+        }
+        
+        // Créer le blob
+        const blob = new Blob([fileContent], { 
+          type: format === 'epub' ? 'application/epub+zip' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+        })
+        const url = URL.createObjectURL(blob)
+        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${format === 'epub' ? 'html' : 'txt'}`
+        const sizeMB = (blob.size / (1024 * 1024)).toFixed(2)
         
         return {
           format: format.toUpperCase(),
           filename,
-          url: mockUrl,
-          size: fileSize,
+          url,
+          size: `${sizeMB} MB`,
           generatedAt: new Date()
         }
+      } else {
+        throw new Error(`Format ${format} non supporté`)
       }
     } catch (error) {
       console.error(`Erreur lors de la génération ${format}:`, error)
@@ -291,20 +320,17 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
 
   // Fonction pour télécharger un fichier
   const downloadFile = (file: ExportedFile) => {
-    if (file.url.startsWith('blob:')) {
-      // Vrai fichier généré (PDF)
-      const link = document.createElement('a')
-      link.href = file.url
-      link.download = file.filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      setSuccess(`✅ Téléchargement de ${file.filename} démarré`)
-    } else {
-      // Format non encore implémenté
-      setError(`Le format ${file.format} n'est pas encore disponible au téléchargement. Utilisez PDF pour l'instant.`)
-    }
+    console.log('📥 Téléchargement fichier:', file.filename, 'URL:', file.url);
+    
+    // Télécharger le fichier
+    const link = document.createElement('a')
+    link.href = file.url
+    link.download = file.filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    setSuccess(`✅ Téléchargement de ${file.filename} démarré`)
   }
 
   // Fonction pour télécharger tous les fichiers

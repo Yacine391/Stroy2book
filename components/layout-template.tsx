@@ -207,16 +207,16 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
     { value: "5x8", label: "5×8 inches (127×203 mm)", width: 127, height: 203 }
   ]
 
-  // Polices disponibles
+  // Polices disponibles avec preview
   const fonts = [
-    { value: "Georgia", label: "Georgia (serif classique)" },
-    { value: "Times New Roman", label: "Times New Roman (serif traditionnel)" },
-    { value: "Arial", label: "Arial (sans-serif moderne)" },
-    { value: "Helvetica", label: "Helvetica (sans-serif professionnel)" },
-    { value: "Verdana", label: "Verdana (sans-serif lisible)" },
-    { value: "Palatino", label: "Palatino (serif élégant)" },
-    { value: "Garamond", label: "Garamond (serif littéraire)" },
-    { value: "Comic Sans MS", label: "Comic Sans MS (ludique)" }
+    { value: "Georgia", label: "Georgia", description: "serif classique" },
+    { value: "Times New Roman", label: "Times New Roman", description: "serif traditionnel" },
+    { value: "Arial", label: "Arial", description: "sans-serif moderne" },
+    { value: "Helvetica", label: "Helvetica", description: "sans-serif professionnel" },
+    { value: "Verdana", label: "Verdana", description: "sans-serif lisible" },
+    { value: "Palatino", label: "Palatino", description: "serif élégant" },
+    { value: "Garamond", label: "Garamond", description: "serif littéraire" },
+    { value: "Comic Sans MS", label: "Comic Sans MS", description: "ludique" }
   ]
 
   // Positions des numéros de page
@@ -401,7 +401,12 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          {font.label}
+                          <div className="flex items-center space-x-2">
+                            <span style={{ fontFamily: font.value }} className="font-semibold">
+                              {font.label}
+                            </span>
+                            <span className="text-xs text-gray-500">({font.description})</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -420,7 +425,12 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          {font.label}
+                          <div className="flex items-center space-x-2">
+                            <span style={{ fontFamily: font.value }} className="font-semibold">
+                              {font.label}
+                            </span>
+                            <span className="text-xs text-gray-500">({font.description})</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>

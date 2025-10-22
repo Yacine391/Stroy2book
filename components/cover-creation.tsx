@@ -237,11 +237,11 @@ export default function CoverCreation({ illustrations, textData, processedText, 
         console.log('✅ Utilisation des illustrations');
       }
       
-      // Si vraiment aucun contenu, demander à l'utilisateur
+      // Si vraiment aucun contenu, utiliser un prompt générique
       if (!contentToSend || contentToSend.length < 10) {
-        setError("⚠️ Aucun contenu détecté. Veuillez d'abord saisir du texte dans l'étape 1.");
-        setIsGeneratingTitle(false);
-        return;
+        console.warn('⚠️ Pas de contenu détecté, utilisation prompt générique');
+        // Au lieu de bloquer, utiliser un prompt générique basé sur le genre
+        contentToSend = `Génère un titre créatif et accrocheur pour un livre de style ${selectedStyle}`;
       }
       
       console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));
