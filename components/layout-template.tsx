@@ -549,58 +549,88 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                   </div>
                 </div>
                   
-                  {/* Prévisualisation visuelle des marges */}
-                  <div className="bg-gray-50 rounded-lg p-4 flex-shrink-0" style={{width: '180px'}}>
-                    <div className="text-xs text-gray-600 mb-2 text-center">Prévisualisation</div>
-                    <div className="bg-white border-2 border-gray-300 relative" style={{
-                      width: '120px',
-                      height: '160px',
+                  {/* Prévisualisation visuelle des marges - AGRANDIE ET DYNAMIQUE */}
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex-shrink-0 border-2 border-blue-200" style={{width: '300px'}}>
+                    <div className="text-sm font-semibold text-gray-700 mb-3 text-center flex items-center justify-center space-x-2">
+                      <span>📄</span>
+                      <span>Prévisualisation en temps réel</span>
+                    </div>
+                    <div className="bg-white border-4 border-gray-400 relative shadow-lg" style={{
+                      width: '240px',
+                      height: '320px',
                       marginLeft: 'auto',
                       marginRight: 'auto'
                     }}>
-                      {/* Zones de marges colorées */}
-                      <div className="absolute bg-blue-100 opacity-40" style={{
+                      {/* Zones de marges colorées avec animations */}
+                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
                         top: 0,
                         left: 0,
                         right: 0,
-                        height: `${(layoutSettings.spacing.margins.top / 40) * 30}%`
-                      }} title={`Haut: ${layoutSettings.spacing.margins.top}mm`}></div>
+                        height: `${(layoutSettings.spacing.margins.top / 40) * 35}%`
+                      }} title={`Marge haute: ${layoutSettings.spacing.margins.top}mm`}>
+                        <div className="text-[10px] font-bold text-blue-900 text-center mt-1">
+                          {layoutSettings.spacing.margins.top}mm
+                        </div>
+                      </div>
                       
-                      <div className="absolute bg-blue-100 opacity-40" style={{
+                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`
-                      }} title={`Bas: ${layoutSettings.spacing.margins.bottom}mm`}></div>
+                        height: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`
+                      }} title={`Marge basse: ${layoutSettings.spacing.margins.bottom}mm`}>
+                        <div className="text-[10px] font-bold text-blue-900 text-center absolute bottom-1 w-full">
+                          {layoutSettings.spacing.margins.bottom}mm
+                        </div>
+                      </div>
                       
-                      <div className="absolute bg-blue-100 opacity-40" style={{
+                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
                         top: 0,
                         left: 0,
                         bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.left / 40) * 30}%`
-                      }} title={`Gauche: ${layoutSettings.spacing.margins.left}mm`}></div>
+                        width: `${(layoutSettings.spacing.margins.left / 40) * 35}%`
+                      }} title={`Marge gauche: ${layoutSettings.spacing.margins.left}mm`}>
+                        <div className="text-[10px] font-bold text-green-900 transform -rotate-90 absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                          {layoutSettings.spacing.margins.left}mm
+                        </div>
+                      </div>
                       
-                      <div className="absolute bg-blue-100 opacity-40" style={{
+                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
                         top: 0,
                         right: 0,
                         bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
-                      }} title={`Droite: ${layoutSettings.spacing.margins.right}mm`}></div>
+                        width: `${(layoutSettings.spacing.margins.right / 40) * 35}%`
+                      }} title={`Marge droite: ${layoutSettings.spacing.margins.right}mm`}>
+                        <div className="text-[10px] font-bold text-green-900 transform rotate-90 absolute right-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
+                          {layoutSettings.spacing.margins.right}mm
+                        </div>
+                      </div>
                       
-                      {/* Zone de contenu */}
-                      <div className="absolute flex items-center justify-center" style={{
-                        top: `${(layoutSettings.spacing.margins.top / 40) * 30}%`,
-                        bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`,
-                        left: `${(layoutSettings.spacing.margins.left / 40) * 30}%`,
-                        right: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
+                      {/* Zone de contenu avec texte simulé */}
+                      <div className="absolute flex flex-col justify-start p-2 transition-all duration-300" style={{
+                        top: `${(layoutSettings.spacing.margins.top / 40) * 35}%`,
+                        bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`,
+                        left: `${(layoutSettings.spacing.margins.left / 40) * 35}%`,
+                        right: `${(layoutSettings.spacing.margins.right / 40) * 35}%`,
+                        backgroundColor: 'rgba(255,255,255,0.9)'
                       }}>
-                        <div className="text-[6px] text-gray-400 leading-tight">
-                          Lorem ipsum dolor sit amet...
+                        <div className="text-[9px] font-bold text-gray-800 mb-1">Chapitre 1</div>
+                        <div className="text-[7px] text-gray-600 leading-tight space-y-1">
+                          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                          <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                          <p>Ut enim ad minim veniam, quis nostrud exercitation.</p>
                         </div>
                       </div>
                     </div>
-                    <div className="text-[10px] text-gray-500 text-center mt-2">
-                      Zones bleues = Marges
+                    <div className="flex items-center justify-center space-x-4 mt-3 text-[11px] text-gray-600">
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 bg-blue-400 opacity-40 rounded"></div>
+                        <span>Marges H/B</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 bg-green-400 opacity-40 rounded"></div>
+                        <span>Marges G/D</span>
+                      </div>
                     </div>
                   </div>
                 </div>

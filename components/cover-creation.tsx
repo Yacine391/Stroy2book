@@ -202,6 +202,14 @@ export default function CoverCreation({ illustrations, textData, processedText, 
 
   // Fonction pour générer le titre avec l'IA
   const generateTitleWithAI = async () => {
+    console.log('🪄 BAGUETTE CLIQUÉE - Début génération titre');
+    console.log('📊 Données disponibles:', { 
+      hasProcessedText: !!processedText, 
+      hasTextData: !!textData,
+      processedTextLength: processedText?.processedText?.length,
+      textDataLength: textData?.text?.length
+    });
+    
     setIsGeneratingTitle(true);
     setError("");
     setSuccess("");
@@ -214,21 +222,26 @@ export default function CoverCreation({ illustrations, textData, processedText, 
       // Priorité 1: Texte traité par l'IA
       if (processedText && processedText.processedText) {
         contentToSend = processedText.processedText.substring(0, 2000);
+        console.log('✅ Utilisation du texte traité:', contentToSend.substring(0, 100));
       }
       // Priorité 2: Texte original et chapitres
-      else if (textData) {
+      else if (textData && textData.text) {
         contentToSend = textData.text.substring(0, 2000);
         chaptersToSend = textData.chapters || [];
+        console.log('✅ Utilisation du texte original:', contentToSend.substring(0, 100));
       }
       // Priorité 3: Illustrations
       else if (illustrations && illustrations.length > 0) {
         chaptersToSend = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
         contentToSend = chaptersToSend.join('. ');
+        console.log('✅ Utilisation des illustrations');
       }
       
-      // Si vraiment aucun contenu, utiliser un fallback
+      // Si vraiment aucun contenu, demander à l'utilisateur
       if (!contentToSend || contentToSend.length < 10) {
-        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
+        setError("⚠️ Aucun contenu détecté. Veuillez d'abord saisir du texte dans l'étape 1.");
+        setIsGeneratingTitle(false);
+        return;
       }
       
       console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));

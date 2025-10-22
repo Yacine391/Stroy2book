@@ -173,15 +173,23 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
         updateProgress()
         
         // Préparer les données pour le PDF
+        console.log('📄 Préparation données PDF:');
+        console.log('- Titre:', coverData.title);
+        console.log('- Auteur:', coverData.author);
+        console.log('- Contenu length:', processedText?.length || 0);
+        console.log('- Contenu preview:', processedText?.substring(0, 200));
+        
         const ebookData = {
-          title: coverData.title,
-          author: coverData.author,
-          content: processedText,
+          title: coverData.title || 'Mon Ebook',
+          author: coverData.author || 'Auteur',
+          content: processedText || 'Contenu vide',
           backgroundColor: coverData.colors.primary || '#ffffff',
           fontFamily: layoutSettings.typography.bodyFont || 'Georgia',
           hasWatermark: coverData.hasWatermark,
           coverImage: coverData.imageUrl
         }
+        
+        console.log('✅ ebookData préparé:', ebookData.title, 'avec', ebookData.content.length, 'caractères');
         
         currentStep = 2
         updateProgress()
