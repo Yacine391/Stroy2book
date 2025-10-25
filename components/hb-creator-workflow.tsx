@@ -22,7 +22,7 @@ type WorkflowStep =
   | 'ai-generation'
   | 'cover'
   | 'layout'
-  | 'illustrations'  // ✅ DÉPLACÉ APRÈS LAYOUT
+  | 'illustrations'
   | 'export'
   | 'project-management'
   | 'security'
@@ -71,6 +71,11 @@ export default function HBCreatorWorkflow() {
   useEffect(() => {
     loadCurrentUser()
   }, [])
+
+  // Scroll en haut à chaque changement d'étape
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
 
   // Fermer le menu utilisateur quand on clique ailleurs
   useEffect(() => {

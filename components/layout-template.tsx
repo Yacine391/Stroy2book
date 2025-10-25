@@ -110,6 +110,45 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
+  // Presets de disposition rapide
+  const layoutPresets = [
+    {
+      name: "📚 Roman classique",
+      description: "Marges larges, police serif, espacement confortable",
+      settings: {
+        typography: { titleSize: 18, subtitleSize: 14, bodySize: 11, titleFont: "Georgia", bodyFont: "Georgia" },
+        spacing: { lineHeight: 1.6, paragraphSpacing: 12, chapterSpacing: 24, margins: { top: 25, bottom: 25, left: 25, right: 25 } }
+      }
+    },
+    {
+      name: "📖 Livre technique",
+      description: "Marges étroites, police sans-serif, espacement compact",
+      settings: {
+        typography: { titleSize: 16, subtitleSize: 13, bodySize: 10, titleFont: "Arial", bodyFont: "Arial" },
+        spacing: { lineHeight: 1.4, paragraphSpacing: 10, chapterSpacing: 20, margins: { top: 20, bottom: 20, left: 20, right: 20 } }
+      }
+    },
+    {
+      name: "✨ Luxe élégant",
+      description: "Grandes marges, grandes polices, espacement généreux",
+      settings: {
+        typography: { titleSize: 22, subtitleSize: 16, bodySize: 13, titleFont: "Palatino", bodyFont: "Palatino" },
+        spacing: { lineHeight: 1.8, paragraphSpacing: 16, chapterSpacing: 32, margins: { top: 30, bottom: 30, left: 30, right: 30 } }
+      }
+    }
+  ]
+
+  // Fonction pour appliquer un preset
+  const applyPreset = (preset: typeof layoutPresets[0]) => {
+    setLayoutSettings(prev => ({
+      ...prev,
+      typography: { ...prev.typography, ...preset.settings.typography },
+      spacing: { ...prev.spacing, ...preset.settings.spacing }
+    }))
+    setSuccess(`Preset "${preset.name}" appliqué !`)
+    setTimeout(() => setSuccess(""), 3000)
+  }
+
   // Templates disponibles
   const templates = [
     {
@@ -207,16 +246,16 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
     { value: "5x8", label: "5×8 inches (127×203 mm)", width: 127, height: 203 }
   ]
 
-  // Polices disponibles avec preview
+  // Polices disponibles
   const fonts = [
-    { value: "Georgia", label: "Georgia", description: "serif classique" },
-    { value: "Times New Roman", label: "Times New Roman", description: "serif traditionnel" },
-    { value: "Arial", label: "Arial", description: "sans-serif moderne" },
-    { value: "Helvetica", label: "Helvetica", description: "sans-serif professionnel" },
-    { value: "Verdana", label: "Verdana", description: "sans-serif lisible" },
-    { value: "Palatino", label: "Palatino", description: "serif élégant" },
-    { value: "Garamond", label: "Garamond", description: "serif littéraire" },
-    { value: "Comic Sans MS", label: "Comic Sans MS", description: "ludique" }
+    { value: "Georgia", label: "Georgia (serif classique)" },
+    { value: "Times New Roman", label: "Times New Roman (serif traditionnel)" },
+    { value: "Arial", label: "Arial (sans-serif moderne)" },
+    { value: "Helvetica", label: "Helvetica (sans-serif professionnel)" },
+    { value: "Verdana", label: "Verdana (sans-serif lisible)" },
+    { value: "Palatino", label: "Palatino (serif élégant)" },
+    { value: "Garamond", label: "Garamond (serif littéraire)" },
+    { value: "Comic Sans MS", label: "Comic Sans MS (ludique)" }
   ]
 
   // Positions des numéros de page
@@ -379,6 +418,33 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
             </CardContent>
           </Card>
 
+          {/* Presets de disposition rapide */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Settings className="h-5 w-5" />
+                <span>Presets rapides</span>
+              </CardTitle>
+              <CardDescription>
+                Appliquez instantanément une configuration prédéfinie
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-3">
+                {layoutPresets.map((preset, index) => (
+                  <button
+                    key={index}
+                    onClick={() => applyPreset(preset)}
+                    className="text-left p-4 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                  >
+                    <div className="font-medium text-gray-900 mb-1">{preset.name}</div>
+                    <div className="text-sm text-gray-600">{preset.description}</div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Paramètres de typographie */}
           <Card>
             <CardHeader>
@@ -401,12 +467,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          <div className="flex items-center space-x-2">
-                            <span style={{ fontFamily: font.value }} className="font-semibold">
-                              {font.label}
-                            </span>
-                            <span className="text-xs text-gray-500">({font.description})</span>
-                          </div>
+                          {font.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -425,12 +486,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          <div className="flex items-center space-x-2">
-                            <span style={{ fontFamily: font.value }} className="font-semibold">
-                              {font.label}
-                            </span>
-                            <span className="text-xs text-gray-500">({font.description})</span>
-                          </div>
+                          {font.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -515,39 +571,38 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
 
               <div>
                 <Label className="text-sm font-medium">Marges (mm)</Label>
-                <div className="flex gap-4">
-                  <div className="grid grid-cols-4 gap-2 mt-2 flex-1">
-                    <div>
-                      <Label className="text-xs">Haut</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.top}
-                        onChange={(e) => updateMargin('top', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Bas</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.bottom}
-                        onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Gauche</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.left}
-                        onChange={(e) => updateMargin('left', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div>
+                    <Label className="text-xs">Haut</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.top}
+                      onChange={(e) => updateMargin('top', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Bas</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.bottom}
+                      onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Gauche</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.left}
+                      onChange={(e) => updateMargin('left', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
                     <Label className="text-xs">Droite</Label>
                     <Input
                       type="number"
@@ -556,92 +611,6 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                       value={layoutSettings.spacing.margins.right}
                       onChange={(e) => updateMargin('right', parseInt(e.target.value))}
                     />
-                  </div>
-                </div>
-                  
-                  {/* Prévisualisation visuelle des marges - AGRANDIE ET DYNAMIQUE */}
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex-shrink-0 border-2 border-blue-200" style={{width: '300px'}}>
-                    <div className="text-sm font-semibold text-gray-700 mb-3 text-center flex items-center justify-center space-x-2">
-                      <span>📄</span>
-                      <span>Prévisualisation en temps réel</span>
-                    </div>
-                    <div className="bg-white border-4 border-gray-400 relative shadow-lg" style={{
-                      width: '240px',
-                      height: '320px',
-                      marginLeft: 'auto',
-                      marginRight: 'auto'
-                    }}>
-                      {/* Zones de marges colorées avec animations */}
-                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${(layoutSettings.spacing.margins.top / 40) * 35}%`
-                      }} title={`Marge haute: ${layoutSettings.spacing.margins.top}mm`}>
-                        <div className="text-[10px] font-bold text-blue-900 text-center mt-1">
-                          {layoutSettings.spacing.margins.top}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`
-                      }} title={`Marge basse: ${layoutSettings.spacing.margins.bottom}mm`}>
-                        <div className="text-[10px] font-bold text-blue-900 text-center absolute bottom-1 w-full">
-                          {layoutSettings.spacing.margins.bottom}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.left / 40) * 35}%`
-                      }} title={`Marge gauche: ${layoutSettings.spacing.margins.left}mm`}>
-                        <div className="text-[10px] font-bold text-green-900 transform -rotate-90 absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
-                          {layoutSettings.spacing.margins.left}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.right / 40) * 35}%`
-                      }} title={`Marge droite: ${layoutSettings.spacing.margins.right}mm`}>
-                        <div className="text-[10px] font-bold text-green-900 transform rotate-90 absolute right-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
-                          {layoutSettings.spacing.margins.right}mm
-                        </div>
-                      </div>
-                      
-                      {/* Zone de contenu avec texte simulé */}
-                      <div className="absolute flex flex-col justify-start p-2 transition-all duration-300" style={{
-                        top: `${(layoutSettings.spacing.margins.top / 40) * 35}%`,
-                        bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`,
-                        left: `${(layoutSettings.spacing.margins.left / 40) * 35}%`,
-                        right: `${(layoutSettings.spacing.margins.right / 40) * 35}%`,
-                        backgroundColor: 'rgba(255,255,255,0.9)'
-                      }}>
-                        <div className="text-[9px] font-bold text-gray-800 mb-1">Chapitre 1</div>
-                        <div className="text-[7px] text-gray-600 leading-tight space-y-1">
-                          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                          <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                          <p>Ut enim ad minim veniam, quis nostrud exercitation.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-center space-x-4 mt-3 text-[11px] text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <div className="w-3 h-3 bg-blue-400 opacity-40 rounded"></div>
-                        <span>Marges H/B</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-3 h-3 bg-green-400 opacity-40 rounded"></div>
-                        <span>Marges G/D</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -713,50 +682,140 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
 
         {/* Panneau de prévisualisation et paramètres */}
         <div className="space-y-6">
-          {/* Aperçu */}
+          {/* Aperçu interactif */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Eye className="h-5 w-5" />
-                <span>Aperçu</span>
+                <span>Aperçu en temps réel</span>
               </CardTitle>
+              <CardDescription>
+                Visualisez les changements de mise en page instantanément
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
+              {/* Prévisualisation avec marges visuelles */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 shadow-inner">
+                <div className="text-xs text-center text-gray-500 mb-2">
+                  📄 Page A4 (210×297 mm)
+                </div>
+                
+                {/* Page avec marges */}
                 <div 
-                  className="space-y-3"
+                  className="bg-white border-4 border-gray-300 relative mx-auto shadow-lg"
                   style={{
-                    fontFamily: layoutSettings.typography.bodyFont,
-                    fontSize: `${layoutSettings.typography.bodySize}px`,
-                    lineHeight: layoutSettings.spacing.lineHeight
+                    width: '300px',
+                    height: '424px', // Ratio A4 (297/210 * 300)
                   }}
                 >
-                  <h1 
+                  {/* Zones de marges colorées */}
+                  <div 
+                    className="absolute bg-blue-100 opacity-50 border-b border-blue-300"
                     style={{
-                      fontFamily: layoutSettings.typography.titleFont,
-                      fontSize: `${layoutSettings.typography.titleSize}px`,
-                      fontWeight: 'bold',
-                      marginBottom: `${layoutSettings.spacing.chapterSpacing}px`
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${(layoutSettings.spacing.margins.top / 40) * 30}%`
+                    }}
+                    title={`Marge haute: ${layoutSettings.spacing.margins.top}mm`}
+                  />
+                  
+                  <div 
+                    className="absolute bg-blue-100 opacity-50 border-t border-blue-300"
+                    style={{
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`
+                    }}
+                    title={`Marge basse: ${layoutSettings.spacing.margins.bottom}mm`}
+                  />
+                  
+                  <div 
+                    className="absolute bg-green-100 opacity-50 border-r border-green-300"
+                    style={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      width: `${(layoutSettings.spacing.margins.left / 40) * 30}%`
+                    }}
+                    title={`Marge gauche: ${layoutSettings.spacing.margins.left}mm`}
+                  />
+                  
+                  <div 
+                    className="absolute bg-green-100 opacity-50 border-l border-green-300"
+                    style={{
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
+                    }}
+                    title={`Marge droite: ${layoutSettings.spacing.margins.right}mm`}
+                  />
+                  
+                  {/* Zone de contenu avec texte réactif */}
+                  <div 
+                    className="absolute overflow-hidden"
+                    style={{
+                      top: `${(layoutSettings.spacing.margins.top / 40) * 30}%`,
+                      bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`,
+                      left: `${(layoutSettings.spacing.margins.left / 40) * 30}%`,
+                      right: `${(layoutSettings.spacing.margins.right / 40) * 30}%`,
+                      padding: '8px'
                     }}
                   >
-                    {coverData.title}
-                  </h1>
-                  
-                  {coverData.subtitle && (
-                    <h2 
+                    <h1 
                       style={{
                         fontFamily: layoutSettings.typography.titleFont,
-                        fontSize: `${layoutSettings.typography.subtitleSize}px`,
-                        fontWeight: 'normal',
-                        marginBottom: `${layoutSettings.spacing.paragraphSpacing}px`
+                        fontSize: `${Math.min(layoutSettings.typography.titleSize * 0.6, 16)}px`,
+                        fontWeight: 'bold',
+                        marginBottom: `${layoutSettings.spacing.chapterSpacing * 0.3}px`,
+                        lineHeight: layoutSettings.spacing.lineHeight
                       }}
                     >
-                      {coverData.subtitle}
-                    </h2>
-                  )}
-                  
-                  <div className="text-xs text-gray-600">
-                    {generatePreview()}
+                      {coverData.title}
+                    </h1>
+                    
+                    <p 
+                      style={{
+                        fontFamily: layoutSettings.typography.bodyFont,
+                        fontSize: `${Math.min(layoutSettings.typography.bodySize * 0.7, 9)}px`,
+                        lineHeight: layoutSettings.spacing.lineHeight,
+                        marginBottom: `${layoutSettings.spacing.paragraphSpacing * 0.5}px`
+                      }}
+                    >
+                      {generatePreview().substring(0, 200)}...
+                    </p>
+                    
+                    {/* Numéro de page si activé */}
+                    {layoutSettings.pageSettings.showPageNumbers && (
+                      <div 
+                        className="absolute text-gray-400"
+                        style={{
+                          fontSize: '8px',
+                          bottom: layoutSettings.pageSettings.pageNumberPosition.includes('bottom') ? '4px' : 'auto',
+                          top: layoutSettings.pageSettings.pageNumberPosition.includes('top') ? '4px' : 'auto',
+                          left: layoutSettings.pageSettings.pageNumberPosition.includes('left') ? '4px' : 'auto',
+                          right: layoutSettings.pageSettings.pageNumberPosition.includes('right') ? '4px' : 'auto',
+                          textAlign: layoutSettings.pageSettings.pageNumberPosition.includes('center') ? 'center' : 'left',
+                          width: layoutSettings.pageSettings.pageNumberPosition.includes('center') ? '100%' : 'auto'
+                        }}
+                      >
+                        1
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Légende des marges */}
+                <div className="flex items-center justify-center space-x-6 mt-4 text-xs text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-blue-100 opacity-50 border border-blue-300 rounded"></div>
+                    <span>Marges H/B</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-green-100 opacity-50 border border-green-300 rounded"></div>
+                    <span>Marges G/D</span>
                   </div>
                 </div>
               </div>
@@ -922,7 +981,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
           onClick={handleNext}
           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
         >
-          Continuer vers l'export
+          Continuer vers les illustrations
         </Button>
       </div>
     </div>

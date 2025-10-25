@@ -200,51 +200,41 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     }
   }
 
-  // Fonction pour générer le titre avec l'IA
+  // Fonction pour générer le titre avec l'IA basé sur le texte utilisateur
   const generateTitleWithAI = async () => {
-    console.log('🪄 BAGUETTE CLIQUÉE - Début génération titre');
-    console.log('📊 Données disponibles:', { 
-      hasProcessedText: !!processedText, 
-      hasTextData: !!textData,
-      processedTextLength: processedText?.processedText?.length,
-      textDataLength: textData?.text?.length
-    });
-    
     setIsGeneratingTitle(true);
     setError("");
     setSuccess("");
 
     try {
-      // Utiliser le contenu réel du texte traité ou du texte original
+      // PRIORITÉ 1: Utiliser le texte ORIGINAL de l'utilisateur (saisie initiale)
       let contentToSend = '';
       let chaptersToSend: string[] = [];
       
-      // Priorité 1: Texte traité par l'IA
-      if (processedText && processedText.processedText) {
-        contentToSend = processedText.processedText.substring(0, 2000);
-        console.log('✅ Utilisation du texte traité:', contentToSend.substring(0, 100));
-      }
-      // Priorité 2: Texte original et chapitres
-      else if (textData && textData.text) {
-        contentToSend = textData.text.substring(0, 2000);
+      if (textData && textData.text) {
+        // Utiliser le texte original saisi par l'utilisateur
+        contentToSend = textData.text.substring(0, 2000); // Prendre les 2000 premiers caractères
         chaptersToSend = textData.chapters || [];
-        console.log('✅ Utilisation du texte original:', contentToSend.substring(0, 100));
+        console.log('✅ Utilisation du texte ORIGINAL de l\'utilisateur:', contentToSend.substring(0, 100));
+      } 
+      // PRIORITÉ 2: Utiliser le texte traité par l'IA si pas de texte original
+      else if (processedText && processedText.processedText) {
+        contentToSend = processedText.processedText.substring(0, 2000);
+        console.log('✅ Utilisation du texte TRAITÉ:', contentToSend.substring(0, 100));
       }
-      // Priorité 3: Illustrations
+      // PRIORITÉ 3: Utiliser les illustrations en dernier recours
       else if (illustrations && illustrations.length > 0) {
         chaptersToSend = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
         contentToSend = chaptersToSend.join('. ');
         console.log('✅ Utilisation des illustrations');
       }
-      
-      // Si vraiment aucun contenu, utiliser un prompt générique
-      if (!contentToSend || contentToSend.length < 10) {
+      // PRIORITÉ 4: Fallback générique
+      else {
+        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
         console.warn('⚠️ Pas de contenu détecté, utilisation prompt générique');
-        // Au lieu de bloquer, utiliser un prompt générique basé sur le genre
-        contentToSend = `Génère un titre créatif et accrocheur pour un livre de style ${selectedStyle}`;
       }
       
-      console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));
+      console.log('🪄 Génération titre IA avec', contentToSend.length, 'caractères de contenu');
       
       const response = await fetch('/api/generate-title', {
         method: 'POST',
@@ -253,7 +243,8 @@ export default function CoverCreation({ illustrations, textData, processedText, 
           chapters: chaptersToSend.length > 0 ? chaptersToSend : undefined,
           content: contentToSend,
           genre: textData?.style || selectedStyle,
-          style: selectedLayout
+          style: selectedLayout,
+          previousTitle: title || undefined // Pour éviter les doublons lors de la régénération
         })
       });
 
@@ -267,7 +258,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
 
       if (data.title && data.title.trim()) {
         setTitle(data.title);
-        setSuccess("✨ Titre généré avec l'IA !");
+        setSuccess("✨ Titre généré avec l'IA basé sur votre texte !");
         console.log('✅ Titre appliqué:', data.title);
         setTimeout(() => setSuccess(""), 3000);
       } else {
@@ -281,61 +272,6 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     } finally {
       setIsGeneratingTitle(false);
     }
-  };
-
-  // Fonction pour extraire des mots-clés pertinents du contenu
-  const extractKeywords = (text: string): string[] => {
-    const lowerText = text.toLowerCase();
-    const keywords: string[] = [];
-    
-    // Mots-clés géographiques et historiques
-    const locations: Record<string, string[]> = {
-      'algérie': ['algerian landscape', 'north africa', 'sahara desert', 'mediterranean coast', 'algiers casbah'],
-      'algeria': ['algerian landscape', 'north africa', 'sahara desert', 'mediterranean coast'],
-      'france': ['french countryside', 'eiffel tower', 'paris', 'provence lavender'],
-      'maroc': ['moroccan architecture', 'marrakech', 'atlas mountains', 'sahara'],
-      'egypt': ['pyramids', 'sphinx', 'nile river', 'ancient egypt'],
-      'égypte': ['pyramides', 'sphinks', 'nil', 'égypte antique']
-    };
-    
-    // Événements historiques
-    const historical: Record<string, string[]> = {
-      'indépendance': ['independence celebration', 'freedom', 'national flags waving', 'liberation'],
-      'guerre': ['war memorial', 'historical battle', 'soldiers monument', 'conflict history'],
-      'révolution': ['revolution symbols', 'uprising', 'historical change', 'freedom fighters'],
-      'colonisation': ['historical colonial era', 'historical period', 'vintage historical scene']
-    };
-    
-    // Thèmes généraux
-    const themes: Record<string, string[]> = {
-      'amour': ['romantic scene', 'love hearts', 'couples', 'romance'],
-      'aventure': ['epic adventure', 'journey landscape', 'exploration', 'discovery'],
-      'mystère': ['mysterious atmosphere', 'shadows', 'enigma', 'detective noir'],
-      'science': ['scientific laboratory', 'research', 'innovation', 'technology'],
-      'nature': ['natural landscape', 'wilderness', 'flora fauna', 'ecosystem']
-    };
-    
-    // Chercher correspondances
-    for (const [key, values] of Object.entries(locations)) {
-      if (lowerText.includes(key)) {
-        keywords.push(...values);
-        break;
-      }
-    }
-    
-    for (const [key, values] of Object.entries(historical)) {
-      if (lowerText.includes(key)) {
-        keywords.push(...values);
-      }
-    }
-    
-    for (const [key, values] of Object.entries(themes)) {
-      if (lowerText.includes(key)) {
-        keywords.push(...values);
-      }
-    }
-    
-    return keywords;
   };
 
   // Fonction pour générer automatiquement la couverture avec l'IA
@@ -355,43 +291,61 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     setSuccess("")
 
     try {
+      // Créer un prompt SANS TEXTE (les IA d'images ne peuvent pas écrire du texte lisible)
+      const styleDescriptions: Record<string, string> = {
+        professional: 'professional corporate style, clean modern aesthetic',
+        creative: 'creative artistic style, vibrant imaginative colors',
+        academic: 'scholarly formal style, serious academic look',
+        popular: 'popular commercial style, eye-catching attractive design',
+        luxury: 'luxury premium style, sophisticated elegant appearance'
+      };
+
+      const layoutDescriptions: Record<string, string> = {
+        classic: 'classic traditional composition',
+        modern: 'modern minimalist composition with geometric shapes',
+        artistic: 'artistic creative composition with abstract elements',
+        minimalist: 'minimalist simple composition with negative space',
+        bold: 'bold striking composition with strong visual impact',
+        elegant: 'elegant refined composition with ornamental decorative elements'
+      };
+
       let coverPrompt = '';
       
       if (useCustomDescription && coverDescription.trim()) {
-        // Utiliser la description personnalisée
-        coverPrompt = `professional book cover illustration: ${coverDescription}, artistic, high quality, detailed, vibrant colors, no text, no letters, no words`;
+        // Utiliser la description personnalisée - SIMPLE ET DIRECT
+        coverPrompt = `book cover art: ${coverDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
       } else {
-        // Analyse intelligente du contenu
-        let contentToAnalyze = title + ' ';
-        
-        if (processedText && processedText.processedText) {
-          contentToAnalyze += processedText.processedText.substring(0, 1000);
-        } else if (textData && textData.text) {
-          contentToAnalyze += textData.text.substring(0, 1000);
-          if (textData.chapters && textData.chapters.length > 0) {
-            contentToAnalyze += ' ' + textData.chapters.join(' ').substring(0, 500);
-          }
-        }
-        
-        // Extraire mots-clés intelligents
-        const keywords = extractKeywords(contentToAnalyze);
-        
+        // Génération automatique SIMPLIFIÉE basée sur le titre
+        const titleLower = title.toLowerCase();
         let visualDescription = '';
-        if (keywords.length > 0) {
-          // Utiliser les mots-clés extraits (max 4)
-          visualDescription = keywords.slice(0, 4).join(', ');
+        
+        // Détection SIMPLE et PRÉCISE
+        if (titleLower.includes('space') || titleLower.includes('étoile') || titleLower.includes('galaxy') || titleLower.includes('cosmos')) {
+          visualDescription = 'space galaxy nebula stars planets cosmic';
+        } else if (titleLower.includes('dragon') || titleLower.includes('fantasy') || titleLower.includes('magic') || titleLower.includes('magie')) {
+          visualDescription = 'fantasy dragon castle magical mythical';
+        } else if (titleLower.includes('love') || titleLower.includes('amour') || titleLower.includes('romance')) {
+          visualDescription = 'romantic sunset couple love hearts warm';
+        } else if (titleLower.includes('mystery') || titleLower.includes('mystère') || titleLower.includes('detective')) {
+          visualDescription = 'mysterious dark noir detective shadows';
+        } else if (titleLower.includes('adventure') || titleLower.includes('aventure') || titleLower.includes('treasure')) {
+          visualDescription = 'adventure epic landscape mountain journey';
+        } else if (titleLower.includes('tech') || titleLower.includes('cyber') || titleLower.includes('robot') || titleLower.includes('future')) {
+          visualDescription = 'futuristic technology cyber neon digital';
+        } else if (titleLower.includes('ocean') || titleLower.includes('océan') || titleLower.includes('sea') || titleLower.includes('mer')) {
+          visualDescription = 'ocean sea waves water blue';
+        } else if (titleLower.includes('forest') || titleLower.includes('forêt') || titleLower.includes('tree') || titleLower.includes('nature')) {
+          visualDescription = 'forest trees nature green woodland';
+        } else if (titleLower.includes('city') || titleLower.includes('ville') || titleLower.includes('urban')) {
+          visualDescription = 'city urban skyline buildings modern';
         } else {
-          // Fallback basé sur le titre
-          const titleWords = title.split(' ').filter(w => w.length > 3).slice(0, 3).join(' ');
-          visualDescription = titleWords || 'book cover art';
+          // Fallback : utiliser les premiers mots du titre comme description
+          const words = title.split(' ').slice(0, 5).join(' ');
+          visualDescription = words;
         }
         
-        const styleHint = selectedStyle === 'professional' ? 'corporate elegant' :
-                         selectedStyle === 'creative' ? 'artistic imaginative' :
-                         selectedStyle === 'academic' ? 'scholarly formal' :
-                         selectedStyle === 'popular' ? 'modern attractive' : 'sophisticated';
-        
-        coverPrompt = `professional book cover illustration: ${visualDescription}, ${styleHint}, artistic composition, vibrant professional colors, high quality detailed artwork, no text, no letters, no words, no symbols`;
+        // Prompt SIMPLE et DIRECT
+        coverPrompt = `book cover art: ${visualDescription}, artistic, colorful, professional, high quality, no text, no letters, no words`;
       }
       
       console.log('🎨 Génération couverture (sans texte):', coverPrompt);
@@ -983,7 +937,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
           disabled={!title.trim() || !author.trim()}
           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
         >
-          Continuer vers la mise en page
+          Continuer vers le layout
         </Button>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
-import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye, Info } from "lucide-react"
+import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye } from "lucide-react"
 import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
 
 interface LayoutSettings {
@@ -138,7 +138,7 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
     { value: "epub2", label: "EPUB 2 (compatibilité ancienne)" }
   ]
 
-  // Fonction pour générer réellement un format d'export
+  // Fonction pour exporter réellement un format
   const exportFormat = async (format: string): Promise<ExportedFile> => {
     const steps = [
       "Préparation du contenu...",
@@ -172,12 +172,13 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
         currentStep = 1
         updateProgress()
         
-        // Préparer les données pour le PDF
-        console.log('📄 Préparation données PDF:');
-        console.log('- Titre:', coverData.title);
-        console.log('- Auteur:', coverData.author);
-        console.log('- Contenu length:', processedText?.length || 0);
-        console.log('- Contenu preview:', processedText?.substring(0, 200));
+        // Préparer les données pour le PDF avec le VRAI contenu traité
+        console.log('📄 Génération PDF avec contenu:', {
+          title: coverData.title,
+          author: coverData.author,
+          contentLength: processedText?.length || 0,
+          contentPreview: processedText?.substring(0, 200)
+        });
         
         const ebookData = {
           title: coverData.title || 'Mon Ebook',
@@ -188,8 +189,6 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
           hasWatermark: coverData.hasWatermark,
           coverImage: coverData.imageUrl
         }
-        
-        console.log('✅ ebookData préparé:', ebookData.title, 'avec', ebookData.content.length, 'caractères');
         
         currentStep = 2
         updateProgress()
@@ -232,7 +231,7 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
           await new Promise(resolve => setTimeout(resolve, 400))
         }
         
-        // Créer le contenu du fichier
+        // Créer le contenu du fichier avec le VRAI contenu
         let fileContent = '';
         if (format === 'epub') {
           // Format EPUB simplifié (HTML)
@@ -602,21 +601,7 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <Label className="text-sm">Qualité PDF</Label>
-                  <div className="group relative">
-                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg -top-2 left-6">
-                      <strong>DPI (Dots Per Inch)</strong> = Points par pouce
-                      <div className="mt-1">
-                        • <strong>300 DPI</strong>: Qualité professionnelle pour l'impression<br/>
-                        • <strong>150 DPI</strong>: Bon compromis taille/qualité pour le web<br/>
-                        • <strong>72 DPI</strong>: Optimisé pour liseuses électroniques (plus léger)
-                      </div>
-                      <div className="absolute w-2 h-2 bg-gray-900 transform rotate-45 -left-1 top-4"></div>
-                    </div>
-                  </div>
-                </div>
+                <Label className="text-sm">Qualité PDF</Label>
                 <Select defaultValue="print">
                   <SelectTrigger className="text-sm mt-1">
                     <SelectValue />
