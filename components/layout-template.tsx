@@ -207,16 +207,16 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
     { value: "5x8", label: "5×8 inches (127×203 mm)", width: 127, height: 203 }
   ]
 
-  // Polices disponibles avec preview
+  // Polices disponibles
   const fonts = [
-    { value: "Georgia", label: "Georgia", description: "serif classique" },
-    { value: "Times New Roman", label: "Times New Roman", description: "serif traditionnel" },
-    { value: "Arial", label: "Arial", description: "sans-serif moderne" },
-    { value: "Helvetica", label: "Helvetica", description: "sans-serif professionnel" },
-    { value: "Verdana", label: "Verdana", description: "sans-serif lisible" },
-    { value: "Palatino", label: "Palatino", description: "serif élégant" },
-    { value: "Garamond", label: "Garamond", description: "serif littéraire" },
-    { value: "Comic Sans MS", label: "Comic Sans MS", description: "ludique" }
+    { value: "Georgia", label: "Georgia (serif classique)" },
+    { value: "Times New Roman", label: "Times New Roman (serif traditionnel)" },
+    { value: "Arial", label: "Arial (sans-serif moderne)" },
+    { value: "Helvetica", label: "Helvetica (sans-serif professionnel)" },
+    { value: "Verdana", label: "Verdana (sans-serif lisible)" },
+    { value: "Palatino", label: "Palatino (serif élégant)" },
+    { value: "Garamond", label: "Garamond (serif littéraire)" },
+    { value: "Comic Sans MS", label: "Comic Sans MS (ludique)" }
   ]
 
   // Positions des numéros de page
@@ -326,7 +326,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Mise en page automatique</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Mise en page automatique</h2>
         <p className="text-gray-600">Choisissez un template et personnalisez la mise en page de votre ebook. Tous les styles sont optimisés pour une lecture agréable.</p>
       </div>
 
@@ -401,12 +401,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          <div className="flex items-center space-x-2">
-                            <span style={{ fontFamily: font.value }} className="font-semibold">
-                              {font.label}
-                            </span>
-                            <span className="text-xs text-gray-500">({font.description})</span>
-                          </div>
+                          {font.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -425,12 +420,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                     <SelectContent>
                       {fonts.map((font) => (
                         <SelectItem key={font.value} value={font.value}>
-                          <div className="flex items-center space-x-2">
-                            <span style={{ fontFamily: font.value }} className="font-semibold">
-                              {font.label}
-                            </span>
-                            <span className="text-xs text-gray-500">({font.description})</span>
-                          </div>
+                          {font.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -515,39 +505,38 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
 
               <div>
                 <Label className="text-sm font-medium">Marges (mm)</Label>
-                <div className="flex gap-4">
-                  <div className="grid grid-cols-4 gap-2 mt-2 flex-1">
-                    <div>
-                      <Label className="text-xs">Haut</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.top}
-                        onChange={(e) => updateMargin('top', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Bas</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.bottom}
-                        onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Gauche</Label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="40"
-                        value={layoutSettings.spacing.margins.left}
-                        onChange={(e) => updateMargin('left', parseInt(e.target.value))}
-                      />
-                    </div>
-                    <div>
+                <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div>
+                    <Label className="text-xs">Haut</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.top}
+                      onChange={(e) => updateMargin('top', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Bas</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.bottom}
+                      onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Gauche</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="40"
+                      value={layoutSettings.spacing.margins.left}
+                      onChange={(e) => updateMargin('left', parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div>
                     <Label className="text-xs">Droite</Label>
                     <Input
                       type="number"
@@ -556,92 +545,6 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
                       value={layoutSettings.spacing.margins.right}
                       onChange={(e) => updateMargin('right', parseInt(e.target.value))}
                     />
-                  </div>
-                </div>
-                  
-                  {/* Prévisualisation visuelle des marges - AGRANDIE ET DYNAMIQUE */}
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 flex-shrink-0 border-2 border-blue-200" style={{width: '300px'}}>
-                    <div className="text-sm font-semibold text-gray-700 mb-3 text-center flex items-center justify-center space-x-2">
-                      <span>📄</span>
-                      <span>Prévisualisation en temps réel</span>
-                    </div>
-                    <div className="bg-white border-4 border-gray-400 relative shadow-lg" style={{
-                      width: '240px',
-                      height: '320px',
-                      marginLeft: 'auto',
-                      marginRight: 'auto'
-                    }}>
-                      {/* Zones de marges colorées avec animations */}
-                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${(layoutSettings.spacing.margins.top / 40) * 35}%`
-                      }} title={`Marge haute: ${layoutSettings.spacing.margins.top}mm`}>
-                        <div className="text-[10px] font-bold text-blue-900 text-center mt-1">
-                          {layoutSettings.spacing.margins.top}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-blue-400 opacity-30 transition-all duration-300" style={{
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`
-                      }} title={`Marge basse: ${layoutSettings.spacing.margins.bottom}mm`}>
-                        <div className="text-[10px] font-bold text-blue-900 text-center absolute bottom-1 w-full">
-                          {layoutSettings.spacing.margins.bottom}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.left / 40) * 35}%`
-                      }} title={`Marge gauche: ${layoutSettings.spacing.margins.left}mm`}>
-                        <div className="text-[10px] font-bold text-green-900 transform -rotate-90 absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
-                          {layoutSettings.spacing.margins.left}mm
-                        </div>
-                      </div>
-                      
-                      <div className="absolute bg-green-400 opacity-30 transition-all duration-300" style={{
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        width: `${(layoutSettings.spacing.margins.right / 40) * 35}%`
-                      }} title={`Marge droite: ${layoutSettings.spacing.margins.right}mm`}>
-                        <div className="text-[10px] font-bold text-green-900 transform rotate-90 absolute right-0 top-1/2 -translate-y-1/2 whitespace-nowrap">
-                          {layoutSettings.spacing.margins.right}mm
-                        </div>
-                      </div>
-                      
-                      {/* Zone de contenu avec texte simulé */}
-                      <div className="absolute flex flex-col justify-start p-2 transition-all duration-300" style={{
-                        top: `${(layoutSettings.spacing.margins.top / 40) * 35}%`,
-                        bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 35}%`,
-                        left: `${(layoutSettings.spacing.margins.left / 40) * 35}%`,
-                        right: `${(layoutSettings.spacing.margins.right / 40) * 35}%`,
-                        backgroundColor: 'rgba(255,255,255,0.9)'
-                      }}>
-                        <div className="text-[9px] font-bold text-gray-800 mb-1">Chapitre 1</div>
-                        <div className="text-[7px] text-gray-600 leading-tight space-y-1">
-                          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-                          <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                          <p>Ut enim ad minim veniam, quis nostrud exercitation.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-center space-x-4 mt-3 text-[11px] text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <div className="w-3 h-3 bg-blue-400 opacity-40 rounded"></div>
-                        <span>Marges H/B</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-3 h-3 bg-green-400 opacity-40 rounded"></div>
-                        <span>Marges G/D</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

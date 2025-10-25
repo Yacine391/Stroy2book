@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
-import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye, Info } from "lucide-react"
-import { generatePDF, downloadPDF } from "@/lib/pdf-generator"
+import { Download, FileText, Book, File, Settings, Loader2, CheckCircle, AlertCircle, Eye } from "lucide-react"
 
 interface LayoutSettings {
   template: string
@@ -138,145 +137,57 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
     { value: "epub2", label: "EPUB 2 (compatibilité ancienne)" }
   ]
 
-  // Fonction pour générer réellement un format d'export
+  // Fonction pour simuler l'export d'un format
   const exportFormat = async (format: string): Promise<ExportedFile> => {
-    const steps = [
-      "Préparation du contenu...",
-      "Application de la mise en page...",
-      "Intégration des illustrations...",
-      "Génération du fichier...",
-      "Optimisation...",
-      "Finalisation..."
-    ]
+    return new Promise((resolve) => {
+      // Simulation du processus d'export avec étapes
+      const steps = [
+        "Préparation du contenu...",
+        "Application de la mise en page...",
+        "Intégration des illustrations...",
+        "Génération du fichier...",
+        "Optimisation...",
+        "Finalisation..."
+      ]
 
-    let currentStep = 0
-    const updateProgress = () => {
-      const progress = Math.min((currentStep / steps.length) * 100, 100)
-      setExportProgress(prev => 
-        prev.map(p => 
-          p.format === format 
-            ? { 
-                ...p, 
-                progress, 
-                status: currentStep < steps.length ? 'generating' : 'completed',
-                message: currentStep < steps.length ? steps[currentStep] : 'Terminé !'
-              }
-            : p
+      let currentStep = 0
+      const interval = setInterval(() => {
+        currentStep++
+        const progress = Math.min((currentStep / steps.length) * 100, 100)
+        
+        setExportProgress(prev => 
+          prev.map(p => 
+            p.format === format 
+              ? { 
+                  ...p, 
+                  progress, 
+                  message: steps[currentStep - 1] || "Finalisation...",
+                  status: progress === 100 ? 'completed' : 'generating'
+                }
+              : p
+          )
         )
-      )
-    }
 
-    try {
-      // Générer vraiment le fichier selon le format
-      if (format === 'pdf') {
-        currentStep = 1
-        updateProgress()
-        
-        // Préparer les données pour le PDF
-        console.log('📄 Préparation données PDF:');
-        console.log('- Titre:', coverData.title);
-        console.log('- Auteur:', coverData.author);
-        console.log('- Contenu length:', processedText?.length || 0);
-        console.log('- Contenu preview:', processedText?.substring(0, 200));
-        
-        const ebookData = {
-          title: coverData.title || 'Mon Ebook',
-          author: coverData.author || 'Auteur',
-          content: processedText || 'Contenu vide',
-          backgroundColor: coverData.colors.primary || '#ffffff',
-          fontFamily: layoutSettings.typography.bodyFont || 'Georgia',
-          hasWatermark: coverData.hasWatermark,
-          coverImage: coverData.imageUrl
+        if (currentStep >= steps.length) {
+          clearInterval(interval)
+          
+          // Générer le fichier simulé
+          const filename = `${coverData.title.replace(/\s+/g, '-').toLowerCase()}.${format}`
+          const mockUrl = `data:application/${format};base64,mock-file-content`
+          const fileSize = format === 'pdf' ? '3.2 MB' : format === 'epub' ? '1.8 MB' : '1.1 MB'
+          
+          const exportedFile: ExportedFile = {
+            format: format.toUpperCase(),
+            filename,
+            url: mockUrl,
+            size: fileSize,
+            generatedAt: new Date()
+          }
+          
+          resolve(exportedFile)
         }
-        
-        console.log('✅ ebookData préparé:', ebookData.title, 'avec', ebookData.content.length, 'caractères');
-        
-        currentStep = 2
-        updateProgress()
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        currentStep = 3
-        updateProgress()
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        currentStep = 4
-        updateProgress()
-        
-        // Générer le PDF réel
-        const pdfBlob = await generatePDF(ebookData)
-        
-        currentStep = 5
-        updateProgress()
-        await new Promise(resolve => setTimeout(resolve, 300))
-        
-        currentStep = 6
-        updateProgress()
-        
-        // Créer l'URL du blob
-        const url = URL.createObjectURL(pdfBlob)
-        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.pdf`
-        const sizeMB = (pdfBlob.size / (1024 * 1024)).toFixed(2)
-        
-        return {
-          format: 'PDF',
-          filename,
-          url,
-          size: `${sizeMB} MB`,
-          generatedAt: new Date()
-        }
-      } else if (format === 'epub' || format === 'docx') {
-        // Génération EPUB et DOCX
-        for (let i = 0; i < steps.length; i++) {
-          currentStep = i + 1
-          updateProgress()
-          await new Promise(resolve => setTimeout(resolve, 400))
-        }
-        
-        // Créer le contenu du fichier
-        let fileContent = '';
-        if (format === 'epub') {
-          // Format EPUB simplifié (HTML)
-          fileContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <title>${coverData.title}</title>
-  <meta charset="UTF-8"/>
-</head>
-<body>
-  <h1>${coverData.title}</h1>
-  <h2>par ${coverData.author}</h2>
-  <hr/>
-  ${processedText.split('\n\n').map(p => `<p>${p}</p>`).join('\n')}
-</body>
-</html>`;
-        } else {
-          // Format DOCX simplifié (texte brut pour l'instant)
-          fileContent = `${coverData.title}\n\npar ${coverData.author}\n\n${'='.repeat(50)}\n\n${processedText}`;
-        }
-        
-        // Créer le blob
-        const blob = new Blob([fileContent], { 
-          type: format === 'epub' ? 'application/epub+zip' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-        })
-        const url = URL.createObjectURL(blob)
-        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${format === 'epub' ? 'html' : 'txt'}`
-        const sizeMB = (blob.size / (1024 * 1024)).toFixed(2)
-        
-        return {
-          format: format.toUpperCase(),
-          filename,
-          url,
-          size: `${sizeMB} MB`,
-          generatedAt: new Date()
-        }
-      } else {
-        throw new Error(`Format ${format} non supporté`)
-      }
-    } catch (error) {
-      console.error(`Erreur lors de la génération ${format}:`, error)
-      throw error
-    }
+      }, 800)
+    })
   }
 
   // Fonction pour démarrer l'export
@@ -320,17 +231,13 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
 
   // Fonction pour télécharger un fichier
   const downloadFile = (file: ExportedFile) => {
-    console.log('📥 Téléchargement fichier:', file.filename, 'URL:', file.url);
-    
-    // Télécharger le fichier
+    // Dans une vraie implémentation, ceci téléchargerait le fichier réel
     const link = document.createElement('a')
     link.href = file.url
     link.download = file.filename
-    document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
     
-    setSuccess(`✅ Téléchargement de ${file.filename} démarré`)
+    setSuccess(`Téléchargement de ${file.filename} démarré`)
   }
 
   // Fonction pour télécharger tous les fichiers
@@ -602,21 +509,7 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <Label className="text-sm">Qualité PDF</Label>
-                  <div className="group relative">
-                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                    <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg -top-2 left-6">
-                      <strong>DPI (Dots Per Inch)</strong> = Points par pouce
-                      <div className="mt-1">
-                        • <strong>300 DPI</strong>: Qualité professionnelle pour l'impression<br/>
-                        • <strong>150 DPI</strong>: Bon compromis taille/qualité pour le web<br/>
-                        • <strong>72 DPI</strong>: Optimisé pour liseuses électroniques (plus léger)
-                      </div>
-                      <div className="absolute w-2 h-2 bg-gray-900 transform rotate-45 -left-1 top-4"></div>
-                    </div>
-                  </div>
-                </div>
+                <Label className="text-sm">Qualité PDF</Label>
                 <Select defaultValue="print">
                   <SelectTrigger className="text-sm mt-1">
                     <SelectValue />

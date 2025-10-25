@@ -53,7 +53,6 @@ export default function IllustrationGeneration({ textData, processedText, coverD
   const [isGeneratingAll, setIsGeneratingAll] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [enableIllustrations, setEnableIllustrations] = useState(true)
 
   // Styles d'illustration disponibles
   const illustrationStyles = [
@@ -277,14 +276,6 @@ export default function IllustrationGeneration({ textData, processedText, coverD
 
   // Fonction pour passer à l'étape suivante
   const handleNext = () => {
-    if (!enableIllustrations) {
-      // Si les illustrations sont désactivées, passer un tableau vide
-      onNext({
-        illustrations: []
-      })
-      return
-    }
-    
     const completedIllustrations = illustrations.filter(ill => ill.imageUrl)
     onNext({
       illustrations: completedIllustrations
@@ -298,45 +289,22 @@ export default function IllustrationGeneration({ textData, processedText, coverD
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Génération d'illustrations</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Génération d'illustrations</h2>
         <p className="text-gray-600">Créez des illustrations uniques pour chaque chapitre avec l'IA. Personnalisez le style selon vos préférences.</p>
       </div>
 
       <div className="space-y-6">
-        {/* Option pour activer/désactiver les illustrations */}
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                id="enableIllustrations"
-                checked={enableIllustrations}
-                onChange={(e) => setEnableIllustrations(e.target.checked)}
-                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <label htmlFor="enableIllustrations" className="flex-1 cursor-pointer">
-                <div className="font-medium text-gray-900">Générer des illustrations pour cet ebook</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Décochez cette option si vous ne souhaitez pas d'illustrations dans votre livre
-                </div>
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {enableIllustrations && (
-          <>
-            {/* Configuration du style */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Palette className="h-5 w-5" />
-                  <span>Style d'illustration</span>
-                </CardTitle>
-                <CardDescription>
-                  Choisissez le style artistique pour toutes les illustrations
-                </CardDescription>
-              </CardHeader>
+        {/* Configuration du style */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Palette className="h-5 w-5" />
+              <span>Style d'illustration</span>
+            </CardTitle>
+            <CardDescription>
+              Choisissez le style artistique pour toutes les illustrations
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label>Style artistique</Label>
@@ -412,17 +380,11 @@ export default function IllustrationGeneration({ textData, processedText, coverD
                 {/* Zone d'image avec aperçu */}
                 <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden relative border-2 border-gray-200">
                   {illustration.isGenerating ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
-                      <div className="text-center p-4">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+                      <div className="text-center">
                         <Loader2 className="h-10 w-10 animate-spin mx-auto mb-3 text-blue-600" />
-                        <p className="text-sm font-medium text-gray-700 mb-3">Génération en cours...</p>
-                        <div className="bg-white rounded-lg p-3 shadow-sm">
-                          <AITimer 
-                            isGenerating={illustration.isGenerating} 
-                            estimatedSeconds={8}
-                            onComplete={() => console.log(`⏰ Illustration ${illustration.chapterIndex + 1} générée`)}
-                          />
-                        </div>
+                        <p className="text-sm font-medium text-gray-700">Génération en cours...</p>
+                        <p className="text-xs text-gray-500 mt-1">Cela peut prendre quelques secondes</p>
                       </div>
                     </div>
                   ) : illustration.imageUrl ? (
@@ -537,8 +499,6 @@ export default function IllustrationGeneration({ textData, processedText, coverD
             </div>
           </CardContent>
         </Card>
-          </>
-        )}
       </div>
 
       {/* Boutons de navigation */}
@@ -550,7 +510,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
           onClick={handleNext}
           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
         >
-          Continuer vers l'export
+          Continuer vers la couverture
         </Button>
       </div>
     </div>
