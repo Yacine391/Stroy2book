@@ -431,7 +431,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Création de la couverture</h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Création de la couverture</h2>
         <p className="text-gray-600">Créez une couverture professionnelle automatiquement ou uploadez votre propre image. Taille recommandée : 2048×3072 px.</p>
       </div>
 
@@ -937,7 +937,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
           disabled={!title.trim() || !author.trim()}
           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
         >
-          Continuer vers la mise en page
+          Continuer vers le layout
         </Button>
       </div>
     </div>

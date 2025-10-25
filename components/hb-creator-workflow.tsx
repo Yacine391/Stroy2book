@@ -22,7 +22,7 @@ type WorkflowStep =
   | 'ai-generation'
   | 'cover'
   | 'layout'
-  | 'illustrations'  // ✅ DÉPLACÉ APRÈS LAYOUT
+  | 'illustrations'
   | 'export'
   | 'project-management'
   | 'security'
@@ -145,9 +145,9 @@ export default function HBCreatorWorkflow() {
     { id: 'welcome', title: 'Bienvenue', description: 'Introduction à HB Creator' },
     { id: 'text-input', title: 'Saisie du texte', description: 'Import et analyse du contenu' },
     { id: 'ai-generation', title: 'Génération IA', description: 'Amélioration du contenu' },
-    { id: 'illustrations', title: 'Illustrations', description: 'Génération d\'images IA' },
     { id: 'cover', title: 'Couverture', description: 'Création de la couverture' },
     { id: 'layout', title: 'Mise en page', description: 'Templates et typographie' },
+    { id: 'illustrations', title: 'Illustrations', description: 'Génération d\'images IA' },
     { id: 'export', title: 'Export', description: 'Génération des fichiers' },
     { id: 'project-management', title: 'Projets', description: 'Sauvegarde et gestion' },
     { id: 'security', title: 'Sécurité', description: 'Authentification et limites' },
