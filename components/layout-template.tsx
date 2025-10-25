@@ -712,50 +712,134 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
 
         {/* Panneau de prévisualisation et paramètres */}
         <div className="space-y-6">
-          {/* Aperçu */}
+          {/* Aperçu interactif avec marges */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Eye className="h-5 w-5" />
-                <span>Aperçu</span>
+                <span>Aperçu en temps réel</span>
               </CardTitle>
+              <CardDescription>
+                Visualisez les changements instantanément
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 shadow-inner">
+                <div className="text-xs text-center text-gray-500 mb-2">
+                  📄 Page A4 (210×297 mm)
+                </div>
+                
                 <div 
-                  className="space-y-3"
+                  className="bg-white border-4 border-gray-300 relative mx-auto shadow-lg"
                   style={{
-                    fontFamily: layoutSettings.typography.bodyFont,
-                    fontSize: `${layoutSettings.typography.bodySize}px`,
-                    lineHeight: layoutSettings.spacing.lineHeight
+                    width: '300px',
+                    height: '424px',
                   }}
                 >
-                  <h1 
+                  {/* Marges colorées */}
+                  <div 
+                    className="absolute bg-blue-100 opacity-50 border-b border-blue-300 transition-all"
                     style={{
-                      fontFamily: layoutSettings.typography.titleFont,
-                      fontSize: `${layoutSettings.typography.titleSize}px`,
-                      fontWeight: 'bold',
-                      marginBottom: `${layoutSettings.spacing.chapterSpacing}px`
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${(layoutSettings.spacing.margins.top / 40) * 30}%`
+                    }}
+                  />
+                  
+                  <div 
+                    className="absolute bg-blue-100 opacity-50 border-t border-blue-300 transition-all"
+                    style={{
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`
+                    }}
+                  />
+                  
+                  <div 
+                    className="absolute bg-green-100 opacity-50 border-r border-green-300 transition-all"
+                    style={{
+                      top: 0,
+                      left: 0,
+                      bottom: 0,
+                      width: `${(layoutSettings.spacing.margins.left / 40) * 30}%`
+                    }}
+                  />
+                  
+                  <div 
+                    className="absolute bg-green-100 opacity-50 border-l border-green-300 transition-all"
+                    style={{
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: `${(layoutSettings.spacing.margins.right / 40) * 30}%`
+                    }}
+                  />
+                  
+                  {/* Zone de contenu réactive */}
+                  <div 
+                    className="absolute overflow-hidden"
+                    style={{
+                      top: `${(layoutSettings.spacing.margins.top / 40) * 30}%`,
+                      bottom: `${(layoutSettings.spacing.margins.bottom / 40) * 30}%`,
+                      left: `${(layoutSettings.spacing.margins.left / 40) * 30}%`,
+                      right: `${(layoutSettings.spacing.margins.right / 40) * 30}%`,
+                      padding: '8px'
                     }}
                   >
-                    {coverData.title}
-                  </h1>
-                  
-                  {coverData.subtitle && (
-                    <h2 
+                    <h1 
                       style={{
                         fontFamily: layoutSettings.typography.titleFont,
-                        fontSize: `${layoutSettings.typography.subtitleSize}px`,
-                        fontWeight: 'normal',
-                        marginBottom: `${layoutSettings.spacing.paragraphSpacing}px`
+                        fontSize: `${Math.min(layoutSettings.typography.titleSize * 0.6, 16)}px`,
+                        fontWeight: 'bold',
+                        marginBottom: `${layoutSettings.spacing.chapterSpacing * 0.3}px`,
+                        lineHeight: layoutSettings.spacing.lineHeight
                       }}
                     >
-                      {coverData.subtitle}
-                    </h2>
-                  )}
-                  
-                  <div className="text-xs text-gray-600">
-                    {generatePreview()}
+                      {coverData.title}
+                    </h1>
+                    
+                    <p 
+                      style={{
+                        fontFamily: layoutSettings.typography.bodyFont,
+                        fontSize: `${Math.min(layoutSettings.typography.bodySize * 0.7, 9)}px`,
+                        lineHeight: layoutSettings.spacing.lineHeight,
+                        marginBottom: `${layoutSettings.spacing.paragraphSpacing * 0.5}px`
+                      }}
+                    >
+                      {generatePreview().substring(0, 200)}...
+                    </p>
+                    
+                    {/* Numéro de page si activé */}
+                    {layoutSettings.pageSettings.showPageNumbers && (
+                      <div 
+                        className="absolute text-gray-400"
+                        style={{
+                          fontSize: '8px',
+                          bottom: layoutSettings.pageSettings.pageNumberPosition.includes('bottom') ? '4px' : 'auto',
+                          top: layoutSettings.pageSettings.pageNumberPosition.includes('top') ? '4px' : 'auto',
+                          left: layoutSettings.pageSettings.pageNumberPosition.includes('left') ? '4px' : 'auto',
+                          right: layoutSettings.pageSettings.pageNumberPosition.includes('right') ? '4px' : 'auto',
+                          textAlign: layoutSettings.pageSettings.pageNumberPosition.includes('center') ? 'center' : 'left',
+                          width: layoutSettings.pageSettings.pageNumberPosition.includes('center') ? '100%' : 'auto'
+                        }}
+                      >
+                        1
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Légende */}
+                <div className="flex items-center justify-center space-x-6 mt-4 text-xs text-gray-600">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-blue-100 opacity-50 border border-blue-300 rounded"></div>
+                    <span>Marges H/B</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4 bg-green-100 opacity-50 border border-green-300 rounded"></div>
+                    <span>Marges G/D</span>
                   </div>
                 </div>
               </div>
@@ -911,6 +995,33 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
           <p className="text-green-700 mt-1">{success}</p>
         </div>
       )}
+
+      {/* Presets de disposition rapide - EN BAS pour voir la preview */}
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Settings className="h-5 w-5" />
+            <span>Presets rapides</span>
+          </CardTitle>
+          <CardDescription>
+            Appliquez instantanément une configuration prédéfinie et voyez le résultat dans la prévisualisation ci-dessus
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {layoutPresets.map((preset, index) => (
+              <button
+                key={index}
+                onClick={() => applyPreset(preset)}
+                className="text-left p-4 border-2 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+              >
+                <div className="font-medium text-gray-900 mb-1">{preset.name}</div>
+                <div className="text-sm text-gray-600">{preset.description}</div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Boutons de navigation */}
       <div className="flex justify-between pt-8">
