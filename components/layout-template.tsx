@@ -110,6 +110,45 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
+  // Presets de disposition rapide
+  const layoutPresets = [
+    {
+      name: "📚 Roman classique",
+      description: "Marges larges, police serif, espacement confortable",
+      settings: {
+        typography: { titleSize: 18, subtitleSize: 14, bodySize: 11, titleFont: "Georgia", bodyFont: "Georgia" },
+        spacing: { lineHeight: 1.6, paragraphSpacing: 12, chapterSpacing: 24, margins: { top: 25, bottom: 25, left: 25, right: 25 } }
+      }
+    },
+    {
+      name: "📖 Livre technique",
+      description: "Marges étroites, police sans-serif, espacement compact",
+      settings: {
+        typography: { titleSize: 16, subtitleSize: 13, bodySize: 10, titleFont: "Arial", bodyFont: "Arial" },
+        spacing: { lineHeight: 1.4, paragraphSpacing: 10, chapterSpacing: 20, margins: { top: 20, bottom: 20, left: 20, right: 20 } }
+      }
+    },
+    {
+      name: "✨ Luxe élégant",
+      description: "Grandes marges, grandes polices, espacement généreux",
+      settings: {
+        typography: { titleSize: 22, subtitleSize: 16, bodySize: 13, titleFont: "Palatino", bodyFont: "Palatino" },
+        spacing: { lineHeight: 1.8, paragraphSpacing: 16, chapterSpacing: 32, margins: { top: 30, bottom: 30, left: 30, right: 30 } }
+      }
+    }
+  ]
+
+  // Fonction pour appliquer un preset
+  const applyPreset = (preset: typeof layoutPresets[0]) => {
+    setLayoutSettings(prev => ({
+      ...prev,
+      typography: { ...prev.typography, ...preset.settings.typography },
+      spacing: { ...prev.spacing, ...preset.settings.spacing }
+    }))
+    setSuccess(`Preset "${preset.name}" appliqué !`)
+    setTimeout(() => setSuccess(""), 3000)
+  }
+
   // Templates disponibles
   const templates = [
     {
