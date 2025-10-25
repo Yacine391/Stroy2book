@@ -22,6 +22,17 @@ interface GeneratedIllustration {
 
 interface CoverCreationProps {
   illustrations: GeneratedIllustration[]
+  textData?: {
+    text: string
+    language: string
+    chapters: string[]
+    style: string
+    desiredPages: number
+  }
+  processedText?: {
+    processedText: string
+    history: any[]
+  }
   onNext: (data: { coverData: CoverData }) => void
   onBack: () => void
 }
@@ -41,7 +52,7 @@ interface CoverData {
   hasWatermark: boolean
 }
 
-export default function CoverCreation({ illustrations, onNext, onBack }: CoverCreationProps) {
+export default function CoverCreation({ illustrations, textData, processedText, onNext, onBack }: CoverCreationProps) {
   const [title, setTitle] = useState("")
   const [subtitle, setSubtitle] = useState("")
   const [author, setAuthor] = useState("")
@@ -189,38 +200,55 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
     }
   }
 
-  // Fonction pour générer le titre avec l'IA
+  // Fonction pour générer le titre avec l'IA basé sur le texte utilisateur
   const generateTitleWithAI = async () => {
     setIsGeneratingTitle(true);
     setError("");
     setSuccess("");
 
     try {
-      // Utiliser le contenu des illustrations pour générer un titre
-      const chapters = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+      // PRIORITÉ 1: Utiliser le texte ORIGINAL de l'utilisateur
+      let contentToSend = '';
+      let chaptersToSend: string[] = [];
       
-      // Si pas de chapitres depuis les illustrations, utiliser des données de base
-      let contentToSend = chapters.join('. ');
-      if (!contentToSend || contentToSend.length < 10) {
-        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle} avec un layout ${selectedLayout}`;
+      if (textData && textData.text) {
+        // Utiliser le texte ORIGINAL saisi par l'utilisateur
+        contentToSend = textData.text.substring(0, 2000);
+        chaptersToSend = textData.chapters || [];
+        console.log('✅ Utilisation du texte ORIGINAL de l\'utilisateur');
+      } 
+      // PRIORITÉ 2: Texte traité par l'IA
+      else if (processedText && processedText.processedText) {
+        contentToSend = processedText.processedText.substring(0, 2000);
+        console.log('✅ Utilisation du texte traité');
+      }
+      // PRIORITÉ 3: Illustrations en dernier recours
+      else if (illustrations && illustrations.length > 0) {
+        chaptersToSend = illustrations.map(ill => ill.chapterTitle).filter(t => t && t.trim());
+        contentToSend = chaptersToSend.join('. ');
+        console.log('✅ Utilisation des illustrations');
+      }
+      // PRIORITÉ 4: Fallback générique
+      else {
+        contentToSend = `Créer un titre créatif et accrocheur pour un ebook de style ${selectedStyle}`;
+        console.warn('⚠️ Pas de contenu, utilisation prompt générique');
       }
       
-      console.log('🪄 Génération titre IA - Contenu:', contentToSend.substring(0, 100));
+      console.log('🪄 Génération titre avec', contentToSend.length, 'caractères');
       
       const response = await fetch('/api/generate-title', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chapters: chapters.length > 0 ? chapters : [`Ebook ${selectedStyle}`],
+          chapters: chaptersToSend.length > 0 ? chaptersToSend : undefined,
           content: contentToSend,
-          genre: selectedStyle,
-          style: selectedLayout
+          genre: textData?.style || selectedStyle,
+          style: selectedLayout,
+          previousTitle: title || undefined // Pour éviter les doublons lors de régénération
         })
       });
 
-      console.log('📡 Response status:', response.status);
       const data = await response.json();
-      console.log('📦 Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur API');
@@ -228,11 +256,10 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
       if (data.title && data.title.trim()) {
         setTitle(data.title);
-        setSuccess("✨ Titre généré avec l'IA !");
-        console.log('✅ Titre appliqué:', data.title);
+        setSuccess("✨ Titre généré basé sur votre texte !");
         setTimeout(() => setSuccess(""), 3000);
       } else {
-        throw new Error('Pas de titre reçu de l\'API');
+        throw new Error('Pas de titre reçu');
       }
       
     } catch (err: any) {
@@ -739,10 +766,17 @@ export default function CoverCreation({ illustrations, onNext, onBack }: CoverCr
 
               <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
                 {isGenerating ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
+                    <div className="text-center p-6">
                       <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-sm text-gray-600">Génération de la couverture...</p>
+                      <p className="text-sm text-gray-700 font-medium mb-4">Génération de la couverture...</p>
+                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                        <AITimer 
+                          isGenerating={isGenerating} 
+                          estimatedSeconds={10}
+                          onComplete={() => console.log('⏰ Couverture générée')}
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : generatedCoverUrl ? (
