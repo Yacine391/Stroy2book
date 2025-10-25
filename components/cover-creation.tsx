@@ -207,18 +207,20 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     setSuccess("");
 
     try {
-      // Utiliser le contenu réel du texte traité ou du texte original
+      // Utiliser le contenu réel - PRIORITÉ AU TEXTE ORIGINAL
       let contentToSend = '';
       let chaptersToSend: string[] = [];
       
-      // Priorité 1: Texte traité par l'IA
-      if (processedText && processedText.processedText) {
-        contentToSend = processedText.processedText.substring(0, 2000);
-      }
-      // Priorité 2: Texte original et chapitres
-      else if (textData) {
+      // Priorité 1: Texte ORIGINAL de l'utilisateur
+      if (textData && textData.text) {
         contentToSend = textData.text.substring(0, 2000);
         chaptersToSend = textData.chapters || [];
+        console.log('✅ Utilisation du texte ORIGINAL');
+      }
+      // Priorité 2: Texte traité par l'IA
+      else if (processedText && processedText.processedText) {
+        contentToSend = processedText.processedText.substring(0, 2000);
+        console.log('✅ Utilisation du texte traité');
       }
       // Priorité 3: Illustrations
       else if (illustrations && illustrations.length > 0) {

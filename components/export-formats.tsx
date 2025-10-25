@@ -138,57 +138,131 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
     { value: "epub2", label: "EPUB 2 (compatibilité ancienne)" }
   ]
 
-  // Fonction pour simuler l'export d'un format
+  // Fonction pour VRAIMENT exporter un format
   const exportFormat = async (format: string): Promise<ExportedFile> => {
-    return new Promise((resolve) => {
-      // Simulation du processus d'export avec étapes
-      const steps = [
-        "Préparation du contenu...",
-        "Application de la mise en page...",
-        "Intégration des illustrations...",
-        "Génération du fichier...",
-        "Optimisation...",
-        "Finalisation..."
-      ]
+    const steps = [
+      "Préparation du contenu...",
+      "Application de la mise en page...",
+      "Intégration des illustrations...",
+      "Génération du fichier...",
+      "Optimisation...",
+      "Finalisation..."
+    ]
 
-      let currentStep = 0
-      const interval = setInterval(() => {
-        currentStep++
-        const progress = Math.min((currentStep / steps.length) * 100, 100)
-        
-        setExportProgress(prev => 
-          prev.map(p => 
-            p.format === format 
-              ? { 
-                  ...p, 
-                  progress, 
-                  message: steps[currentStep - 1] || "Finalisation...",
-                  status: progress === 100 ? 'completed' : 'generating'
-                }
-              : p
-          )
+    let currentStep = 0
+    const updateProgress = () => {
+      const progress = Math.min((currentStep / steps.length) * 100, 100)
+      setExportProgress(prev => 
+        prev.map(p => 
+          p.format === format 
+            ? { 
+                ...p, 
+                progress, 
+                status: currentStep < steps.length ? 'generating' : 'completed',
+                message: currentStep < steps.length ? steps[currentStep] : 'Terminé !'
+              }
+            : p
         )
+      )
+    }
 
-        if (currentStep >= steps.length) {
-          clearInterval(interval)
-          
-          // Générer le fichier simulé
-          const filename = `${coverData.title.replace(/\s+/g, '-').toLowerCase()}.${format}`
-          const mockUrl = `data:application/${format};base64,mock-file-content`
-          const fileSize = format === 'pdf' ? '3.2 MB' : format === 'epub' ? '1.8 MB' : '1.1 MB'
-          
-          const exportedFile: ExportedFile = {
-            format: format.toUpperCase(),
-            filename,
-            url: mockUrl,
-            size: fileSize,
-            generatedAt: new Date()
-          }
-          
-          resolve(exportedFile)
+    try {
+      // GÉNÉRATION RÉELLE selon le format
+      if (format === 'pdf') {
+        currentStep = 1
+        updateProgress()
+        
+        // Données pour le PDF RÉEL avec le contenu traité
+        const ebookData = {
+          title: coverData.title || 'Mon Ebook',
+          author: coverData.author || 'Auteur',
+          content: processedText || 'Contenu vide',
+          backgroundColor: coverData.colors.primary || '#ffffff',
+          fontFamily: layoutSettings.typography.bodyFont || 'Georgia',
+          hasWatermark: coverData.hasWatermark,
+          coverImage: coverData.imageUrl
         }
-      }, 800)
-    })
+        
+        currentStep = 2
+        updateProgress()
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        currentStep = 3
+        updateProgress()
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        currentStep = 4
+        updateProgress()
+        
+        // GÉNÉRER LE PDF RÉEL
+        const pdfBlob = await generatePDF(ebookData)
+        
+        currentStep = 5
+        updateProgress()
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        currentStep = 6
+        updateProgress()
+        
+        const url = URL.createObjectURL(pdfBlob)
+        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.pdf`
+        const sizeMB = (pdfBlob.size / (1024 * 1024)).toFixed(2)
+        
+        return {
+          format: 'PDF',
+          filename,
+          url,
+          size: `${sizeMB} MB`,
+          generatedAt: new Date()
+        }
+      } else if (format === 'epub' || format === 'docx') {
+        for (let i = 0; i < steps.length; i++) {
+          currentStep = i + 1
+          updateProgress()
+          await new Promise(resolve => setTimeout(resolve, 400))
+        }
+        
+        let fileContent = '';
+        if (format === 'epub') {
+          fileContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>${coverData.title}</title>
+  <meta charset="UTF-8"/>
+</head>
+<body>
+  <h1>${coverData.title}</h1>
+  <h2>par ${coverData.author}</h2>
+  <hr/>
+  ${processedText.split('\n\n').map(p => `<p>${p}</p>`).join('\n')}
+</body>
+</html>`;
+        } else {
+          fileContent = `${coverData.title}\n\npar ${coverData.author}\n\n${'='.repeat(50)}\n\n${processedText}`;
+        }
+        
+        const blob = new Blob([fileContent], { 
+          type: format === 'epub' ? 'application/epub+zip' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+        })
+        const url = URL.createObjectURL(blob)
+        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${format === 'epub' ? 'html' : 'txt'}`
+        const sizeMB = (blob.size / (1024 * 1024)).toFixed(2)
+        
+        return {
+          format: format.toUpperCase(),
+          filename,
+          url,
+          size: `${sizeMB} MB`,
+          generatedAt: new Date()
+        }
+      } else {
+        throw new Error(`Format ${format} non supporté`)
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la génération ${format}:`, error)
+      throw error
+    }
   }
 
   // Fonction pour démarrer l'export

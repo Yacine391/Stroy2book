@@ -72,6 +72,11 @@ export default function HBCreatorWorkflow() {
     loadCurrentUser()
   }, [])
 
+  // Scroll en haut à chaque changement d'étape
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentStep])
+
   // Fermer le menu utilisateur quand on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
