@@ -67,6 +67,8 @@ export default function CoverCreation({ illustrations, textData, processedText, 
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false) // Nouveau
+  const [retryCount, setRetryCount] = useState(0) // Compteur de tentatives
+  const [generationAbortController, setGenerationAbortController] = useState<AbortController | null>(null) // Pour annuler
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -327,8 +329,20 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     return keywords;
   };
 
+  // Fonction pour annuler la génération
+  const cancelGeneration = () => {
+    if (generationAbortController) {
+      generationAbortController.abort()
+      setGenerationAbortController(null)
+      setIsGenerating(false)
+      setRetryCount(0)
+      setError("Génération annulée par l'utilisateur")
+      setTimeout(() => setError(""), 3000)
+    }
+  }
+
   // Fonction pour générer automatiquement la couverture avec l'IA
-  const generateCover = async (useCustomDescription = false) => {
+  const generateCover = async (useCustomDescription = false, attemptNumber = 1) => {
     if (!title.trim()) {
       setError("Veuillez saisir un titre")
       return
@@ -339,7 +353,12 @@ export default function CoverCreation({ illustrations, textData, processedText, 
       return
     }
 
+    // Créer un AbortController pour cette génération
+    const abortController = new AbortController()
+    setGenerationAbortController(abortController)
+
     setIsGenerating(true)
+    setRetryCount(attemptNumber)
     setError("")
     setSuccess("")
 
@@ -380,19 +399,25 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                          selectedStyle === 'academic' ? 'scholarly formal' :
                          selectedStyle === 'popular' ? 'modern attractive' : 'sophisticated';
         
-        coverPrompt = `professional book cover illustration: ${visualDescription}, ${styleHint}, artistic composition, vibrant professional colors, high quality detailed artwork, no text, no letters, no words, no symbols`;
+        // Si c'est une retry, améliorer le prompt
+        if (attemptNumber > 1) {
+          coverPrompt = `stunning professional book cover: ${visualDescription}, ${styleHint}, masterpiece quality, award-winning design, cinematic lighting, ultra detailed, 8K resolution, perfect composition, no text overlay, clean image`;
+        } else {
+          coverPrompt = `professional book cover illustration: ${visualDescription}, ${styleHint}, artistic composition, vibrant professional colors, high quality detailed artwork, no text, no letters, no words, no symbols`;
+        }
       }
       
-      console.log('🎨 Génération couverture (sans texte):', coverPrompt);
+      console.log(`🎨 Génération couverture (tentative ${attemptNumber}/2):`, coverPrompt);
 
-      // Appeler l'API de génération d'image
+      // Appeler l'API de génération d'image avec signal d'abort
       const response = await fetch('/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: coverPrompt,
           style: 'realistic' // Pour les couvertures
-        })
+        }),
+        signal: abortController.signal
       });
 
       const data = await response.json();
@@ -401,16 +426,49 @@ export default function CoverCreation({ illustrations, textData, processedText, 
         throw new Error(data.error || 'Erreur API');
       }
 
+      // Vérifier que l'image est valide
+      if (!data.imageUrl || data.imageUrl.length < 10) {
+        throw new Error("URL d'image invalide reçue de l'API")
+      }
+
       setGeneratedCoverUrl(data.imageUrl);
+      setRetryCount(0)
+      setGenerationAbortController(null)
       setSuccess("✨ Couverture générée avec succès ! (Le titre et l'auteur seront ajoutés lors de l'export)");
       setTimeout(() => setSuccess(""), 4000);
       
     } catch (err: any) {
-      console.error('❌ Erreur génération couverture:', err);
-      setError(err.message || "Erreur lors de la génération de la couverture");
-      setTimeout(() => setError(""), 3000);
+      // Si c'est une annulation, ne pas réessayer
+      if (err.name === 'AbortError') {
+        console.log('⚠️ Génération annulée')
+        return
+      }
+
+      console.error(`❌ Erreur génération couverture (tentative ${attemptNumber}):`, err);
+      
+      // Retry automatique (max 2 tentatives)
+      if (attemptNumber < 2) {
+        console.log(`🔄 Tentative automatique ${attemptNumber + 1}/2...`)
+        setError(`Tentative ${attemptNumber} échouée. Nouvelle tentative avec prompt amélioré...`)
+        // Attendre 2 secondes avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Réessayer avec un prompt amélioré
+        await generateCover(useCustomDescription, attemptNumber + 1)
+        return
+      }
+      
+      // Après 2 échecs, afficher erreur complète
+      const errorMessage = `❌ Erreur génération (2 tentatives) : ${err.message || "Service d'image indisponible"}`
+      setError(errorMessage)
+      console.error('🚨 ÉCHEC COMPLET:', errorMessage)
+      
+      // Ne pas effacer l'erreur automatiquement pour que l'utilisateur puisse la lire
+      setTimeout(() => setError(""), 8000)
+      
     } finally {
       setIsGenerating(false)
+      setGenerationAbortController(null)
+      setRetryCount(0)
     }
   }
 
@@ -490,14 +548,14 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Le titre de votre ebook"
-                    className="flex-1"
+                    className={`flex-1 transition-all ${success.includes('Titre généré') ? 'border-green-500 bg-green-50' : ''}`}
                   />
                   <Button
                     onClick={generateTitleWithAI}
                     disabled={isGeneratingTitle || isGenerating}
                     variant="outline"
                     size="sm"
-                    title="Générer un titre avec l'IA"
+                    title="Générer un titre avec l'IA basé sur votre texte"
                     className="shrink-0"
                   >
                     {isGeneratingTitle ? (
@@ -510,7 +568,10 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                 
                 {/* Mini timer pour génération titre */}
                 {isGeneratingTitle && (
-                  <div className="mt-2">
+                  <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-blue-700 font-medium mb-2">
+                      🔍 Analyse de votre texte en cours...
+                    </p>
                     <AITimer 
                       isGenerating={isGeneratingTitle} 
                       estimatedSeconds={5}
@@ -519,10 +580,19 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                   </div>
                 )}
                 
-                {!isGeneratingTitle && (
+                {!isGeneratingTitle && !success.includes('Titre généré') && (
                   <p className="text-xs text-gray-500 mt-1">
                     💡 Cliquez sur la baguette magique 🪄 pour générer un titre avec l'IA
                   </p>
+                )}
+                
+                {success.includes('Titre généré') && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <p className="text-xs text-green-700 font-medium">
+                      Titre généré et appliqué avec succès !
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -805,16 +875,30 @@ export default function CoverCreation({ illustrations, textData, processedText, 
               <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
                 {isGenerating ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
-                    <div className="text-center p-6">
+                    <div className="text-center p-6 w-full">
                       <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-                      <p className="text-sm text-gray-700 font-medium mb-4">Génération de la couverture...</p>
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
+                      <p className="text-sm text-gray-700 font-medium mb-2">
+                        {retryCount > 1 ? `Tentative ${retryCount}/2 en cours...` : 'Génération de la couverture...'}
+                      </p>
+                      <p className="text-xs text-orange-600 font-semibold mb-4">
+                        ⚠️ Ne pas fermer cette page
+                      </p>
+                      <div className="bg-white rounded-lg p-4 shadow-sm mb-3">
                         <AITimer 
                           isGenerating={isGenerating} 
                           estimatedSeconds={10}
                           onComplete={() => console.log('⏰ Couverture générée')}
                         />
                       </div>
+                      <Button
+                        onClick={cancelGeneration}
+                        variant="outline"
+                        size="sm"
+                        className="bg-white hover:bg-red-50 border-red-300 text-red-600"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        Annuler
+                      </Button>
                     </div>
                   </div>
                 ) : generatedCoverUrl ? (
@@ -829,6 +913,43 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                     alt="Couverture personnalisée"
                     className="w-full h-full object-cover"
                   />
+                ) : error && !generatedCoverUrl ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-50">
+                    <div className="text-center text-red-700 p-6">
+                      <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+                      <p className="text-sm font-medium mb-2">❌ Échec de génération</p>
+                      <p className="text-xs text-gray-600 mb-4 px-4">{error}</p>
+                      {title && (
+                        <div className="space-y-2 mb-4 p-3 bg-white rounded-lg">
+                          <p className="font-bold text-base text-gray-800">{title}</p>
+                          {subtitle && <p className="text-xs text-gray-600">{subtitle}</p>}
+                          {author && <p className="text-xs text-gray-700 mt-2">par {author}</p>}
+                        </div>
+                      )}
+                      <div className="flex justify-center space-x-2">
+                        <Button
+                          onClick={() => generateCover(false, 1)}
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Réessayer
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setError("")
+                            const input = fileInputRef.current
+                            if (input) input.click()
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Upload className="h-3 w-3 mr-1" />
+                          Charger une image
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-gray-500 p-4">
