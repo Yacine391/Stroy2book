@@ -60,6 +60,8 @@ interface CoverData {
     text: string
   }
   hasWatermark: boolean
+  includeIllustrationInPDF?: boolean
+  imagePosition?: { x: number; y: number; scale: number }
 }
 
 interface ExportFormatsProps {
@@ -172,15 +174,18 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
         currentStep = 1
         updateProgress()
         
-        // Données pour le PDF RÉEL avec le contenu traité
+        // Données pour le PDF RÉEL avec le contenu traité ET toutes les métadonnées
         const ebookData = {
           title: coverData.title || 'Mon Ebook',
+          subtitle: coverData.subtitle || '',
           author: coverData.author || 'Auteur',
           content: processedText || 'Contenu vide',
           backgroundColor: coverData.colors.primary || '#ffffff',
           fontFamily: layoutSettings.typography.bodyFont || 'Georgia',
           hasWatermark: coverData.hasWatermark,
-          coverImage: coverData.imageUrl
+          coverImage: coverData.imageUrl,
+          includeIllustrationInPDF: coverData.includeIllustrationInPDF ?? true,
+          imagePosition: coverData.imagePosition || { x: 0, y: 0, scale: 1 }
         }
         
         currentStep = 2

@@ -13,12 +13,15 @@ declare module 'jspdf' {
 
 interface EbookData {
   title: string
+  subtitle?: string
   author: string
   content: string
   backgroundColor: string
   fontFamily: string
   hasWatermark: boolean
   coverImage?: string
+  includeIllustrationInPDF?: boolean
+  imagePosition?: { x: number; y: number; scale: number }
   exactPages?: number
   length?: string
 }
