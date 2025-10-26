@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // ✅ CORRECTION: Utiliser gemini-1.5-flash (plus rapide et stable)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Construire le contenu à analyser
     let textToAnalyze = content || '';

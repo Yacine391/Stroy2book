@@ -1,27 +1,5 @@
 {
-  "forceDeployment": true,
-  "timestamp": "2024-10-10T16:00:00Z",
-  "reason": "Deploy adaptive UI features not included in 7G93UxZU4",
-  "features": {
-    "newUsers": {
-      "workflow": "Complete 8-step guided process",
-      "navigation": "Step-by-step with progress bar",
-      "loginButton": "Available in header"
-    },
-    "authenticatedUsers": {
-      "interface": "Clean without step navigation",
-      "userMenu": "3-dot menu in top-right corner",
-      "dashboard": {
-        "greeting": "Personalized welcome message",
-        "quickActions": [
-          "Créer un ebook",
-          "Projets sauvegardés", 
-          "Compte configuré"
-        ]
-      },
-      "navigation": "Direct access to any feature"
-    }
-  },
-  "commitHash": "8339029",
-  "deploymentNeeded": "YES - Missing adaptive interface"
+  "deploy": true,
+  "timestamp": "2025-10-25T15:00:00Z",
+  "trigger": "auto"
 }
