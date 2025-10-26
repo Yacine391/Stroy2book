@@ -853,7 +853,7 @@ Tu DOIS générer un contenu COMPLET et ENTIER de ${lengthConfig.minWords}-${len
         console.warn('⚠️ Erreur OpenAI, fallback vers Google:', openaiError)
         
         // Fallback vers Google Gemini
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' })
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
         const result = await model.generateContent({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
           generationConfig: {
