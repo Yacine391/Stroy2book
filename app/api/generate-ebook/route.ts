@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ CORRECTION: Utiliser gemini-1.5-flash (plus rapide et stable)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // ✅ CORRECTION DÉFINITIVE: Utiliser gemini-1.5-flash-latest (stable, v1 API)
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
     // Calculer le nombre de mots nécessaires
     // En moyenne : 250 mots par page pour un livre standard

@@ -148,19 +148,50 @@ export default function IllustrationGeneration({ textData, processedText, coverD
     setIllustrations(initialIllustrations)
   }, [processedText.processedText, selectedStyle])
 
-  // Fonction pour générer le prompt d'illustration basé sur le contenu du chapitre
+  // ✅ NOUVELLE FONCTION: Génération contextuelle comme les couvertures
   const generatePromptForChapter = (chapterTitle: string, chapterContent: string): string => {
-    // Extraire les mots-clés du contenu du chapitre
-    const words = chapterContent.toLowerCase().split(/\s+/)
-    const keywords = words.filter(word => 
-      word.length > 4 && 
-      !['dans', 'avec', 'pour', 'cette', 'comme', 'mais', 'tout', 'plus', 'très', 'bien', 'encore', 'aussi'].includes(word)
-    ).slice(0, 5)
-
-    const basePrompt = `Illustration pour "${chapterTitle}"`
-    const keywordPrompt = keywords.length > 0 ? ` montrant ${keywords.join(', ')}` : ''
+    // Extraire le contexte COMPLET (titre + texte utilisateur)
+    const TITLE = coverData?.coverData?.title || textData?.chapters?.[0] || 'Mon Ebook'
+    const TEXT = textData?.text || processedText.processedText.substring(0, 1500)
     
-    return `${basePrompt}${keywordPrompt}, style ${selectedStyle}`
+    // Analyser le contenu pour extraire les éléments visuels clés
+    const contentToAnalyze = (TITLE + ' ' + TEXT + ' ' + chapterContent).toLowerCase()
+    
+    // Extraction intelligente des éléments visuels (comme pour les couvertures)
+    const extractVisualElements = (text: string): string[] => {
+      const elements: string[] = []
+      
+      // Lieux
+      const locations = ['algérie', 'france', 'paris', 'désert', 'montagne', 'mer', 'ville', 'campagne', 'forêt']
+      locations.forEach(loc => {
+        if (text.includes(loc)) elements.push(loc)
+      })
+      
+      // Objets symboliques
+      const objects = ['drapeau', 'livre', 'arme', 'outil', 'monument', 'véhicule', 'bâtiment']
+      objects.forEach(obj => {
+        if (text.includes(obj)) elements.push(obj)
+      })
+      
+      // Personnages/Actions
+      const actions = ['combat', 'célébration', 'réunion', 'voyage', 'découverte', 'rencontre']
+      actions.forEach(act => {
+        if (text.includes(act)) elements.push(act)
+      })
+      
+      return elements.slice(0, 3)
+    }
+    
+    const visualElements = extractVisualElements(contentToAnalyze)
+    
+    // Construire le prompt PRÉCIS comme pour les couvertures
+    const basePrompt = `Illustration réaliste en rapport avec le texte fourni`
+    const elementPrompt = visualElements.length > 0 
+      ? `. Scène montrant: ${visualElements.join(', ')}`
+      : `. Contexte: ${chapterTitle}`
+    const keywordPrompt = `. Tous les symboles et drapeaux doivent correspondre à la réalité. Composition équilibrée, style professionnel`
+    
+    return `${basePrompt}${elementPrompt}${keywordPrompt}, style ${selectedStyle}`
   }
 
   // Génération d'image avec IA (VRAIE API !)
