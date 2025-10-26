@@ -50,6 +50,8 @@ interface CoverData {
     text: string
   }
   hasWatermark: boolean
+  includeIllustrationInPDF?: boolean
+  imagePosition?: { x: number; y: number; scale: number }
 }
 
 export default function CoverCreation({ illustrations, textData, processedText, onNext, onBack }: CoverCreationProps) {
@@ -69,6 +71,9 @@ export default function CoverCreation({ illustrations, textData, processedText, 
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false) // Nouveau
   const [retryCount, setRetryCount] = useState(0) // Compteur de tentatives
   const [generationAbortController, setGenerationAbortController] = useState<AbortController | null>(null) // Pour annuler
+  const [includeIllustrationInPDF, setIncludeIllustrationInPDF] = useState(true) // Toggle pour PDF
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0, scale: 1 }) // Position/scale de l'image
+  const [generationQuota, setGenerationQuota] = useState({ used: 0, max: 3 }) // Quota génération
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -341,6 +346,29 @@ export default function CoverCreation({ illustrations, textData, processedText, 
     }
   }
 
+  // Fonction pour vérifier le quota de génération
+  const checkGenerationQuota = (): boolean => {
+    // Simulation - À remplacer par une vraie API call
+    // const userSubscription = userAuth?.subscription?.plan || 'free'
+    const userSubscription = 'free' // Pour demo
+    
+    const quotas = {
+      free: 3,
+      basic: 30,
+      pro: 999999 // illimité
+    }
+    
+    const maxGenerations = quotas[userSubscription as keyof typeof quotas] || 3
+    
+    setGenerationQuota(prev => ({ ...prev, max: maxGenerations }))
+    
+    if (generationQuota.used >= maxGenerations) {
+      return false
+    }
+    
+    return true
+  }
+
   // Fonction pour générer automatiquement la couverture avec l'IA
   const generateCover = async (useCustomDescription = false, attemptNumber = 1) => {
     if (!title.trim()) {
@@ -350,6 +378,13 @@ export default function CoverCreation({ illustrations, textData, processedText, 
 
     if (!author.trim()) {
       setError("Veuillez saisir le nom de l'auteur")
+      return
+    }
+
+    // Vérifier le quota (sauf pour les retry)
+    if (attemptNumber === 1 && !checkGenerationQuota()) {
+      setError("🔒 Quota de génération atteint. Passez à un abonnement supérieur pour continuer.")
+      setTimeout(() => setError(""), 8000)
       return
     }
 
@@ -369,41 +404,74 @@ export default function CoverCreation({ illustrations, textData, processedText, 
         // Utiliser la description personnalisée
         coverPrompt = `professional book cover illustration: ${coverDescription}, artistic, high quality, detailed, vibrant colors, no text, no letters, no words`;
       } else {
-        // Analyse intelligente du contenu
-        let contentToAnalyze = title + ' ';
+        // NOUVEAU TEMPLATE PRÉCIS avec TITLE et TEXT
+        const TITLE = title.trim();
+        let TEXT = '';
         
-        if (processedText && processedText.processedText) {
-          contentToAnalyze += processedText.processedText.substring(0, 1000);
-        } else if (textData && textData.text) {
-          contentToAnalyze += textData.text.substring(0, 1000);
-          if (textData.chapters && textData.chapters.length > 0) {
-            contentToAnalyze += ' ' + textData.chapters.join(' ').substring(0, 500);
-          }
+        // Extraire le texte de l'utilisateur
+        if (textData && textData.text) {
+          TEXT = textData.text.substring(0, 1500);
+        } else if (processedText && processedText.processedText) {
+          TEXT = processedText.processedText.substring(0, 1500);
         }
         
-        // Extraire mots-clés intelligents
+        // Analyser le contenu pour extraire les éléments clés
+        const contentToAnalyze = (TITLE + ' ' + TEXT).toLowerCase();
+        
+        // Extraire LIEU, PERSONNAGES, OBJETS, SYMBOLES
         const keywords = extractKeywords(contentToAnalyze);
         
-        let visualDescription = '';
-        if (keywords.length > 0) {
-          // Utiliser les mots-clés extraits (max 4)
-          visualDescription = keywords.slice(0, 4).join(', ');
-        } else {
-          // Fallback basé sur le titre
-          const titleWords = title.split(' ').filter(w => w.length > 3).slice(0, 3).join(' ');
-          visualDescription = titleWords || 'book cover art';
+        // Déterminer la palette (chaude/froide) selon le ton
+        const warmKeywords = ['amour', 'passion', 'feu', 'désert', 'soleil', 'été', 'chaleur', 'rouge', 'orange'];
+        const coolKeywords = ['mystère', 'nuit', 'hiver', 'glace', 'mer', 'bleu', 'vert', 'technologie', 'futur'];
+        
+        const isWarm = warmKeywords.some(k => contentToAnalyze.includes(k));
+        const isCool = coolKeywords.some(k => contentToAnalyze.includes(k));
+        const palette = isWarm ? 'warm colors (reds, oranges, golds)' : 
+                       isCool ? 'cool colors (blues, purples, teals)' : 
+                       'balanced harmonious colors';
+        
+        // Construire les éléments clés
+        let keyElements = keywords.length > 0 ? keywords.slice(0, 4).join(', ') : '';
+        if (!keyElements) {
+          keyElements = TITLE.split(' ').filter(w => w.length > 3).slice(0, 3).join(', ');
         }
         
-        const styleHint = selectedStyle === 'professional' ? 'corporate elegant' :
-                         selectedStyle === 'creative' ? 'artistic imaginative' :
-                         selectedStyle === 'academic' ? 'scholarly formal' :
-                         selectedStyle === 'popular' ? 'modern attractive' : 'sophisticated';
+        const styleHint = selectedStyle === 'professional' ? 'realistic, ultra-detailed, professional photography style' :
+                         selectedStyle === 'creative' ? 'artistic, imaginative, painterly style' :
+                         selectedStyle === 'academic' ? 'scholarly, formal, elegant composition' :
+                         selectedStyle === 'popular' ? 'modern, attractive, commercial appeal' : 
+                         'sophisticated, high-end design';
         
-        // Si c'est une retry, améliorer le prompt
+        // Template expert (comme demandé)
         if (attemptNumber > 1) {
-          coverPrompt = `stunning professional book cover: ${visualDescription}, ${styleHint}, masterpiece quality, award-winning design, cinematic lighting, ultra detailed, 8K resolution, perfect composition, no text overlay, clean image`;
+          // Version améliorée pour retry
+          coverPrompt = `Expert AI book cover generation:
+Title: "${TITLE}"
+Summary: "${TEXT.substring(0, 300)}..."
+
+Instructions: Generate a VERTICAL book cover illustration (ebook/book format). 
+Style: ${styleHint}. 
+Composition: centered, professional layout.
+Palette: ${palette}, adapted to the mood.
+Key elements from summary: ${keyElements}.
+Ensure flags, symbols, and colors are historically/culturally accurate.
+Avoid: anatomical distortions, extra fingers, illegible text.
+Quality: masterpiece, award-winning, cinematic lighting, ultra-detailed, 8K resolution.
+Ready for 1600x2400 px print.
+NO TEXT OVERLAY, NO LETTERS, NO WORDS on the image.`;
         } else {
-          coverPrompt = `professional book cover illustration: ${visualDescription}, ${styleHint}, artistic composition, vibrant professional colors, high quality detailed artwork, no text, no letters, no words, no symbols`;
+          // Version standard
+          coverPrompt = `Professional book cover generation:
+Title: "${TITLE}"
+Context: "${TEXT.substring(0, 250)}..."
+
+Create a VERTICAL book cover illustration. Style: ${styleHint}.
+Centered composition. Palette: ${palette}.
+Key visual elements: ${keyElements}.
+Realistic, ultra-detailed. Accurate symbols and colors.
+Avoid distortions. 1600x2400 px format.
+NO TEXT, NO LETTERS, NO WORDS on the image.`;
         }
       }
       
@@ -434,8 +502,15 @@ export default function CoverCreation({ illustrations, textData, processedText, 
       setGeneratedCoverUrl(data.imageUrl);
       setRetryCount(0)
       setGenerationAbortController(null)
-      setSuccess("✨ Couverture générée avec succès ! (Le titre et l'auteur seront ajoutés lors de l'export)");
-      setTimeout(() => setSuccess(""), 4000);
+      
+      // Incrémenter le quota utilisé (seulement sur première tentative réussie)
+      if (attemptNumber === 1) {
+        setGenerationQuota(prev => ({ ...prev, used: prev.used + 1 }))
+      }
+      
+      const remaining = generationQuota.max - generationQuota.used - 1
+      setSuccess(`✨ Couverture générée avec succès ! ${remaining}/${generationQuota.max} générations restantes.`);
+      setTimeout(() => setSuccess(""), 5000);
       
     } catch (err: any) {
       // Si c'est une annulation, ne pas réessayer
@@ -505,7 +580,9 @@ export default function CoverCreation({ illustrations, textData, processedText, 
         secondary: secondaryColor,
         text: textColor
       },
-      hasWatermark
+      hasWatermark,
+      includeIllustrationInPDF,
+      imagePosition
     }
 
     onNext({ coverData })
@@ -872,7 +949,23 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                 </p>
               </div>
 
-              <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden relative max-w-sm mx-auto">
+              {/* Card attractif avec nouveau design */}
+              <div 
+                className="relative mx-auto transition-all duration-300 hover:shadow-2xl"
+                style={{
+                  width: '300px',
+                  minHeight: '420px',
+                  height: '420px',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                  background: 'linear-gradient(135deg, #f7f8fb 0%, #e9eef7 100%)',
+                  backgroundImage: `
+                    linear-gradient(135deg, #f7f8fb 0%, #e9eef7 100%),
+                    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)
+                  `,
+                  overflow: 'hidden'
+                }}
+              >
                 {isGenerating ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
                     <div className="text-center p-6 w-full">
@@ -902,17 +995,45 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                     </div>
                   </div>
                 ) : generatedCoverUrl ? (
-                  <img
-                    src={generatedCoverUrl}
-                    alt="Couverture générée"
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full">
+                    <img
+                      src={generatedCoverUrl}
+                      alt="Couverture générée"
+                      className="w-full h-full object-cover"
+                      style={{
+                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imagePosition.scale})`,
+                        transition: 'transform 0.2s ease-out'
+                      }}
+                    />
+                    {/* Overlay semi-transparent pour contraste */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.1) 100%)',
+                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)'
+                      }}
+                    />
+                  </div>
                 ) : customImage ? (
-                  <img
-                    src={URL.createObjectURL(customImage)}
-                    alt="Couverture personnalisée"
-                    className="w-full h-full object-cover"
-                  />
+                  <div className="relative w-full h-full">
+                    <img
+                      src={URL.createObjectURL(customImage)}
+                      alt="Couverture personnalisée"
+                      className="w-full h-full object-cover"
+                      style={{
+                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imagePosition.scale})`,
+                        transition: 'transform 0.2s ease-out'
+                      }}
+                    />
+                    {/* Overlay semi-transparent pour contraste */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to bottom, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.1) 100%)',
+                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)'
+                      }}
+                    />
+                  </div>
                 ) : error && !generatedCoverUrl ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-red-50">
                     <div className="text-center text-red-700 p-6">
@@ -951,28 +1072,58 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                     </div>
                   </div>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-gray-500 p-4">
-                      <BookOpen className="h-16 w-16 mx-auto mb-4" />
-                      <p className="text-sm mb-2">Aperçu de la couverture</p>
-                      {title && (
-                        <div className="space-y-1">
-                          <p className="font-bold text-lg" style={{ color: textColor }}>
-                            {title}
-                          </p>
-                          {subtitle && (
-                            <p className="text-sm" style={{ color: textColor }}>
-                              {subtitle}
-                            </p>
-                          )}
-                          {author && (
-                            <p className="text-sm mt-4" style={{ color: textColor }}>
-                              par {author}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+                    {/* Icône stylisée avec gradient */}
+                    <div className="mb-6 relative">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
+                      <BookOpen className="h-20 w-20 relative z-10 text-gradient-to-br from-purple-600 to-blue-600" 
+                        style={{ 
+                          filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))',
+                          color: '#6366f1'
+                        }} 
+                      />
                     </div>
+                    
+                    {/* Texte "Aperçu de la couverture" */}
+                    <p className="text-sm text-gray-500 font-medium mb-6">Aperçu de la couverture</p>
+                    
+                    {/* Mock de typographie avec titre */}
+                    {title ? (
+                      <div className="space-y-4 text-center">
+                        <div 
+                          className="font-bold text-2xl leading-tight px-4"
+                          style={{ 
+                            color: primaryColor,
+                            textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            fontFamily: 'Georgia, serif',
+                            lineHeight: '1.3'
+                          }}
+                        >
+                          {title}
+                        </div>
+                        {subtitle && (
+                          <div 
+                            className="text-sm font-light px-6"
+                            style={{ color: secondaryColor }}
+                          >
+                            {subtitle}
+                          </div>
+                        )}
+                        {author && (
+                          <div 
+                            className="text-sm mt-6 pt-4 border-t border-gray-300"
+                            style={{ color: textColor === '#ffffff' ? '#1f2937' : textColor }}
+                          >
+                            {author}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-400 text-sm px-8">
+                        <p className="mb-2">Saisissez un titre et un auteur</p>
+                        <p className="text-xs">puis générez une couverture</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -984,12 +1135,105 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                 )}
               </div>
 
+              {/* Toggle et contrôles de manipulation */}
+              {(generatedCoverUrl || customImage) && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-3">
+                  {/* Toggle "Inclure dans PDF" */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="include-pdf"
+                        checked={includeIllustrationInPDF}
+                        onChange={(e) => setIncludeIllustrationInPDF(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                      <Label htmlFor="include-pdf" className="cursor-pointer font-medium">
+                        Inclure l'illustration dans le PDF
+                      </Label>
+                    </div>
+                    <span className={`text-xs font-semibold ${includeIllustrationInPDF ? 'text-green-600' : 'text-gray-400'}`}>
+                      {includeIllustrationInPDF ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                  
+                  {/* Contrôles de manipulation */}
+                  <div className="border-t border-gray-300 pt-3">
+                    <p className="text-xs text-gray-600 font-medium mb-2">Ajuster la position et la taille</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, scale: Math.min(prev.scale + 0.1, 2) }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        🔍 Zoom +
+                      </button>
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, scale: Math.max(prev.scale - 0.1, 0.5) }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        🔍 Zoom -
+                      </button>
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, y: prev.y - 10 }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        ⬆️ Haut
+                      </button>
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, y: prev.y + 10 }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        ⬇️ Bas
+                      </button>
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, x: prev.x - 10 }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        ⬅️ Gauche
+                      </button>
+                      <button
+                        onClick={() => setImagePosition(prev => ({ ...prev, x: prev.x + 10 }))}
+                        className="text-xs px-2 py-1 bg-white border rounded hover:bg-gray-50"
+                      >
+                        ➡️ Droite
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setImagePosition({ x: 0, y: 0, scale: 1 })}
+                      className="w-full mt-2 text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                    >
+                      🔄 Réinitialiser
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Actions sur la couverture */}
               <div className="space-y-2 mt-4">
+                {/* Affichage quota */}
+                <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-blue-700 font-medium">
+                      Générations disponibles :
+                    </span>
+                    <span className={`text-sm font-bold ${generationQuota.used >= generationQuota.max ? 'text-red-600' : 'text-blue-600'}`}>
+                      {generationQuota.max - generationQuota.used}/{generationQuota.max}
+                    </span>
+                  </div>
+                  {generationQuota.used >= generationQuota.max && (
+                    <a 
+                      href="/upgrade" 
+                      className="text-xs text-blue-600 font-semibold hover:underline"
+                    >
+                      Upgrade →
+                    </a>
+                  )}
+                </div>
+
                 <Button
                   onClick={() => generateCover(false)}
-                  disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim()}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  disabled={isGenerating || isGeneratingTitle || !title.trim() || !author.trim() || generationQuota.used >= generationQuota.max}
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGenerating ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
