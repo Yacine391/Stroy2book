@@ -17,7 +17,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ CORRECTION DÉFINITIVE: Utiliser gemini-pro (stable, testé, fonctionne)
+    // ✅ Utiliser gemini-pro et vérifier disponibilité via ListModels
+    try {
+      // @ts-ignore types
+      const models = await (genAI as any).listModels?.() || []
+      const names = Array.isArray(models?.models) ? models.models.map((m: any) => m.name) : []
+      console.log('Gemini models available:', names.slice(0, 5))
+    } catch (e) {
+      console.warn('ListModels not available; proceeding with gemini-pro')
+    }
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     // Calculer le nombre de mots nécessaires
