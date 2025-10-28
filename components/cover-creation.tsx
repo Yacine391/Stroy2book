@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -42,6 +42,7 @@ interface CoverData {
   subtitle: string
   author: string
   imageUrl: string
+  imageBase64?: string
   style: string
   layout: string
   colors: {
@@ -67,6 +68,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
   const [hasWatermark, setHasWatermark] = useState(true)
   const [customImage, setCustomImage] = useState<File | null>(null)
   const [generatedCoverUrl, setGeneratedCoverUrl] = useState("")
+  const [generatedCoverBase64, setGeneratedCoverBase64] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false) // Nouveau
   const [retryCount, setRetryCount] = useState(0) // Compteur de tentatives
@@ -77,6 +79,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   // Layouts de couverture disponibles
   const coverLayouts = [
@@ -495,11 +498,17 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
       }
 
       // Vérifier que l'image est valide
-      if (!data.imageUrl || data.imageUrl.length < 10) {
+      if ((!data.imageUrl || data.imageUrl.length < 10) && (!data.imageBase64 || data.imageBase64.length < 100)) {
         throw new Error("URL d'image invalide reçue de l'API")
       }
 
-      setGeneratedCoverUrl(data.imageUrl);
+      if (data.imageBase64) {
+        setGeneratedCoverBase64(data.imageBase64)
+        setGeneratedCoverUrl("")
+      } else {
+        setGeneratedCoverUrl(data.imageUrl)
+        setGeneratedCoverBase64("")
+      }
       setRetryCount(0)
       setGenerationAbortController(null)
       
@@ -561,6 +570,48 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
     await generateCover(useCustom);
   }
 
+  // Interactions: drag to move, wheel to scale
+  useEffect(() => {
+    const el = previewRef.current
+    if (!el) return
+    let dragging = false
+    let startX = 0
+    let startY = 0
+    let originX = 0
+    let originY = 0
+    const onDown = (e: MouseEvent) => {
+      dragging = true
+      startX = e.clientX
+      startY = e.clientY
+      originX = imagePosition.x
+      originY = imagePosition.y
+    }
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
+      setImagePosition(prev => ({ ...prev, x: originX + dx, y: originY + dy }))
+    }
+    const onUp = () => { dragging = false }
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        const delta = e.deltaY > 0 ? -0.05 : 0.05
+        setImagePosition(prev => ({ ...prev, scale: Math.min(2, Math.max(0.5, prev.scale + delta)) }))
+      }
+    }
+    el.addEventListener('mousedown', onDown)
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      el.removeEventListener('mousedown', onDown)
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      el.removeEventListener('wheel', onWheel as any)
+    }
+  }, [imagePosition.x, imagePosition.y])
+
   // Fonction pour passer à l'étape suivante
   const handleNext = () => {
     if (!title.trim() || !author.trim()) {
@@ -573,6 +624,7 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
       subtitle: subtitle.trim(),
       author: author.trim(),
       imageUrl: generatedCoverUrl || (customImage ? URL.createObjectURL(customImage) : ""),
+      imageBase64: generatedCoverBase64 || undefined,
       style: selectedStyle,
       layout: selectedLayout,
       colors: {
@@ -965,6 +1017,7 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
                   `,
                   overflow: 'hidden'
                 }}
+                ref={previewRef}
               >
                 {isGenerating ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
@@ -994,17 +1047,23 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
                       </Button>
                     </div>
                   </div>
-                ) : generatedCoverUrl ? (
+                ) : generatedCoverUrl || generatedCoverBase64 ? (
                   <div className="relative w-full h-full">
-                    <img
-                      src={generatedCoverUrl}
-                      alt="Couverture générée"
-                      className="w-full h-full object-cover"
-                      style={{
-                        transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imagePosition.scale})`,
-                        transition: 'transform 0.2s ease-out'
-                      }}
-                    />
+                    {generatedCoverBase64 ? (
+                      <img
+                        src={`data:image/png;base64,${generatedCoverBase64}`}
+                        alt="Couverture générée"
+                        className="w-full h-full object-cover"
+                        style={{ transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imagePosition.scale})`, transition: 'transform 0.2s ease-out' }}
+                      />
+                    ) : (
+                      <img
+                        src={generatedCoverUrl}
+                        alt="Couverture générée"
+                        className="w-full h-full object-cover"
+                        style={{ transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imagePosition.scale})`, transition: 'transform 0.2s ease-out' }}
+                      />
+                    )}
                     {/* Overlay semi-transparent pour contraste */}
                     <div 
                       className="absolute inset-0 pointer-events-none"
