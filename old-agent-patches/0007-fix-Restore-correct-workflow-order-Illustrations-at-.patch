@@ -1,0 +1,133 @@
+From 5f595e64d755848fd3eab1de3cbea6b4e57bc5e0 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Sat, 25 Oct 2025 13:48:50 +0000
+Subject: [PATCH 7/7] fix: Restore correct workflow order - Illustrations at
+ the end
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BEFORE (buggy):
+1. Saisie texte
+2. Actions IA
+3. Illustrations (wrong position)
+4. Couverture
+5. Layout
+6. Export
+
+NOW (correct):
+1. Saisie texte
+2. Actions IA
+3. Couverture (Étape 3)
+4. Layout (Étape 4)
+5. Illustrations (Étape 5 - at the end as before)
+6. Export (Étape 6)
+
+Changes:
+- Fixed WorkflowStep type order
+- Fixed steps array order
+- Updated step numbers in components (3,4,5)
+- Fixed navigation button texts
+- Data flow correctly maintained
+
+All previous improvements preserved ✅
+---
+ components/cover-creation.tsx          | 4 ++--
+ components/hb-creator-workflow.tsx     | 4 ++--
+ components/illustration-generation.tsx | 4 ++--
+ components/layout-template.tsx         | 4 ++--
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/components/cover-creation.tsx b/components/cover-creation.tsx
+index 638ae5b..9a316bc 100644
+--- a/components/cover-creation.tsx
++++ b/components/cover-creation.tsx
+@@ -431,7 +431,7 @@ export default function CoverCreation({ illustrations, textData, processedText,
+   return (
+     <div className="max-w-6xl mx-auto px-4 py-8">
+       <div className="mb-8">
+-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Création de la couverture</h2>
++        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Création de la couverture</h2>
+         <p className="text-gray-600">Créez une couverture professionnelle automatiquement ou uploadez votre propre image. Taille recommandée : 2048×3072 px.</p>
+       </div>
+ 
+@@ -937,7 +937,7 @@ export default function CoverCreation({ illustrations, textData, processedText,
+           disabled={!title.trim() || !author.trim()}
+           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+         >
+-          Continuer vers la mise en page
++          Continuer vers le layout
+         </Button>
+       </div>
+     </div>
+diff --git a/components/hb-creator-workflow.tsx b/components/hb-creator-workflow.tsx
+index 38ba0de..bb89f1a 100644
+--- a/components/hb-creator-workflow.tsx
++++ b/components/hb-creator-workflow.tsx
+@@ -22,7 +22,7 @@ type WorkflowStep =
+   | 'ai-generation'
+   | 'cover'
+   | 'layout'
+-  | 'illustrations'  // ✅ DÉPLACÉ APRÈS LAYOUT
++  | 'illustrations'
+   | 'export'
+   | 'project-management'
+   | 'security'
+@@ -145,9 +145,9 @@ export default function HBCreatorWorkflow() {
+     { id: 'welcome', title: 'Bienvenue', description: 'Introduction à HB Creator' },
+     { id: 'text-input', title: 'Saisie du texte', description: 'Import et analyse du contenu' },
+     { id: 'ai-generation', title: 'Génération IA', description: 'Amélioration du contenu' },
+-    { id: 'illustrations', title: 'Illustrations', description: 'Génération d\'images IA' },
+     { id: 'cover', title: 'Couverture', description: 'Création de la couverture' },
+     { id: 'layout', title: 'Mise en page', description: 'Templates et typographie' },
++    { id: 'illustrations', title: 'Illustrations', description: 'Génération d\'images IA' },
+     { id: 'export', title: 'Export', description: 'Génération des fichiers' },
+     { id: 'project-management', title: 'Projets', description: 'Sauvegarde et gestion' },
+     { id: 'security', title: 'Sécurité', description: 'Authentification et limites' },
+diff --git a/components/illustration-generation.tsx b/components/illustration-generation.tsx
+index 3ff9f5b..1605068 100644
+--- a/components/illustration-generation.tsx
++++ b/components/illustration-generation.tsx
+@@ -289,7 +289,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
+   return (
+     <div className="max-w-6xl mx-auto px-4 py-8">
+       <div className="mb-8">
+-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 3 : Génération d'illustrations</h2>
++        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Génération d'illustrations</h2>
+         <p className="text-gray-600">Créez des illustrations uniques pour chaque chapitre avec l'IA. Personnalisez le style selon vos préférences.</p>
+       </div>
+ 
+@@ -510,7 +510,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
+           onClick={handleNext}
+           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+         >
+-          Continuer vers la couverture
++          Continuer vers l'export
+         </Button>
+       </div>
+     </div>
+diff --git a/components/layout-template.tsx b/components/layout-template.tsx
+index 33c1617..0e3a529 100644
+--- a/components/layout-template.tsx
++++ b/components/layout-template.tsx
+@@ -365,7 +365,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
+   return (
+     <div className="max-w-6xl mx-auto px-4 py-8">
+       <div className="mb-8">
+-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Mise en page automatique</h2>
++        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 4 : Mise en page automatique</h2>
+         <p className="text-gray-600">Choisissez un template et personnalisez la mise en page de votre ebook. Tous les styles sont optimisés pour une lecture agréable.</p>
+       </div>
+ 
+@@ -981,7 +981,7 @@ export default function LayoutTemplate({ coverData, processedText, onNext, onBac
+           onClick={handleNext}
+           className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+         >
+-          Continuer vers l'export
++          Continuer vers les illustrations
+         </Button>
+       </div>
+     </div>
+-- 
+2.48.1
+
