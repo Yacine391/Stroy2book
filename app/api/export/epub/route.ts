@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Epub from 'epub-gen-memory'
+import { default as EpubModule } from 'epub-gen-memory'
 import { inlineImage } from '@/lib/export-html'
 
 export const maxDuration = 60
@@ -29,8 +29,12 @@ export async function POST(req: NextRequest) {
       version: 3
     } as any
 
-    const result = await Epub(options).promise
-    const buffer: Buffer = result as any
+    // Module default is a class EPub: new EPub(options, content?)
+    // But the package exports default helper too; use constructor
+    const EPub: any = (EpubModule as any).EPub || (EpubModule as any).default || EpubModule
+    const instance = new EPub(options)
+    const { epub } = await instance.promise
+    const buffer: Buffer = epub as Buffer
 
     return new NextResponse(buffer, {
       status: 200,
