@@ -141,6 +141,20 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
   ]
 
   // Fonction pour VRAIMENT exporter un format
+  const callServerExport = async (format: 'pdf'|'docx'|'epub'): Promise<Blob> => {
+    const illustrationPayload = (illustrations || []).map((ill: any) => ({
+      src: ill?.imageUrl || ill?.url || '',
+      caption: ill?.chapterTitle || ''
+    })).filter(x => x.src)
+    const res = await fetch(`/api/export/${format}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cover: coverData, content: processedText, illustrations: illustrationPayload })
+    })
+    if (!res.ok) throw new Error(`Export ${format} failed`)
+    return await res.blob()
+  }
+
   const exportFormat = async (format: string): Promise<ExportedFile> => {
     const steps = [
       "Préparation du contenu...",
@@ -199,8 +213,14 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
         currentStep = 4
         updateProgress()
         
-        // GÉNÉRER LE PDF RÉEL
-        const pdfBlob = await generatePDF(ebookData)
+        // GÉNÉRER LE PDF RÉEL (server-side via Puppeteer)
+        let pdfBlob: Blob
+        try {
+          pdfBlob = await callServerExport('pdf')
+        } catch {
+          // Fallback to client jsPDF if server export unavailable
+          pdfBlob = await generatePDF(ebookData)
+        }
         
         currentStep = 5
         updateProgress()
@@ -221,46 +241,18 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
           generatedAt: new Date()
         }
       } else if (format === 'epub' || format === 'docx') {
-        for (let i = 0; i < steps.length; i++) {
-          currentStep = i + 1
-          updateProgress()
-          await new Promise(resolve => setTimeout(resolve, 400))
-        }
-        
-        let fileContent = '';
-        if (format === 'epub') {
-          fileContent = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <title>${coverData.title}</title>
-  <meta charset="UTF-8"/>
-</head>
-<body>
-  <h1>${coverData.title}</h1>
-  <h2>par ${coverData.author}</h2>
-  <hr/>
-  ${processedText.split('\n\n').map(p => `<p>${p}</p>`).join('\n')}
-</body>
-</html>`;
-        } else {
-          fileContent = `${coverData.title}\n\npar ${coverData.author}\n\n${'='.repeat(50)}\n\n${processedText}`;
-        }
-        
-        const blob = new Blob([fileContent], { 
-          type: format === 'epub' ? 'application/epub+zip' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-        })
+        currentStep = 1; updateProgress(); await new Promise(r=>setTimeout(r,200))
+        currentStep = 2; updateProgress(); await new Promise(r=>setTimeout(r,200))
+        currentStep = 3; updateProgress(); await new Promise(r=>setTimeout(r,200))
+        currentStep = 4; updateProgress();
+        const blob = await callServerExport(format as 'epub'|'docx')
+        currentStep = 5; updateProgress(); await new Promise(r=>setTimeout(r,150))
+        currentStep = 6; updateProgress();
         const url = URL.createObjectURL(blob)
-        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${format === 'epub' ? 'html' : 'txt'}`
+        const ext = format
+        const filename = `${coverData.title.replace(/[^a-z0-9]/gi, '_')}.${ext}`
         const sizeMB = (blob.size / (1024 * 1024)).toFixed(2)
-        
-        return {
-          format: format.toUpperCase(),
-          filename,
-          url,
-          size: `${sizeMB} MB`,
-          generatedAt: new Date()
-        }
+        return { format: format.toUpperCase(), filename, url, size: `${sizeMB} MB`, generatedAt: new Date() }
       } else {
         throw new Error(`Format ${format} non supporté`)
       }
