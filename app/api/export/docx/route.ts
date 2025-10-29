@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Document, Packer, Paragraph, HeadingLevel, TextRun, ImageRun } from 'docx'
+import { promises as fs } from 'fs'
+import path from 'path'
 import { inlineImage } from '@/lib/export-html'
 
 export const maxDuration = 60
@@ -61,6 +63,17 @@ export async function POST(req: NextRequest) {
 
     const finalDoc = new Document({ sections: [{ properties: {}, children }] })
     const buffer = await Packer.toBuffer(finalDoc)
+
+    // Save to /tmp/exports
+    try {
+      const dir = '/tmp/exports'
+      await fs.mkdir(dir, { recursive: true })
+      const filename = `${(cover?.title || 'export').replace(/[^a-z0-9]/gi, '_')}.docx`
+      await fs.writeFile(path.join(dir, filename), buffer)
+      console.log('DOCX saved to', path.join(dir, filename))
+    } catch (e) {
+      console.warn('Cannot save DOCX to /tmp/exports:', e)
+    }
 
     return new NextResponse(buffer, {
       status: 200,

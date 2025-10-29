@@ -5,8 +5,7 @@ const chromium = require('@sparticuz/chromium')
 const puppeteer = require('puppeteer-core')
 const pdfParse = require('pdf-parse')
 const AdmZip = require('adm-zip')
-const { Document, Packer, Paragraph, HeadingLevel, Media, TextRun } = require('docx')
-const Epub = require('epub-gen-memory')
+const { Document, Packer, Paragraph, HeadingLevel, ImageRun, TextRun } = require('docx')
 
 async function buildExportHtml(cover, contentMarkdown) {
   const mod = await import('../lib/export-html.ts')
@@ -49,11 +48,11 @@ async function testPDF() {
 
 async function testDOCX() {
   const doc = new Document({ creator: 'HB Creator', title: 'Test', description: 'DOCX test', sections: [{ children: [] }] })
-  const img = Media.addImage(doc, Buffer.from(tinyPngBase64, 'base64'), 600, 900)
+  const imgRun = new ImageRun({ data: Buffer.from(tinyPngBase64, 'base64'), transformation: { width: 600, height: 900 } })
   doc.addSection({ children: [
     new Paragraph({ text: 'Titre Test', heading: HeadingLevel.TITLE }),
     new Paragraph({ children: [new TextRun('Bonjour DOCX test.')] }),
-    img,
+    new Paragraph({ children: [imgRun] }),
   ]})
   const buffer = await Packer.toBuffer(doc)
   const zip = new AdmZip(buffer)
@@ -64,8 +63,11 @@ async function testDOCX() {
 }
 
 async function testEPUB() {
-  const content = [{ title: 'Chapitre 1', data: '<h1>Chapitre 1</h1><p>Bonjour EPUB test.</p>' }]
-  const buffer = await Epub({ title: 'Titre Test', author: 'Auteur', cover: `data:image/png;base64,${tinyPngBase64}`, content }).promise
+  const content = [{ title: 'Chapitre 1', content: '<h1>Chapitre 1</h1><p>Bonjour EPUB test.</p>' }]
+  const mod = await import('epub-gen-memory')
+  const EPub = mod.EPub || (mod.default && mod.default.EPub) || mod
+  const { epub } = await new EPub({ title: 'Titre Test', author: 'Auteur', cover: `data:image/png;base64,${tinyPngBase64}` }, content).promise
+  const buffer = epub
   const zip = new AdmZip(buffer)
   const names = zip.getEntries().map(e => e.entryName)
   const hasImages = names.some(n => n.toLowerCase().includes('image'))

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
+import { promises as fs } from 'fs'
+import path from 'path'
 import { buildExportHtml } from '@/lib/export-html'
 
 export const maxDuration = 60
@@ -35,6 +37,17 @@ export async function POST(req: NextRequest) {
       format: 'A4'
     })
     await browser.close()
+
+    // Save to /tmp/exports
+    try {
+      const dir = '/tmp/exports'
+      await fs.mkdir(dir, { recursive: true })
+      const filename = `${(cover?.title || 'export').replace(/[^a-z0-9]/gi, '_')}.pdf`
+      await fs.writeFile(path.join(dir, filename), pdfBuffer)
+      console.log('PDF saved to', path.join(dir, filename))
+    } catch (e) {
+      console.warn('Cannot save PDF to /tmp/exports:', e)
+    }
 
     return new NextResponse(pdfBuffer, {
       status: 200,
