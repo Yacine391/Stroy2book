@@ -142,10 +142,14 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
 
   // Fonction pour VRAIMENT exporter un format
   const callServerExport = async (format: 'pdf'|'docx'|'epub'): Promise<Blob> => {
+    const illustrationPayload = (illustrations || []).map((ill: any) => ({
+      src: ill?.imageUrl || ill?.url || '',
+      caption: ill?.chapterTitle || ''
+    })).filter(x => x.src)
     const res = await fetch(`/api/export/${format}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cover: coverData, content: processedText })
+      body: JSON.stringify({ cover: coverData, content: processedText, illustrations: illustrationPayload })
     })
     if (!res.ok) throw new Error(`Export ${format} failed`)
     return await res.blob()

@@ -36,7 +36,7 @@ export async function inlineImage(cover: CoverData): Promise<string | undefined>
   return undefined
 }
 
-export async function buildExportHtml(cover: CoverData, contentMarkdown: string): Promise<string> {
+export async function buildExportHtml(cover: CoverData, contentMarkdown: string, illustrations?: { src: string; caption?: string }[]): Promise<string> {
   const title = cover.title || 'Mon Ebook'
   const author = cover.author || 'Auteur'
   const subtitle = cover.subtitle || ''
@@ -78,6 +78,25 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string)
     })
     .join('\n')
 
+  let illustrationsHtml = ''
+  if (illustrations && illustrations.length) {
+    const items: string[] = []
+    for (const ill of illustrations) {
+      if (!ill?.src) continue
+      try {
+        const res = await fetch(ill.src)
+        if (!res.ok) continue
+        const buf = Buffer.from(await res.arrayBuffer())
+        const mime = ill.src.toLowerCase().includes('.jpg') || ill.src.toLowerCase().includes('.jpeg') ? 'image/jpeg' : 'image/png'
+        const dataUrl = `data:${mime};base64,${buf.toString('base64')}`
+        items.push(`<figure><img src="${dataUrl}" style="max-width:100%;height:auto"/>${ill.caption ? `<figcaption>${escapeHtml(ill.caption)}</figcaption>` : ''}</figure>`)
+      } catch {}
+    }
+    if (items.length) {
+      illustrationsHtml = `<section class="page"><h1>Illustrations</h1>${items.join('\n')}</section>`
+    }
+  }
+
   return `<!doctype html>
 <html>
 <head>
@@ -113,6 +132,7 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string)
   </section>
   <main>
     ${htmlBody}
+    ${illustrationsHtml}
   </main>
 </body>
 </html>`

@@ -8,12 +8,12 @@ export const maxDuration = 60
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { cover, content } = body as { cover: any, content: string }
+    const { cover, content, illustrations } = body as { cover: any, content: string, illustrations?: { src: string; caption?: string }[] }
     if (!cover || !content) {
       return NextResponse.json({ error: 'cover and content required' }, { status: 400 })
     }
 
-    const html = await buildExportHtml(cover, content)
+    const html = await buildExportHtml(cover, content, illustrations)
 
     const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME
     const executablePath = isLambda

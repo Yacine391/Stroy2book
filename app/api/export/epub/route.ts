@@ -7,7 +7,7 @@ export const maxDuration = 60
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { cover, content } = body as { cover: any, content: string }
+    const { cover, content, illustrations } = body as { cover: any, content: string, illustrations?: { src: string; caption?: string }[] }
 
     if (!cover || !content) {
       return NextResponse.json({ error: 'cover and content required' }, { status: 400 })
@@ -19,6 +19,23 @@ export async function POST(req: NextRequest) {
       title: part.startsWith('#') ? part.split('\n')[0].replace(/^#+\s*/, '') : `Section ${i+1}`,
       data: `<div>${part.replace(/^#+\s.*$/m, '').split('\n').map(p => p ? `<p>${p}</p>` : '<br/>').join('\n')}</div>`
     }))
+
+    if (illustrations && illustrations.length) {
+      const items: string[] = []
+      for (const ill of illustrations) {
+        try {
+          const res = await fetch(ill.src)
+          if (!res.ok) continue
+          const buf = Buffer.from(await res.arrayBuffer())
+          const mime = ill.src.toLowerCase().includes('.jpg') || ill.src.toLowerCase().includes('.jpeg') ? 'image/jpeg' : 'image/png'
+          const dataUrl = `data:${mime};base64,${buf.toString('base64')}`
+          items.push(`<figure><img src="${dataUrl}"/>${ill.caption ? `<figcaption>${ill.caption}</figcaption>` : ''}</figure>`)
+        } catch {}
+      }
+      if (items.length) {
+        sections.push({ title: 'Illustrations', data: items.join('\n') })
+      }
+    }
 
     const options = {
       title: cover.title || 'Mon Ebook',

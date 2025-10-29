@@ -7,7 +7,7 @@ export const maxDuration = 60
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { cover, content } = body as { cover: any, content: string }
+    const { cover, content, illustrations } = body as { cover: any, content: string, illustrations?: { src: string; caption?: string }[] }
 
     if (!cover || !content) {
       return NextResponse.json({ error: 'cover and content required' }, { status: 400 })
@@ -43,6 +43,20 @@ export async function POST(req: NextRequest) {
       if (line.startsWith('## ')) { children.push(new Paragraph({ text: line.slice(3), heading: HeadingLevel.HEADING_2 })); continue }
       if (line.startsWith('# ')) { children.push(new Paragraph({ text: line.slice(2), heading: HeadingLevel.HEADING_1 })); continue }
       children.push(new Paragraph({ children: [new TextRun(line)] }))
+    }
+
+    // Additional illustrations
+    if (illustrations && illustrations.length) {
+      for (const ill of illustrations) {
+        try {
+          const res = await fetch(ill.src)
+          if (!res.ok) continue
+          const buf = Buffer.from(await res.arrayBuffer())
+          const imgRun = new ImageRun({ data: buf, transformation: { width: 600, height: 900 } })
+          children.push(new Paragraph({ children: [imgRun] }))
+          if (ill.caption) children.push(new Paragraph({ children: [new TextRun(ill.caption)] }))
+        } catch {}
+      }
     }
 
     const finalDoc = new Document({ sections: [{ properties: {}, children }] })
