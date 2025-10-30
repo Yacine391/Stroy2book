@@ -39,6 +39,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   const [showHistory, setShowHistory] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [lastAppliedAction, setLastAppliedAction] = useState<string>("")
+  const [recommendation, setRecommendation] = useState<{msg: string; suggest?: string} | null>(null)
 
   // Actions IA disponibles
   const aiActions = [
@@ -168,6 +170,7 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
       setHistory(prev => [...prev, newEntry])
       setCurrentText(processedText)
       setSuccess(`Action "${newEntry.action}" appliquée avec succès`)
+      setLastAppliedAction(selectedAction)
       
     } catch (err) {
       setError("Erreur lors du traitement IA")
@@ -188,12 +191,51 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     setHistory(prev => prev.filter(entry => entry.id !== id))
   }
 
-  // Fonction pour passer à l'étape suivante
-  const handleNext = () => {
-    onNext({
-      processedText: currentText,
-      history: history
-    })
+  // Heuristiques simples pour conseiller une meilleure action si besoin
+  useEffect(() => {
+    const words = currentText.trim().split(/\s+/).filter(Boolean).length
+    const sentences = currentText.split(/[.!?]+/).filter(s => s.trim().length > 0)
+    const avgSentence = sentences.length ? Math.round(sentences.reduce((a, s) => a + s.split(/\s+/).length, 0) / sentences.length) : 0
+    let rec: {msg: string; suggest?: string} | null = null
+    if (selectedAction === 'shorten' && words < 800) {
+      rec = { msg: 'Texte déjà court : privilégiez "Améliorer", "Simplifier" ou "Corriger" pour un meilleur résultat.', suggest: 'improve' }
+    } else if (selectedAction === 'expand' && words > 3000) {
+      rec = { msg: 'Texte très long : pensez à "Raccourcir" ou "Simplifier" selon votre objectif.', suggest: 'shorten' }
+    } else if (selectedAction === 'simplify' && avgSentence <= 10) {
+      rec = { msg: 'Le texte est déjà simple : "Améliorer" ou "Corriger" pourraient mieux convenir.', suggest: 'improve' }
+    } else if (selectedAction === 'correct' && words < 150 && avgSentence < 10) {
+      rec = { msg: 'Texte court et simple : si vous souhaitez changer le style, utilisez "Reformuler".', suggest: 'reformulate' }
+    } else {
+      rec = null
+    }
+    setRecommendation(rec)
+  }, [selectedAction, currentText])
+
+  // Fonction pour passer à l'étape suivante (applique l'action sélectionnée si non appliquée)
+  const handleNext = async () => {
+    setError("")
+    // Si une action est sélectionnée mais pas encore appliquée, l'appliquer automatiquement
+    if (selectedAction && selectedAction !== lastAppliedAction) {
+      try {
+        setIsProcessing(true)
+        const processedText = await processWithAI(selectedAction, currentText)
+        setCurrentText(processedText)
+        setHistory(prev => [...prev, {
+          id: Date.now().toString(),
+          timestamp: new Date(),
+          action: aiActions.find(a => a.value === selectedAction)?.label || selectedAction,
+          content: processedText,
+          preview: processedText.substring(0, 150) + '...'
+        }])
+        setLastAppliedAction(selectedAction)
+      } catch (e) {
+        setError('Erreur lors de l\'application automatique de l\'action IA')
+      } finally {
+        setIsProcessing(false)
+      }
+    }
+
+    onNext({ processedText: currentText, history })
   }
 
   const formatDate = (date: Date) => {
@@ -267,6 +309,20 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
                   </div>
                 )}
               </Button>
+
+              {recommendation && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm">
+                  💡 {recommendation.msg}
+                  {recommendation.suggest && (
+                    <button
+                      className="ml-2 underline hover:no-underline"
+                      onClick={() => setSelectedAction(recommendation.suggest!)}
+                    >
+                      Utiliser "{aiActions.find(a=>a.value===recommendation.suggest)?.label}"
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Timer IA */}
               {isProcessing && (
