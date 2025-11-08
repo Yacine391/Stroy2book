@@ -35,7 +35,7 @@ export function getAIConfig(): AIConfig {
       return {
         provider: 'gemini',
         apiKey: process.env.GOOGLE_API_KEY || '',
-        model: 'gemini-pro'
+        model: 'gemini-2.5-flash'
       };
     
     case 'openai':
@@ -56,7 +56,7 @@ export function getAIConfig(): AIConfig {
       return {
         provider: 'gemini',
         apiKey: process.env.GOOGLE_API_KEY || '',
-        model: 'gemini-pro'
+        model: 'gemini-2.5-flash'
       };
   }
 }
@@ -133,7 +133,7 @@ TEXTE REFORMULÉ (commence directement):`
  */
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
   const result = await model.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
