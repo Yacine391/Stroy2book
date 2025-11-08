@@ -37,6 +37,18 @@ export async function inlineImage(cover: CoverData): Promise<string | undefined>
 }
 
 export async function buildExportHtml(cover: CoverData, contentMarkdown: string, illustrations?: { src: string; caption?: string }[]): Promise<string> {
+  // ✅ CORRECTION BUG: Validation stricte du contenu
+  if (!contentMarkdown || contentMarkdown.trim().length < 10) {
+    console.error('❌ buildExportHtml: Content is empty or too short')
+    throw new Error('Content is required for export (minimum 10 characters)')
+  }
+  
+  console.log('🔨 Building export HTML:', {
+    contentLength: contentMarkdown.length,
+    contentPreview: contentMarkdown.substring(0, 200) + '...',
+    hasIllustrations: !!illustrations?.length
+  })
+  
   const title = cover.title || 'Mon Ebook'
   const author = cover.author || 'Auteur'
   const subtitle = cover.subtitle || ''
@@ -63,7 +75,7 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
   ` : ''
 
   // Minimal markdown to HTML (very simple, for server render)
-  const md = contentMarkdown || ''
+  const md = contentMarkdown.trim()
   const htmlBody = md
     .split('\n')
     .map(line => {
@@ -77,6 +89,8 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
       return `<p>${escapeHtml(line)}</p>`
     })
     .join('\n')
+  
+  console.log('✅ HTML body generated, length:', htmlBody.length)
 
   let illustrationsHtml = ''
   if (illustrations && illustrations.length) {

@@ -146,12 +146,34 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
       src: ill?.imageUrl || ill?.url || '',
       caption: ill?.chapterTitle || ''
     })).filter(x => x.src)
+    
+    // ✅ CORRECTION BUG: Vérification que le contenu n'est pas vide
+    const contentToSend = processedText && processedText.trim().length > 0 
+      ? processedText 
+      : "Contenu non disponible. Veuillez réessayer la génération."
+    
+    console.log('📤 Export API call:', {
+      format,
+      contentLength: contentToSend.length,
+      contentPreview: contentToSend.substring(0, 100) + '...',
+      hasCover: !!coverData,
+      illustrationsCount: illustrationPayload.length
+    })
+    
     const res = await fetch(`/api/export/${format}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cover: coverData, content: processedText, illustrations: illustrationPayload })
+      body: JSON.stringify({ 
+        cover: coverData, 
+        content: contentToSend, 
+        illustrations: illustrationPayload 
+      })
     })
-    if (!res.ok) throw new Error(`Export ${format} failed`)
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+      console.error(`❌ Export ${format} failed:`, errorData)
+      throw new Error(`Export ${format} failed: ${errorData.error || res.statusText}`)
+    }
     return await res.blob()
   }
 

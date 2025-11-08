@@ -11,8 +11,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { cover, content, illustrations } = body as { cover: any, content: string, illustrations?: { src: string; caption?: string }[] }
 
+    // ✅ CORRECTION BUG: Validation améliorée avec logs détaillés
+    console.log('📥 EPUB Export request received:', {
+      hasCover: !!cover,
+      contentLength: content?.length || 0,
+      contentPreview: content?.substring(0, 150) || '(empty)',
+      illustrationsCount: illustrations?.length || 0
+    })
+
     if (!cover || !content) {
+      console.error('❌ EPUB Export failed: Missing cover or content')
       return NextResponse.json({ error: 'cover and content required' }, { status: 400 })
+    }
+    
+    if (content.trim().length < 10) {
+      console.error('❌ EPUB Export failed: Content too short:', content.length)
+      return NextResponse.json({ error: 'content is too short (minimum 10 characters)' }, { status: 400 })
     }
 
     const img = cover.includeIllustrationInPDF !== false ? await inlineImage(cover) : undefined

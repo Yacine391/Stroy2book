@@ -214,11 +214,16 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   // Fonction pour passer à l'étape suivante (applique l'action sélectionnée si non appliquée)
   const handleNext = async () => {
     setError("")
+    
+    // ✅ CORRECTION BUG: S'assurer qu'on a toujours du contenu
+    let finalText = currentText
+    
     // Si une action est sélectionnée mais pas encore appliquée, l'appliquer automatiquement
     if (selectedAction && selectedAction !== lastAppliedAction) {
       try {
         setIsProcessing(true)
         const processedText = await processWithAI(selectedAction, currentText)
+        finalText = processedText
         setCurrentText(processedText)
         setHistory(prev => [...prev, {
           id: Date.now().toString(),
@@ -230,12 +235,26 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
         setLastAppliedAction(selectedAction)
       } catch (e) {
         setError('Erreur lors de l\'application automatique de l\'action IA')
+        // En cas d'erreur, utiliser le texte actuel
+        finalText = currentText
       } finally {
         setIsProcessing(false)
       }
     }
 
-    onNext({ processedText: currentText, history })
+    // ✅ VALIDATION FINALE: Vérifier qu'on a du contenu
+    if (!finalText || finalText.trim().length < 10) {
+      setError("❌ Le texte est vide ou trop court. Impossible de continuer.")
+      return
+    }
+
+    console.log('✅ Texte final pour export:', {
+      length: finalText.length,
+      wordCount: finalText.split(/\s+/).length,
+      preview: finalText.substring(0, 200) + '...'
+    })
+
+    onNext({ processedText: finalText, history })
   }
 
   const formatDate = (date: Date) => {
