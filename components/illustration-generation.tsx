@@ -197,6 +197,8 @@ export default function IllustrationGeneration({ textData, processedText, coverD
   // Génération d'image avec IA (VRAIE API !)
   const generateImage = async (prompt: string, style: string): Promise<string> => {
     try {
+      console.log('🎨 Generating illustration:', { prompt: prompt.substring(0, 100), style });
+      
       const response = await fetch('/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,7 +211,18 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         throw new Error(data.error || 'Erreur API');
       }
 
-      return data.imageUrl;
+      // ✅ Gérer à la fois imageUrl ET imageBase64
+      const imageUrl = data.imageBase64 
+        ? `data:image/png;base64,${data.imageBase64}`
+        : data.imageUrl;
+      
+      console.log('✅ Image generated:', imageUrl ? 'success' : 'failed');
+      
+      if (!imageUrl) {
+        throw new Error('Aucune image retournée par l\'API');
+      }
+
+      return imageUrl;
     } catch (error: any) {
       console.error('Erreur génération image:', error);
       // Fallback sur placeholder en cas d'erreur
