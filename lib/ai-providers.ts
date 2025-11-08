@@ -94,7 +94,7 @@ function getStyleInstructions(style: string): string {
 export function buildPrompt(action: AIAction, text: string, style: string = 'general', desiredPages?: number): string {
   const styleInstructions = getStyleInstructions(style);
   const pageInstructions = desiredPages 
-    ? `\n12. IMPORTANT: L'utilisateur veut un ebook de ${desiredPages} pages. Génère environ ${desiredPages * 250} mots (250 mots par page). Développe suffisamment pour atteindre cette longueur.`
+    ? `\n12. CRITIQUE: L'utilisateur veut un ebook de ${desiredPages} pages. Tu DOIS générer MINIMUM ${desiredPages * 250} mots (250 mots/page). DÉVELOPPE AU MAXIMUM pour atteindre cette longueur. Ajoute des détails, des exemples, du contexte. NE SOIS PAS CONCIS, SOIS COMPLET.`
     : '';
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:
@@ -128,13 +128,15 @@ ${text}
 
 TEXTE AMÉLIORÉ (commence directement, sans introduction):`,
 
-    expand: `Tu es un écrivain expert. Développe ce texte en ajoutant beaucoup plus de détails, d'exemples concrets, d'explications et de descriptions. Enrichis le contenu pour le rendre beaucoup plus complet et captivant. AUGMENTE le contenu d'au moins 100%.
+    expand: `Tu es un écrivain expert. Développe ce texte de manière TRÈS SUBSTANTIELLE en ajoutant énormément de détails, d'exemples concrets, d'explications approfondies, de descriptions riches, d'anecdotes, de contexte historique/scientifique/culturel selon le sujet. 
+
+IMPORTANT: MULTIPLIE la longueur par 3 à 5 minimum. Si le texte fait 200 mots, génère 600-1000 mots. Développe CHAQUE idée en profondeur. N'hésite pas à être long et détaillé.
 ${langHint}
 
 TEXTE À DÉVELOPPER:
 ${text}
 
-TEXTE DÉVELOPPÉ (commence directement):`,
+TEXTE DÉVELOPPÉ ET TRÈS ENRICHI (commence directement):`,
 
     shorten: `Tu es un rédacteur expert. Condense ce texte en gardant uniquement les idées principales et essentielles. Réduis d'environ 30% tout en préservant le sens et la clarté.
 ${langHint}

@@ -502,12 +502,18 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
         throw new Error("URL d'image invalide reçue de l'API")
       }
 
+      // ✅ CORRECTION: Priorité base64, mais aussi URL
       if (data.imageBase64) {
-        setGeneratedCoverBase64(data.imageBase64)
-        setGeneratedCoverUrl("")
+        const dataUrl = `data:image/png;base64,${data.imageBase64}`;
+        setGeneratedCoverUrl(dataUrl);
+        setGeneratedCoverBase64(data.imageBase64);
+        console.log('✅ Cover set with base64, length:', data.imageBase64.length);
+      } else if (data.imageUrl) {
+        setGeneratedCoverUrl(data.imageUrl);
+        setGeneratedCoverBase64("");
+        console.log('✅ Cover set with URL:', data.imageUrl.substring(0, 50));
       } else {
-        setGeneratedCoverUrl(data.imageUrl)
-        setGeneratedCoverBase64("")
+        throw new Error('Aucune image retournée');
       }
       setRetryCount(0)
       setGenerationAbortController(null)
@@ -530,16 +536,8 @@ NO TEXT, NO LETTERS, NO WORDS on the image.`;
 
       console.error(`❌ Erreur génération couverture (tentative ${attemptNumber}):`, err);
       
-      // Retry automatique (max 2 tentatives)
-      if (attemptNumber < 2) {
-        console.log(`🔄 Tentative automatique ${attemptNumber + 1}/2...`)
-        setError(`Tentative ${attemptNumber} échouée. Nouvelle tentative avec prompt amélioré...`)
-        // Attendre 2 secondes avant de réessayer
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        // Réessayer avec un prompt amélioré
-        await generateCover(useCustomDescription, attemptNumber + 1)
-        return
-      }
+      // ✅ PAS DE RETRY AUTOMATIQUE - L'utilisateur peut réessayer manuellement
+      // Cela évite d'attendre trop longtemps
       
       // Après 2 échecs, afficher erreur complète
       const errorMessage = `❌ Erreur génération (2 tentatives) : ${err.message || "Service d'image indisponible"}`
