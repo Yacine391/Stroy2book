@@ -89,20 +89,26 @@ function getStyleInstructions(style: string): string {
 }
 
 /**
- * Construire le prompt selon l'action demandée et le style
+ * Construire le prompt selon l'action demandée, le style et le nombre de pages
  */
-export function buildPrompt(action: AIAction, text: string, style: string = 'general'): string {
+export function buildPrompt(action: AIAction, text: string, style: string = 'general', desiredPages?: number): string {
   const styleInstructions = getStyleInstructions(style);
+  const pageInstructions = desiredPages 
+    ? `\n12. IMPORTANT: L'utilisateur veut un ebook de ${desiredPages} pages. Génère environ ${desiredPages * 250} mots (250 mots par page). Développe suffisamment pour atteindre cette longueur.`
+    : '';
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:
 1. Conserve EXACTEMENT la langue d'origine du texte
 2. ${styleInstructions}
-3. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
-4. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..."
-5. Retourne DIRECTEMENT le texte transformé, rien d'autre
-6. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
-7. COMMENCE directement par le contenu transformé
-8. GÉNÈRE un contenu UNIQUE et ORIGINAL - Seed: ${Date.now() + Math.random()}
+3. GÉNÈRE LE CONTENU RÉEL ET COMPLET - PAS de méta-description comme "Je vais écrire..." ou "Voici ce que je vais faire..."
+4. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
+5. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..." ou "Je vais rédiger..."
+6. NE DIS PAS ce que tu vas faire, FAIS-LE directement
+7. INTERDICTION de décrire le processus ou le plan - GÉNÈRE le contenu final immédiatement
+8. Retourne DIRECTEMENT le texte transformé, rien d'autre
+9. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
+10. COMMENCE directement par le contenu transformé
+11. GÉNÈRE un contenu UNIQUE et ORIGINAL - Seed: ${Date.now() + Math.random()}${pageInstructions}
 `;
 
   const prompts: Record<AIAction, string> = {
@@ -252,17 +258,17 @@ function cleanAIResponse(text: string): string {
 /**
  * FONCTION PRINCIPALE : Générer du contenu avec l'IA configurée
  */
-export async function generateWithAI(action: AIAction, text: string, style: string = 'general'): Promise<string> {
+export async function generateWithAI(action: AIAction, text: string, style: string = 'general', desiredPages?: number): Promise<string> {
   const config = getAIConfig();
 
-  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model, '- Style:', style);
+  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model, '- Style:', style, '- Desired pages:', desiredPages || 'not specified');
 
   if (!config.apiKey) {
     throw new Error(`Clé API manquante pour ${config.provider}. Configurez-la dans .env.local`);
   }
 
-  // Construire le prompt avec le style
-  const prompt = buildPrompt(action, text, style);
+  // Construire le prompt avec le style et le nombre de pages
+  const prompt = buildPrompt(action, text, style, desiredPages);
 
   let processedText: string;
 

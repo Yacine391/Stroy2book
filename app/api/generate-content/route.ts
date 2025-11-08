@@ -4,9 +4,9 @@ import { generateWithAI, getProviderName, isAIConfigured } from '@/lib/ai-provid
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, text, style } = body;
+    const { action, text, style, desiredPages } = body;
 
-    console.log('📥 Generate-content request:', { action, style: style || 'general', textLength: text?.length || 0 });
+    console.log('📥 Generate-content request:', { action, style: style || 'general', textLength: text?.length || 0, desiredPages: desiredPages || 'not specified' });
     console.log('🤖 AI Provider:', getProviderName());
 
     // Vérifier que l'IA est configurée
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🤖 Calling AI for action:', action, 'with style:', style || 'general');
+    console.log('🤖 Calling AI for action:', action, 'with style:', style || 'general', 'desired pages:', desiredPages);
 
-    // ✅ Utiliser le système multi-IA avec le style
-    let processedText = await generateWithAI(action, text, style || 'general');
+    // ✅ Utiliser le système multi-IA avec le style et nombre de pages
+    let processedText = await generateWithAI(action, text, style || 'general', desiredPages);
 
     console.log('✅ AI response received, length:', processedText?.length || 0);
 

@@ -119,13 +119,13 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
 
   // Fonction pour appeler l'IA (VRAIE API)
   const processWithAI = async (action: string, text: string, style: string): Promise<string> => {
-    console.log('🚀 Calling AI API:', { action, style, textLength: text.length });
+    console.log('🚀 Calling AI API:', { action, style, textLength: text.length, desiredPages: textData.desiredPages });
     
     try {
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, text, style })
+        body: JSON.stringify({ action, text, style, desiredPages: textData.desiredPages })
       });
 
       console.log('📡 API Response status:', response.status);
