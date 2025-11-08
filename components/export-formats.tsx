@@ -147,10 +147,19 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
       caption: ill?.chapterTitle || ''
     })).filter(x => x.src)
     
-    // ✅ CORRECTION BUG: Vérification que le contenu n'est pas vide
+    // ✅ CORRECTION BUG: Vérification que le contenu n'est pas vide + Diagnostic complet
+    console.log('📊 Export Debug - processedText received:', {
+      type: typeof processedText,
+      isString: typeof processedText === 'string',
+      length: processedText?.length || 0,
+      trimmedLength: processedText?.trim?.()?.length || 0,
+      preview: processedText?.substring?.(0, 200) || 'NO PREVIEW',
+      rawValue: processedText
+    });
+    
     const contentToSend = processedText && processedText.trim().length > 0 
       ? processedText 
-      : "Contenu non disponible. Veuillez réessayer la génération."
+      : "⚠️ ERREUR: Contenu vide. Le texte transformé par l'IA n'a pas été reçu correctement. Veuillez réessayer la génération IA avant d'exporter."
     
     console.log('📤 Export API call:', {
       format,
