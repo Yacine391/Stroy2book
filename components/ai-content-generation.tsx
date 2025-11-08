@@ -96,6 +96,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
 
   // Fonction pour appeler l'IA (VRAIE API)
   const processWithAI = async (action: string, text: string): Promise<string> => {
+    console.log('🚀 Calling AI API:', { action, textLength: text.length });
+    
     try {
       const response = await fetch('/api/generate-content', {
         method: 'POST',
@@ -103,44 +105,43 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
         body: JSON.stringify({ action, text })
       });
 
+      console.log('📡 API Response status:', response.status);
+
       const data = await response.json();
+      console.log('📦 API Response data:', { 
+        success: data.success, 
+        hasProcessedText: !!data.processedText,
+        processedTextLength: data.processedText?.length || 0,
+        error: data.error
+      });
       
       if (!response.ok) {
+        console.error('❌ API returned error:', data.error);
+        
+        // ✅ Message d'erreur explicite pour la clé API
+        if (data.error?.includes('not found') || data.error?.includes('404')) {
+          throw new Error('❌ CLÉ API INVALIDE : Obtenez votre clé gratuite sur https://makersuite.google.com/app/apikey et configurez-la dans .env.local');
+        }
+        
         throw new Error(data.error || 'Erreur API');
       }
 
+      if (!data.processedText || data.processedText.trim().length < 10) {
+        console.error('❌ API returned empty or too short text');
+        throw new Error('L\'IA n\'a pas retourné de contenu valide');
+      }
+
+      console.log('✅ AI processing successful');
+      console.log('📄 Preview:', data.processedText.substring(0, 200) + '...');
+
       return data.processedText;
     } catch (error: any) {
-      console.error('Erreur API:', error);
-      // Fallback sur simulation en cas d'erreur
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let processedText = text
-          
-          switch (action) {
-          case "improve":
-            processedText = text + "\n\n[Texte amélioré par l'IA avec un style plus riche et une meilleure fluidité]"
-            break
-          case "shorten":
-            processedText = text.substring(0, Math.floor(text.length * 0.7)) + "\n\n[Texte raccourci par l'IA]"
-            break
-          case "expand":
-            processedText = text + "\n\n[Développements supplémentaires ajoutés par l'IA avec plus de détails et d'exemples concrets]"
-            break
-          case "simplify":
-            processedText = text + "\n\n[Texte simplifié par l'IA avec un vocabulaire plus accessible]"
-            break
-          case "correct":
-            processedText = text + "\n\n[Corrections grammaticales et orthographiques appliquées par l'IA]"
-            break
-          case "reformulate":
-            processedText = text + "\n\n[Texte reformulé par l'IA avec un style différent]"
-            break
-        }
-        
-        resolve(processedText)
-      }, 2000)
-    });
+      console.error('❌ Erreur AI processing:', error);
+      console.error('Stack:', error.stack);
+      
+      // ✅ CORRECTION: Ne plus utiliser de fallback silencieux
+      // Propager l'erreur pour que l'utilisateur sache qu'il y a un problème
+      throw new Error(`Erreur IA: ${error.message}. Vérifiez votre connexion et votre clé API Google Gemini.`);
     }
   }
 
@@ -151,12 +152,35 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
       return
     }
 
+    if (currentText.trim().length < 10) {
+      setError("Le texte est trop court (minimum 10 caractères)")
+      return
+    }
+
     setIsProcessing(true)
     setError("")
     setSuccess("")
 
     try {
+      console.log('🎯 Starting AI action:', selectedAction);
       const processedText = await processWithAI(selectedAction, currentText)
+      
+      console.log('✅ AI action completed, text length:', processedText.length);
+      
+      // ✅ VALIDATION: Vérifier que le texte transformé est différent et valide
+      if (processedText === currentText) {
+        console.warn('⚠️ Processed text is identical to original');
+        setError("L'IA n'a pas transformé le texte. Veuillez réessayer avec une autre action.")
+        return
+      }
+
+      if (processedText.includes('[Texte amélioré par l\'IA') || 
+          processedText.includes('[Texte raccourci par l\'IA') ||
+          processedText.includes('[Développements supplémentaires')) {
+        console.error('❌ Detected fallback placeholder in response');
+        setError("L'IA n'a pas réussi à traiter le texte. Vérifiez votre clé API Google Gemini.")
+        return
+      }
       
       // Ajouter à l'historique
       const newEntry: HistoryEntry = {
@@ -169,11 +193,14 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
       
       setHistory(prev => [...prev, newEntry])
       setCurrentText(processedText)
-      setSuccess(`Action "${newEntry.action}" appliquée avec succès`)
+      setSuccess(`✅ Action "${newEntry.action}" appliquée avec succès ! Le texte a été transformé.`)
       setLastAppliedAction(selectedAction)
       
-    } catch (err) {
-      setError("Erreur lors du traitement IA")
+      console.log('🎉 AI action successful, history updated');
+      
+    } catch (err: any) {
+      console.error('❌ Error in handleAIAction:', err);
+      setError(err.message || "Erreur lors du traitement IA. Vérifiez votre clé API Google Gemini.")
     } finally {
       setIsProcessing(false)
     }
