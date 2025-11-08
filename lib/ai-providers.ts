@@ -179,18 +179,38 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.8,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: 8192,
-    },
-  });
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.8,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      },
+    });
 
-  const response = await result.response;
-  return response.text();
+    const response = await result.response;
+    const text = response.text();
+    
+    if (!text || text.trim().length === 0) {
+      throw new Error('L\'API Gemini a retourné une réponse vide');
+    }
+    
+    return text;
+  } catch (error: any) {
+    console.error('❌ Gemini API Error:', error);
+    if (error.message?.includes('timeout')) {
+      throw new Error('Timeout: La génération a pris trop de temps. Essayez avec un texte plus court ou réessayez.');
+    }
+    if (error.message?.includes('429')) {
+      throw new Error('Quota API dépassé. Attendez quelques minutes ou créez une nouvelle clé API.');
+    }
+    if (error.message?.includes('403') || error.message?.includes('401')) {
+      throw new Error('Clé API invalide ou expirée. Vérifiez votre clé dans .env.local');
+    }
+    throw new Error(`Erreur Gemini: ${error.message || 'Erreur inconnue'}`);
+  }
 }
 
 /**

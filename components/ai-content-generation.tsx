@@ -130,6 +130,15 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
 
       console.log('📡 API Response status:', response.status);
 
+      // ✅ Vérifier si la réponse est bien du JSON avant de parser
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ Response is not JSON:', contentType);
+        const text = await response.text();
+        console.error('Response text:', text.substring(0, 500));
+        throw new Error('L\'API n\'a pas retourné de JSON valide. Cela peut être dû à un timeout ou une erreur serveur.');
+      }
+
       const data = await response.json();
       console.log('📦 API Response data:', { 
         success: data.success, 
