@@ -34,6 +34,7 @@ interface AIContentGenerationProps {
 export default function AIContentGeneration({ textData, onNext, onBack }: AIContentGenerationProps) {
   const [currentText, setCurrentText] = useState(textData.text)
   const [selectedAction, setSelectedAction] = useState("")
+  const [selectedStyle, setSelectedStyle] = useState("general")
   const [isProcessing, setIsProcessing] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
@@ -41,6 +42,28 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   const [success, setSuccess] = useState("")
   const [lastAppliedAction, setLastAppliedAction] = useState<string>("")
   const [recommendation, setRecommendation] = useState<{msg: string; suggest?: string} | null>(null)
+
+  // Styles d'écriture disponibles
+  const writingStyles = [
+    { value: "general", label: "🌐 Général", description: "Style équilibré et polyvalent" },
+    { value: "academic", label: "🎓 Académique", description: "Style formel et scientifique" },
+    { value: "creative", label: "🎨 Créatif", description: "Style littéraire et imaginatif" },
+    { value: "professional", label: "💼 Professionnel", description: "Style d'entreprise et formel" },
+    { value: "casual", label: "😊 Décontracté", description: "Style informel et amical" },
+    { value: "storytelling", label: "📖 Narratif", description: "Style conteur d'histoires" },
+    { value: "poetic", label: "✨ Poétique", description: "Style littéraire et élégant" },
+    { value: "journalistic", label: "📰 Journalistique", description: "Style factuel et objectif" },
+    { value: "technical", label: "🔧 Technique", description: "Style précis et spécialisé" },
+    { value: "persuasive", label: "🎯 Persuasif", description: "Style convaincant et argumentatif" },
+    { value: "educational", label: "🏫 Pédagogique", description: "Style didactique et clair" },
+    { value: "historical", label: "🏛️ Historique", description: "Style documenté et chronologique" },
+    { value: "fantasy", label: "🧙 Fantaisie", description: "Style merveilleux et épique" },
+    { value: "scifi", label: "🚀 Science-Fiction", description: "Style futuriste et technologique" },
+    { value: "romantic", label: "❤️ Romantique", description: "Style émotionnel et sensible" },
+    { value: "humor", label: "😂 Humoristique", description: "Style léger et amusant" },
+    { value: "mystery", label: "🕵️ Mystère", description: "Style suspense et intrigue" },
+    { value: "philosophical", label: "🧐 Philosophique", description: "Style réflexif et profond" }
+  ]
 
   // Actions IA disponibles
   const aiActions = [
@@ -95,14 +118,14 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   }, [textData.text])
 
   // Fonction pour appeler l'IA (VRAIE API)
-  const processWithAI = async (action: string, text: string): Promise<string> => {
-    console.log('🚀 Calling AI API:', { action, textLength: text.length });
+  const processWithAI = async (action: string, text: string, style: string): Promise<string> => {
+    console.log('🚀 Calling AI API:', { action, style, textLength: text.length });
     
     try {
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, text })
+        body: JSON.stringify({ action, text, style })
       });
 
       console.log('📡 API Response status:', response.status);
@@ -162,8 +185,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     setSuccess("")
 
     try {
-      console.log('🎯 Starting AI action:', selectedAction);
-      const processedText = await processWithAI(selectedAction, currentText)
+      console.log('🎯 Starting AI action:', selectedAction, 'with style:', selectedStyle);
+      const processedText = await processWithAI(selectedAction, currentText, selectedStyle)
       
       console.log('✅ AI action completed, text length:', processedText.length);
       
@@ -249,7 +272,7 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     if (selectedAction && selectedAction !== lastAppliedAction) {
       try {
         setIsProcessing(true)
-        const processedText = await processWithAI(selectedAction, currentText)
+        const processedText = await processWithAI(selectedAction, currentText, selectedStyle)
         finalText = processedText
         setCurrentText(processedText)
         setHistory(prev => [...prev, {
@@ -316,6 +339,27 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label>Style d'écriture</Label>
+                <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un style" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {writingStyles.map((style) => (
+                      <SelectItem key={style.value} value={style.value}>
+                        <div className="flex items-center space-x-2">
+                          <div>
+                            <div className="font-medium">{style.label}</div>
+                            <div className="text-xs text-gray-500">{style.description}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div>
                 <Label>Choisir une action</Label>
                 <Select value={selectedAction} onValueChange={setSelectedAction}>

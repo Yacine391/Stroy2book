@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ CORRECTION DÉFINITIVE: Utiliser gemini-pro (stable, testé, fonctionne)
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    // ✅ CORRECTION: Utiliser gemini-2.5-flash (stable, testé, fonctionne)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Construire le contenu à analyser
     let textToAnalyze = content || '';
@@ -33,7 +33,13 @@ export async function POST(request: NextRequest) {
 Contenu des chapitres/idées:
 ${textToAnalyze.substring(0, 1500)}
 
-Génère un titre court (max 8 mots), impactant et mémorable qui capture l'essence du contenu.
+IMPORTANT: 
+- Génère un titre UNIQUE et ORIGINAL qui n'a jamais été utilisé
+- Maximum 8 mots
+- Impactant et mémorable
+- Capture l'essence du contenu
+- Seed unique: ${Date.now() + Math.random()}
+
 Réponds UNIQUEMENT avec le titre, sans guillemets ni explications.`;
 
     const result = await model.generateContent(prompt);

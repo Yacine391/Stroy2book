@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
 
     // Ajouter un seed aléatoire pour assurer l'unicité de chaque image
     const uniqueSeed = Date.now() + Math.random();
+    
+    console.log(`🎨 Génération image UNIQUE avec seed: ${uniqueSeed}`);
 
     // Essai 1: Pollinations (URL) avec contraintes no text et taille verticale
     const pollinationsPrompt = buildNoTextPrompt(fullPrompt)

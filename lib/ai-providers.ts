@@ -62,21 +62,59 @@ export function getAIConfig(): AIConfig {
 }
 
 /**
- * Construire le prompt selon l'action demandée
+ * Obtenir les instructions de style selon le style sélectionné
  */
-export function buildPrompt(action: AIAction, text: string): string {
+function getStyleInstructions(style: string): string {
+  const styleMap: Record<string, string> = {
+    general: "Utilise un style équilibré, clair et accessible.",
+    academic: "Adopte un ton formel et académique. Utilise un vocabulaire scientifique et des formulations rigoureuses.",
+    creative: "Sois créatif et littéraire. Utilise des métaphores, des images poétiques et un style élégant.",
+    professional: "Utilise un ton professionnel d'entreprise. Style formel mais accessible.",
+    casual: "Adopte un ton décontracté et amical. Parle comme si tu conversais avec un ami.",
+    storytelling: "Raconte comme un conteur d'histoires. Crée du suspense et de l'émotion.",
+    poetic: "Utilise un style poétique et lyrique. Privilégie la beauté de la langue.",
+    journalistic: "Adopte un style journalistique factuel et objectif. Va droit au but.",
+    technical: "Sois précis et technique. Utilise le vocabulaire spécialisé approprié.",
+    persuasive: "Sois convaincant et argumentatif. Structure ton propos pour persuader.",
+    educational: "Explique de manière pédagogique et didactique. Rends le sujet facile à comprendre.",
+    historical: "Adopte un style historique documenté. Contextualise les faits chronologiquement.",
+    fantasy: "Écris dans un style merveilleux et épique. Crée un univers fantastique.",
+    scifi: "Utilise un style science-fiction futuriste. Intègre des éléments technologiques.",
+    romantic: "Adopte un ton romantique et émotionnel. Exprime les sentiments avec sensibilité.",
+    humor: "Sois léger et amusant. Utilise l'humour avec subtilité.",
+    mystery: "Crée du suspense et de l'intrigue. Maintiens le mystère.",
+    philosophical: "Adopte un ton philosophique réflexif. Pose des questions profondes."
+  };
+  return styleMap[style] || styleMap.general;
+}
+
+/**
+ * Construire le prompt selon l'action demandée et le style
+ */
+export function buildPrompt(action: AIAction, text: string, style: string = 'general'): string {
+  const styleInstructions = getStyleInstructions(style);
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:
 1. Conserve EXACTEMENT la langue d'origine du texte
-2. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
-3. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..."
-4. Retourne DIRECTEMENT le texte transformé, rien d'autre
-5. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
-6. COMMENCE directement par le contenu transformé
+2. ${styleInstructions}
+3. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
+4. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..."
+5. Retourne DIRECTEMENT le texte transformé, rien d'autre
+6. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
+7. COMMENCE directement par le contenu transformé
+8. GÉNÈRE un contenu UNIQUE et ORIGINAL - Seed: ${Date.now() + Math.random()}
 `;
 
   const prompts: Record<AIAction, string> = {
-    improve: `Tu es un écrivain professionnel. Améliore ce texte en enrichissant le style, en développant les idées, en améliorant la fluidité et en corrigeant les erreurs. Garde le même sens mais rends-le beaucoup plus captivant, professionnel et détaillé. DÉVELOPPE le contenu pour qu'il soit plus riche et complet.
+    improve: `Tu es un écrivain professionnel. Améliore ce texte en gardant LE MÊME SENS et LA MÊME INTENTION que l'utilisateur.
+
+RÈGLES STRICTES:
+1. RESPECTE l'intention de l'utilisateur : si c'est une simple demande, reste simple
+2. Améliore MODÉRÉMENT le style et la fluidité (pas de transformation radicale)
+3. Corrige les erreurs grammaticales
+4. N'ajoute PAS de vocabulaire ultra-académique sauf si le contexte l'exige
+5. Garde le TON NATUREL du texte original
+6. Développe légèrement SEULEMENT si c'est nécessaire pour la clarté
 ${langHint}
 
 TEXTE À AMÉLIORER:
@@ -214,17 +252,17 @@ function cleanAIResponse(text: string): string {
 /**
  * FONCTION PRINCIPALE : Générer du contenu avec l'IA configurée
  */
-export async function generateWithAI(action: AIAction, text: string): Promise<string> {
+export async function generateWithAI(action: AIAction, text: string, style: string = 'general'): Promise<string> {
   const config = getAIConfig();
 
-  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model);
+  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model, '- Style:', style);
 
   if (!config.apiKey) {
     throw new Error(`Clé API manquante pour ${config.provider}. Configurez-la dans .env.local`);
   }
 
-  // Construire le prompt
-  const prompt = buildPrompt(action, text);
+  // Construire le prompt avec le style
+  const prompt = buildPrompt(action, text, style);
 
   let processedText: string;
 
