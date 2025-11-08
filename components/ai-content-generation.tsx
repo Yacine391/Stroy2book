@@ -214,28 +214,37 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   // Fonction pour passer à l'étape suivante (applique l'action sélectionnée si non appliquée)
   const handleNext = async () => {
     setError("")
+    let finalText = currentText
+    let finalHistory = history
+
     // Si une action est sélectionnée mais pas encore appliquée, l'appliquer automatiquement
     if (selectedAction && selectedAction !== lastAppliedAction) {
       try {
         setIsProcessing(true)
         const processedText = await processWithAI(selectedAction, currentText)
-        setCurrentText(processedText)
-        setHistory(prev => [...prev, {
+        const newEntry: HistoryEntry = {
           id: Date.now().toString(),
           timestamp: new Date(),
           action: aiActions.find(a => a.value === selectedAction)?.label || selectedAction,
           content: processedText,
           preview: processedText.substring(0, 150) + '...'
-        }])
+        }
+
+        finalText = processedText
+        finalHistory = [...history, newEntry]
+
+        setCurrentText(processedText)
+        setHistory(finalHistory)
         setLastAppliedAction(selectedAction)
       } catch (e) {
         setError('Erreur lors de l\'application automatique de l\'action IA')
+        return
       } finally {
         setIsProcessing(false)
       }
     }
 
-    onNext({ processedText: currentText, history })
+    onNext({ processedText: finalText, history: finalHistory })
   }
 
   const formatDate = (date: Date) => {
