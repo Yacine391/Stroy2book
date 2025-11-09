@@ -214,7 +214,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
       }
 
       // ✅ Gérer à la fois imageUrl ET imageBase64
-      const imageUrl = data.imageBase64 
+      let imageUrl = data.imageBase64 
         ? `data:image/png;base64,${data.imageBase64}`
         : data.imageUrl;
       
@@ -227,6 +227,24 @@ export default function IllustrationGeneration({ textData, processedText, coverD
       
       if (!imageUrl || imageUrl.length < 20) {
         throw new Error('URL d\'image invalide ou vide');
+      }
+
+      // ✅ Si c'est une URL Pollinations externe, la convertir en base64 pour CORS
+      if (imageUrl.startsWith('http') && imageUrl.includes('pollinations.ai')) {
+        try {
+          console.log('🔄 Converting Pollinations URL to base64 for CORS...');
+          const imgResponse = await fetch(imageUrl);
+          const blob = await imgResponse.blob();
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          imageUrl = base64;
+          console.log('✅ Pollinations URL converted to base64');
+        } catch (e) {
+          console.warn('⚠️ Could not convert to base64, using URL directly:', e);
+        }
       }
 
       return imageUrl;

@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
     
     console.log(`🎨 Génération image UNIQUE avec seed: ${uniqueSeed}`);
 
-    // Essai 1: Pollinations (URL) avec contraintes no text et taille verticale
-    const pollinationsPrompt = buildNoTextPrompt(fullPrompt)
-    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(pollinationsPrompt)}?width=1600&height=2400&seed=${uniqueSeed}&nologo=true`
+    // Essai 1: Pollinations (URL) avec contraintes STRICTES no text et taille verticale
+    const pollinationsPrompt = buildNoTextPrompt(fullPrompt) + ' NO TEXT NO LETTERS NO WORDS'
+    const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(pollinationsPrompt)}?width=1600&height=2400&seed=${uniqueSeed}&nologo=true&enhance=true`
 
     console.log(`🎨 Génération image (Pollinations tentative 1) : ${style} - ${prompt.substring(0, 80)}...`)
 
