@@ -464,17 +464,8 @@ Quality: masterpiece, award-winning, cinematic lighting, ultra-detailed, 8K reso
 Ready for 1600x2400 px print.
 NO TEXT OVERLAY, NO LETTERS, NO WORDS on the image.`;
         } else {
-          // Version standard
-          coverPrompt = `Professional book cover generation:
-Title: "${TITLE}"
-Context: "${TEXT.substring(0, 250)}..."
-
-Create a VERTICAL book cover illustration. Style: ${styleHint}.
-Centered composition. Palette: ${palette}.
-Key visual elements: ${keyElements}.
-Realistic, ultra-detailed. Accurate symbols and colors.
-Avoid distortions. 1600x2400 px format.
-NO TEXT, NO LETTERS, NO WORDS on the image.`;
+          // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE
+          coverPrompt = `Book cover: ${TITLE}. ${palette}. Professional, no text`;
         }
       }
       
