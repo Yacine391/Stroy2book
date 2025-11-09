@@ -170,77 +170,107 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     return pdf.splitTextToSize(text, maxWidth)
   }
 
-  // Page de couverture avec couleur personnalisée
-  pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
-  pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-
-  // Ajouter le filigrane sur la couverture si activé
-  if (ebookData.hasWatermark) {
-    addWatermark()
-  }
-
-  // Titre de la couverture
-  pdf.setFont(selectedFont, 'bold')
-  pdf.setFontSize(24)
-  pdf.setTextColor(60, 60, 60)
-  
-  const cleanedTitle = cleanContent(ebookData.title)
-  const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 24)
-  let titleY = pageHeight / 3
-  
-  titleLines.forEach((line, index) => {
-    const textWidth = pdf.getTextWidth(line)
-    const x = (pageWidth - textWidth) / 2
-    pdf.text(line, x, titleY + (index * 12))
-  })
-
-  // Auteur
-  if (ebookData.author) {
-    pdf.setFont(selectedFont, 'normal')
-    pdf.setFontSize(16)
-    pdf.setTextColor(100, 100, 100)
-    
-    const authorText = `par ${ebookData.author}`
-    const authorWidth = pdf.getTextWidth(authorText)
-    const authorX = (pageWidth - authorWidth) / 2
-    pdf.text(authorText, authorX, titleY + (titleLines.length * 12) + 20)
-  }
-
-  // ✅ AJOUTER L'IMAGE DE COUVERTURE SI DISPONIBLE
+  // ✅ PAGE DE COUVERTURE AVEC IMAGE PLEINE PAGE (si disponible)
   if (ebookData.coverImage) {
     try {
-      console.log('📸 Ajout de l\'image de couverture dans le PDF')
-      // Position centrée pour l'image (APRÈS le titre + auteur)
-      const baseY = titleY + (titleLines.length * 12) + 40
-      const imgWidth = 60 // 60mm de largeur (réduit de 80 pour plus d'espace)
-      const imgHeight = 90 // 90mm de hauteur (ratio 2:3 maintenu)
-      const imgX = (pageWidth - imgWidth) / 2
+      console.log('📸 Création page de couverture avec image pleine page')
       
-      // Calculer l'espace disponible
-      const availableSpace = pageHeight - 60 - baseY // 60 = marge bas + signature
+      // Image en pleine page (de bord à bord)
+      pdf.addImage(ebookData.coverImage, 'PNG', 0, 0, pageWidth, pageHeight)
+      console.log('✅ Image de couverture pleine page ajoutée')
       
-      // Si pas assez d'espace, mettre l'image plus haut (juste après le titre)
-      let imgY = baseY
-      if (availableSpace < imgHeight) {
-        imgY = titleY + (titleLines.length * 12) + 15 // Moins d'espace entre titre et image
-        console.log('⚠️ Espace réduit, image repositionnée plus haut')
+      // Ajouter un overlay semi-transparent pour rendre le texte lisible
+      pdf.setFillColor(0, 0, 0)
+      pdf.setGState(new pdf.GState({ opacity: 0.4 })) // 40% opacité
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      pdf.setGState(new pdf.GState({ opacity: 1 })) // Reset opacité
+      
+      // Titre PAR-DESSUS l'image (en blanc pour contraste)
+      pdf.setFont(selectedFont, 'bold')
+      pdf.setFontSize(28)
+      pdf.setTextColor(255, 255, 255) // Blanc
+      
+      const cleanedTitle = cleanContent(ebookData.title)
+      const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 28)
+      let titleY = pageHeight / 3
+      
+      titleLines.forEach((line, index) => {
+        const textWidth = pdf.getTextWidth(line)
+        const x = (pageWidth - textWidth) / 2
+        pdf.text(line, x, titleY + (index * 14))
+      })
+
+      // Auteur PAR-DESSUS (en blanc)
+      if (ebookData.author) {
+        pdf.setFont(selectedFont, 'normal')
+        pdf.setFontSize(18)
+        pdf.setTextColor(255, 255, 255)
+        
+        const authorText = `par ${ebookData.author}`
+        const authorWidth = pdf.getTextWidth(authorText)
+        const authorX = (pageWidth - authorWidth) / 2
+        pdf.text(authorText, authorX, titleY + (titleLines.length * 14) + 25)
       }
       
-      // Toujours ajouter l'image (même si léger débordement)
-      pdf.addImage(ebookData.coverImage, 'PNG', imgX, imgY, imgWidth, imgHeight)
-      console.log('✅ Image de couverture ajoutée au PDF', { imgY, imgWidth, imgHeight })
+      // Logo/signature en bas (en blanc)
+      pdf.setFont(selectedFont, 'italic')
+      pdf.setFontSize(10)
+      pdf.setTextColor(255, 255, 255)
+      const signature = 'Généré par HB Creator'
+      const signatureWidth = pdf.getTextWidth(signature)
+      pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
+      
     } catch (err) {
-      console.error('❌ Erreur ajout image couverture:', err)
+      console.error('❌ Erreur création couverture pleine page, fallback simple:', err)
+      // Fallback: Couverture simple sans image
+      createSimpleCover()
     }
+  } else {
+    // Pas d'image: couverture simple avec couleur
+    createSimpleCover()
   }
+  
+  // Fonction pour créer une couverture simple (fallback)
+  function createSimpleCover() {
+    pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+    pdf.rect(0, 0, pageWidth, pageHeight, 'F')
 
-  // Logo/signature en bas
-  pdf.setFont(selectedFont, 'italic')
-  pdf.setFontSize(10)
-  pdf.setTextColor(150, 150, 150)
-  const signature = 'Généré par HB Creator'
-  const signatureWidth = pdf.getTextWidth(signature)
-  pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
+    if (ebookData.hasWatermark) {
+      addWatermark()
+    }
+
+    pdf.setFont(selectedFont, 'bold')
+    pdf.setFontSize(24)
+    pdf.setTextColor(60, 60, 60)
+    
+    const cleanedTitle = cleanContent(ebookData.title)
+    const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 24)
+    let titleY = pageHeight / 3
+    
+    titleLines.forEach((line, index) => {
+      const textWidth = pdf.getTextWidth(line)
+      const x = (pageWidth - textWidth) / 2
+      pdf.text(line, x, titleY + (index * 12))
+    })
+
+    if (ebookData.author) {
+      pdf.setFont(selectedFont, 'normal')
+      pdf.setFontSize(16)
+      pdf.setTextColor(100, 100, 100)
+      
+      const authorText = `par ${ebookData.author}`
+      const authorWidth = pdf.getTextWidth(authorText)
+      const authorX = (pageWidth - authorWidth) / 2
+      pdf.text(authorText, authorX, titleY + (titleLines.length * 12) + 20)
+    }
+
+    pdf.setFont(selectedFont, 'italic')
+    pdf.setFontSize(10)
+    pdf.setTextColor(150, 150, 150)
+    const signature = 'Généré par HB Creator'
+    const signatureWidth = pdf.getTextWidth(signature)
+    pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
+  }
 
   // Nouvelle page pour le contenu
   pdf.addPage()

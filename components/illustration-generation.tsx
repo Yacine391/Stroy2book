@@ -233,17 +233,34 @@ export default function IllustrationGeneration({ textData, processedText, coverD
       if (imageUrl.startsWith('http') && imageUrl.includes('pollinations.ai')) {
         try {
           console.log('🔄 Converting Pollinations URL to base64 for CORS...');
-          const imgResponse = await fetch(imageUrl);
+          const imgResponse = await fetch(imageUrl, { mode: 'cors' });
+          if (!imgResponse.ok) {
+            throw new Error(`Fetch failed: ${imgResponse.status}`);
+          }
           const blob = await imgResponse.blob();
-          const base64 = await new Promise<string>((resolve) => {
+          if (blob.size === 0) {
+            throw new Error('Empty blob received');
+          }
+          console.log('📦 Blob size:', blob.size, 'bytes');
+          const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              if (!result || result.length < 100) {
+                reject(new Error('Invalid base64 result'));
+              } else {
+                resolve(result);
+              }
+            };
+            reader.onerror = () => reject(new Error('FileReader error'));
             reader.readAsDataURL(blob);
           });
           imageUrl = base64;
-          console.log('✅ Pollinations URL converted to base64');
+          console.log('✅ Pollinations URL converted to base64, length:', base64.length);
         } catch (e) {
-          console.warn('⚠️ Could not convert to base64, using URL directly:', e);
+          console.error('❌ Failed to convert to base64:', e);
+          console.warn('⚠️ Using URL directly as fallback');
+          // Garder l'URL originale en fallback
         }
       }
 
