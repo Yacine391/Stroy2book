@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateWithAI, getProviderName, isAIConfigured } from '@/lib/ai-providers';
 
-// Augmenter le timeout pour les générations longues
-export const maxDuration = 60; // 60 secondes au lieu de 10
+// Timeout pour génération de texte (peut être long pour beaucoup de pages)
+export const maxDuration = 120; // 2 minutes max
 
 export async function POST(request: NextRequest) {
   try {

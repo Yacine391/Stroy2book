@@ -35,8 +35,8 @@ async function generateWithOpenAI(prompt: string, size: '1024x1792' | '1792x1024
   }
 }
 
-// ✅ Augmenter le timeout pour génération d'images (peut prendre 30-60s)
-export const maxDuration = 90;
+// ✅ Timeout maximal Vercel pour génération d'images
+export const maxDuration = 300; // 5 minutes max
 
 export async function POST(request: NextRequest) {
   try {

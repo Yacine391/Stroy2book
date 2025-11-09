@@ -184,14 +184,8 @@ export default function IllustrationGeneration({ textData, processedText, coverD
     
     const visualElements = extractVisualElements(contentToAnalyze)
     
-    // Construire le prompt PRÉCIS comme pour les couvertures
-    const basePrompt = `Illustration réaliste en rapport avec le texte fourni`
-    const elementPrompt = visualElements.length > 0 
-      ? `. Scène montrant: ${visualElements.join(', ')}`
-      : `. Contexte: ${chapterTitle}`
-    const keywordPrompt = `. Tous les symboles et drapeaux doivent correspondre à la réalité. Composition équilibrée, style professionnel`
-    
-    return `${basePrompt}${elementPrompt}${keywordPrompt}, style ${selectedStyle}`
+    // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE
+    return `${chapterTitle}, ${visualElements.slice(0,2).join(', ')}, ${selectedStyle} style`
   }
 
   // Génération d'image avec IA (VRAIE API !)

@@ -94,7 +94,7 @@ function getStyleInstructions(style: string): string {
 export function buildPrompt(action: AIAction, text: string, style: string = 'general', desiredPages?: number): string {
   const styleInstructions = getStyleInstructions(style);
   const pageInstructions = desiredPages 
-    ? `\n12. CRITIQUE: L'utilisateur veut un ebook de ${desiredPages} pages. Tu DOIS générer MINIMUM ${desiredPages * 250} mots (250 mots/page). DÉVELOPPE AU MAXIMUM pour atteindre cette longueur. Ajoute des détails, des exemples, du contexte. NE SOIS PAS CONCIS, SOIS COMPLET.`
+    ? `\n12. IMPÉRATIF ABSOLU: L'utilisateur veut EXACTEMENT ${desiredPages} pages. Tu DOIS IMPÉRATIVEMENT générer AU MINIMUM ${desiredPages * 250} mots (250 mots par page = ${desiredPages * 250} mots MINIMUM). Si tu génères moins de ${desiredPages * 250} mots, c'est un ÉCHEC. DÉVELOPPE ÉNORMÉMENT, ajoute des chapitres, des sections, des exemples détaillés, du contexte historique/culturel, des anecdotes. MULTIPLIE le contenu jusqu'à atteindre ${desiredPages * 250} mots MINIMUM.`
     : '';
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:
@@ -188,7 +188,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
         temperature: 0.8,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384, // ✅ Doublé pour permettre plus de contenu
       },
     });
 
