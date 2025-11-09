@@ -11,7 +11,7 @@ async function fetchImageAsBase64(url: string): Promise<string> {
 }
 
 function buildNoTextPrompt(base: string) {
-  return `"[SYSTEM] Génère une image de couverture réaliste basée sur le titre et le résumé.\n- Format : vertical 1600x2400 px, haute résolution.\n- IMPORTANT : N'INCLURE AUCUN TEXTE, AUCUNE TYPOGRAPHIE, AUCUN WATERMARK, AUCUN LOGO. L'image doit être purement graphique/photographique.\n- Respecter drapeaux et symboles réels.\n- Style : adapté au contexte. Composition centrée, pas de visage déformé.\n- Retour : image en base64.",\nDescription: ${base}\n--no-text --remove-typography --no-letters --no-words`
+  return `${base}, CRITICAL RULE: ZERO TEXT ALLOWED - absolutely no text overlay, no typography, no letters, no numbers, no words visible anywhere, no watermarks, no captions, no signs, no labels, pure visual imagery only, text-free illustration, 100% no text`
 }
 
 async function generateWithOpenAI(prompt: string, size: '1024x1792' | '1792x1024' = '1024x1792'): Promise<{ base64: string, provider: string } | null> {
