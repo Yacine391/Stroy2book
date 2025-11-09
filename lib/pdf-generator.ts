@@ -182,46 +182,63 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       // Préparer le titre pour calculer la zone
       const cleanedTitle = cleanContent(ebookData.title)
       const titleY = pageHeight / 3  // Position titre
-      const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 28)
       
-      // ✅ Ajouter overlay "effet transparent" avec gris foncé
-      // Note: jsPDF ne supporte pas la vraie transparence facilement
-      // Solution: utiliser un gris foncé au lieu de noir pur pour un effet visuel similaire
-      pdf.setFillColor(30, 30, 30) // Gris très foncé (au lieu de noir 0,0,0)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      
-      console.log('✅ Overlay gris foncé créé (effet semi-transparent visuel)')
-      
-      // Titre PAR-DESSUS (en blanc pour contraste)
+      // ✅ PAS D'OVERLAY - Texte avec OMBRE PORTÉE pour lisibilité
+      // Cette approche laisse l'image 100% visible et le texte "imprégné" dessus
       pdf.setFont(selectedFont, 'bold')
-      pdf.setFontSize(28)
-      pdf.setTextColor(255, 255, 255) // Blanc
+      pdf.setFontSize(32)
+      const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 32)
       
+      // Dessiner le titre avec ombre portée (effet "imprégné")
       titleLines.forEach((line, index) => {
         const textWidth = pdf.getTextWidth(line)
         const x = (pageWidth - textWidth) / 2
-        pdf.text(line, x, titleY + (index * 14))
+        const y = titleY + (index * 16)
+        
+        // Ombre portée (gris foncé, légèrement décalée)
+        pdf.setTextColor(40, 40, 40)
+        pdf.text(line, x + 0.5, y + 0.5)
+        
+        // Texte principal (blanc éclatant)
+        pdf.setTextColor(255, 255, 255)
+        pdf.text(line, x, y)
       })
 
-      // Auteur PAR-DESSUS (en blanc)
+      // Auteur avec ombre portée
       if (ebookData.author) {
         pdf.setFont(selectedFont, 'normal')
-        pdf.setFontSize(18)
-        pdf.setTextColor(255, 255, 255)
+        pdf.setFontSize(20)
         
         const authorText = `par ${ebookData.author}`
         const authorWidth = pdf.getTextWidth(authorText)
         const authorX = (pageWidth - authorWidth) / 2
-        pdf.text(authorText, authorX, titleY + (titleLines.length * 14) + 25)
+        const authorY = titleY + (titleLines.length * 16) + 30
+        
+        // Ombre
+        pdf.setTextColor(40, 40, 40)
+        pdf.text(authorText, authorX + 0.5, authorY + 0.5)
+        
+        // Texte
+        pdf.setTextColor(255, 255, 255)
+        pdf.text(authorText, authorX, authorY)
       }
       
-      // Logo/signature en bas (en blanc)
+      // Signature avec ombre portée
       pdf.setFont(selectedFont, 'italic')
-      pdf.setFontSize(10)
-      pdf.setTextColor(255, 255, 255)
+      pdf.setFontSize(11)
       const signature = 'Généré par HB Creator'
       const signatureWidth = pdf.getTextWidth(signature)
-      pdf.text(signature, (pageWidth - signatureWidth) / 2, pageHeight - 30)
+      const signatureX = (pageWidth - signatureWidth) / 2
+      
+      // Ombre
+      pdf.setTextColor(60, 60, 60)
+      pdf.text(signature, signatureX + 0.3, pageHeight - 29.7)
+      
+      // Texte
+      pdf.setTextColor(255, 255, 255)
+      pdf.text(signature, signatureX, pageHeight - 30)
+      
+      console.log('✅ Couverture créée: image pleine page + texte avec ombre portée')
       
     } catch (err) {
       console.error('❌ Erreur création couverture pleine page, fallback simple:', err)
