@@ -229,34 +229,47 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         throw new Error('URL d\'image invalide ou vide');
       }
 
-      // ✅ Si c'est une URL Pollinations externe, la convertir en base64 pour CORS
+      // ✅ Si c'est une URL Pollinations externe, précharger l'image puis convertir
       if (imageUrl.startsWith('http') && imageUrl.includes('pollinations.ai')) {
         try {
           console.log('🔄 Converting Pollinations URL to base64 for CORS...');
-          const imgResponse = await fetch(imageUrl, { mode: 'cors' });
-          if (!imgResponse.ok) {
-            throw new Error(`Fetch failed: ${imgResponse.status}`);
-          }
-          const blob = await imgResponse.blob();
-          if (blob.size === 0) {
-            throw new Error('Empty blob received');
-          }
-          console.log('📦 Blob size:', blob.size, 'bytes');
+          
+          // Méthode alternative: créer une Image, la charger, puis canvas
           const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const result = reader.result as string;
-              if (!result || result.length < 100) {
-                reject(new Error('Invalid base64 result'));
-              } else {
-                resolve(result);
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            img.onload = () => {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                  reject(new Error('Canvas context not available'));
+                  return;
+                }
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL('image/png');
+                if (dataUrl.length < 100) {
+                  reject(new Error('Invalid canvas dataURL'));
+                } else {
+                  resolve(dataUrl);
+                }
+              } catch (err) {
+                reject(err);
               }
             };
-            reader.onerror = () => reject(new Error('FileReader error'));
-            reader.readAsDataURL(blob);
+            
+            img.onerror = () => reject(new Error('Image failed to load'));
+            img.src = imageUrl;
+            
+            // Timeout après 30 secondes
+            setTimeout(() => reject(new Error('Image load timeout')), 30000);
           });
+          
           imageUrl = base64;
-          console.log('✅ Pollinations URL converted to base64, length:', base64.length);
+          console.log('✅ Pollinations URL converted to base64 via canvas, length:', base64.length);
         } catch (e) {
           console.error('❌ Failed to convert to base64:', e);
           console.warn('⚠️ Using URL directly as fallback');
