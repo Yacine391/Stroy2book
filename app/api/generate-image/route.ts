@@ -35,8 +35,8 @@ async function generateWithOpenAI(prompt: string, size: '1024x1792' | '1792x1024
   }
 }
 
-// ✅ Timeout réduit pour génération d'images (sans OCR = plus rapide)
-export const maxDuration = 60; // 1 minute max (sans OCR)
+// ✅ Timeout pour génération d'images (équilibré entre vitesse et fiabilité)
+export const maxDuration = 90; // 90 secondes (Pollinations peut être lent parfois)
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,14 +78,14 @@ export async function POST(request: NextRequest) {
     // ✅ OPTIMISATION: Retourner directement l'URL sans OCR (plus rapide)
     // L'OCR prend 10-30s et ralentit beaucoup. On le désactive temporairement.
     try {
-      // Timeout rapide de 30 secondes pour Pollinations
+      // Timeout de 45 secondes pour Pollinations (équilibre vitesse/fiabilité)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
       
       const base64_1 = await fetchImageAsBase64(pollinationsUrl)
       clearTimeout(timeoutId);
       
-      console.log('✅ Pollinations image fetched, returning without OCR for speed');
+      console.log('✅ Pollinations image fetched successfully');
       return NextResponse.json({ 
         success: true, 
         provider: 'pollinations', 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         prompt: pollinationsPrompt 
       })
     } catch (e) {
-      console.warn('⚠️ Pollinations failed or timeout (30s), trying fallback:', e)
+      console.warn('⚠️ Pollinations failed or timeout (45s), trying fallback OpenAI:', e)
     }
 
     // Fallback: OpenAI Images (sans OCR pour vitesse)

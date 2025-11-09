@@ -199,6 +199,14 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         body: JSON.stringify({ prompt, style })
       });
 
+      // ✅ Vérifier Content-Type avant JSON.parse (évite erreur si timeout/HTML)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ API n\'a pas retourné JSON:', text.substring(0, 200));
+        throw new Error('L\'API de génération d\'image a timeout ou retourné une erreur. Réessayez.');
+      }
+
       const data = await response.json();
       
       if (!response.ok) {
