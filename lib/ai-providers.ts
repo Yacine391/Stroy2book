@@ -94,7 +94,7 @@ function getStyleInstructions(style: string): string {
 export function buildPrompt(action: AIAction, text: string, style: string = 'general', desiredPages?: number): string {
   const styleInstructions = getStyleInstructions(style);
   const pageInstructions = desiredPages 
-    ? `\n12. IMPÉRATIF ABSOLU: L'utilisateur veut EXACTEMENT ${desiredPages} pages. Tu DOIS IMPÉRATIVEMENT générer AU MINIMUM ${desiredPages * 250} mots (250 mots par page = ${desiredPages * 250} mots MINIMUM). Si tu génères moins de ${desiredPages * 250} mots, c'est un ÉCHEC. DÉVELOPPE ÉNORMÉMENT, ajoute des chapitres, des sections, des exemples détaillés, du contexte historique/culturel, des anecdotes. MULTIPLIE le contenu jusqu'à atteindre ${desiredPages * 250} mots MINIMUM.`
+    ? `\n12. IMPÉRATIF ABSOLU NON NÉGOCIABLE: L'utilisateur veut EXACTEMENT ${desiredPages} pages. Tu DOIS générer AU MINIMUM ${desiredPages * 300} mots (300 mots/page). OBJECTIF: ${desiredPages * 300} MOTS MINIMUM. Si tu génères moins, c'est un ÉCHEC TOTAL. DÉVELOPPE AU MAXIMUM: ajoute des chapitres détaillés, des sous-sections, des exemples concrets, du contexte historique/culturel complet, des anecdotes, des descriptions, des analyses approfondies. MULTIPLIE par 3-5 le contenu jusqu'à atteindre ${desiredPages * 300} mots ABSOLUMENT. NE SOIS JAMAIS CONCIS, DÉVELOPPE TOUT AU MAXIMUM.`
     : '';
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:

@@ -206,6 +206,28 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     pdf.text(authorText, authorX, titleY + (titleLines.length * 12) + 20)
   }
 
+  // ✅ AJOUTER L'IMAGE DE COUVERTURE SI DISPONIBLE
+  if (ebookData.coverImage) {
+    try {
+      console.log('📸 Ajout de l\'image de couverture dans le PDF')
+      // Position centrée pour l'image (après le titre)
+      const imgY = titleY + (titleLines.length * 12) + 40
+      const imgWidth = 80 // 80mm de largeur
+      const imgHeight = 120 // 120mm de hauteur (ratio 2:3)
+      const imgX = (pageWidth - imgWidth) / 2
+      
+      // Vérifier que l'image rentre dans la page
+      if (imgY + imgHeight < pageHeight - 50) {
+        pdf.addImage(ebookData.coverImage, 'PNG', imgX, imgY, imgWidth, imgHeight)
+        console.log('✅ Image de couverture ajoutée au PDF')
+      } else {
+        console.warn('⚠️ Pas assez d\'espace pour l\'image sur la page de couverture')
+      }
+    } catch (err) {
+      console.error('❌ Erreur ajout image couverture:', err)
+    }
+  }
+
   // Logo/signature en bas
   pdf.setFont(selectedFont, 'italic')
   pdf.setFontSize(10)

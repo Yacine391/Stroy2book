@@ -481,8 +481,11 @@ export default function CoverCreation({ illustrations, textData, processedText, 
       } else {
         throw new Error('Aucune image retournée');
       }
+      
+      // ✅ IMPORTANT: Réinitialiser l'état AVANT success pour permettre régénération
       setRetryCount(0)
       setGenerationAbortController(null)
+      setIsGenerating(false)
       
       // Incrémenter le quota utilisé (seulement sur première tentative réussie)
       if (attemptNumber === 1) {
@@ -514,6 +517,7 @@ export default function CoverCreation({ illustrations, textData, processedText, 
       setTimeout(() => setError(""), 8000)
       
     } finally {
+      // ✅ Toujours réinitialiser l'état en cas d'erreur pour permettre retry
       setIsGenerating(false)
       setGenerationAbortController(null)
       setRetryCount(0)

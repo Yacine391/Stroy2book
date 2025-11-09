@@ -210,10 +210,15 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         ? `data:image/png;base64,${data.imageBase64}`
         : data.imageUrl;
       
-      console.log('✅ Image generated:', imageUrl ? 'success' : 'failed');
+      console.log('✅ Image generated:', {
+        hasBase64: !!data.imageBase64,
+        hasUrl: !!data.imageUrl,
+        finalUrl: imageUrl ? imageUrl.substring(0, 100) : 'NO URL',
+        success: !!imageUrl
+      });
       
-      if (!imageUrl) {
-        throw new Error('Aucune image retournée par l\'API');
+      if (!imageUrl || imageUrl.length < 20) {
+        throw new Error('URL d\'image invalide ou vide');
       }
 
       return imageUrl;
