@@ -440,8 +440,8 @@ export default function CoverCreation({ illustrations, textData, processedText, 
           keyElements = TITLE.split(' ').filter(w => w.length > 3).slice(0, 3).join(', ');
         }
         
-        // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE (toujours identique)
-        coverPrompt = `Book cover: ${TITLE}. ${palette}. Professional, no text`;
+        // ✅ PROMPT ULTRA-COURT SANS TEXTE (image pure)
+        coverPrompt = `${TITLE}. ${palette}. Pure image, no text, no letters, no words, no typography`;
       }
       
       console.log(`🎨 Génération couverture (tentative ${attemptNumber}/2):`, coverPrompt);

@@ -236,7 +236,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
           
           // Méthode alternative: créer une Image, la charger, puis canvas
           const base64 = await new Promise<string>((resolve, reject) => {
-            const img = new Image();
+            const img = document.createElement('img') as HTMLImageElement;
             img.crossOrigin = 'anonymous';
             
             img.onload = () => {

@@ -184,14 +184,23 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       const titleY = pageHeight / 3  // Position titre
       const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 28)
       
-      // Ajouter des rectangles noirs pour zones de texte (lisibilité)
-      // Zone titre (haut)
-      pdf.setFillColor(0, 0, 0)
-      pdf.rect(0, titleY - 30, pageWidth, 100, 'F')
+      // ✅ Ajouter overlay semi-transparent (opacité 50%)
+      // @ts-ignore - Utilisation avancée de jsPDF pour transparence
+      const pdfInternal = pdf.internal
       
-      // Zone signature (bas)
+      // Sauvegarder l'état graphique actuel
+      pdfInternal.write('q')
+      
+      // Définir l'opacité (0.5 = 50% transparent)
+      pdfInternal.write('0.5 g') // Opacité du remplissage
+      pdfInternal.write('0.5 G') // Opacité du contour
+      
+      // Dessiner rectangle noir semi-transparent sur toute la page
       pdf.setFillColor(0, 0, 0)
-      pdf.rect(0, pageHeight - 50, pageWidth, 50, 'F')
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      
+      // Restaurer l'état graphique (opacité 100% pour le texte)
+      pdfInternal.write('Q')
       
       // Titre PAR-DESSUS (en blanc pour contraste)
       pdf.setFont(selectedFont, 'bold')
