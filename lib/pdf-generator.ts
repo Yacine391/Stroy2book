@@ -179,21 +179,24 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       pdf.addImage(ebookData.coverImage, 'PNG', 0, 0, pageWidth, pageHeight)
       console.log('✅ Image de couverture pleine page ajoutée')
       
-      // Ajouter un overlay semi-transparent pour rendre le texte lisible
-      pdf.saveGraphicsState()
-      pdf.setFillColor(0, 0, 0)
-      pdf.setGState({ opacity: 0.4 }) // 40% opacité
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      pdf.restoreGraphicsState() // Reset opacité et état graphique
+      // Préparer le titre pour calculer la zone
+      const cleanedTitle = cleanContent(ebookData.title)
+      const titleY = pageHeight / 3  // Position titre
+      const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 28)
       
-      // Titre PAR-DESSUS l'image (en blanc pour contraste)
+      // Ajouter des rectangles noirs pour zones de texte (lisibilité)
+      // Zone titre (haut)
+      pdf.setFillColor(0, 0, 0)
+      pdf.rect(0, titleY - 30, pageWidth, 100, 'F')
+      
+      // Zone signature (bas)
+      pdf.setFillColor(0, 0, 0)
+      pdf.rect(0, pageHeight - 50, pageWidth, 50, 'F')
+      
+      // Titre PAR-DESSUS (en blanc pour contraste)
       pdf.setFont(selectedFont, 'bold')
       pdf.setFontSize(28)
       pdf.setTextColor(255, 255, 255) // Blanc
-      
-      const cleanedTitle = cleanContent(ebookData.title)
-      const titleLines = splitTextToLines(cleanedTitle, contentWidth - 20, 28)
-      let titleY = pageHeight / 3
       
       titleLines.forEach((line, index) => {
         const textWidth = pdf.getTextWidth(line)
