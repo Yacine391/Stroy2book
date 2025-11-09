@@ -440,33 +440,8 @@ export default function CoverCreation({ illustrations, textData, processedText, 
           keyElements = TITLE.split(' ').filter(w => w.length > 3).slice(0, 3).join(', ');
         }
         
-        const styleHint = selectedStyle === 'professional' ? 'realistic, ultra-detailed, professional photography style' :
-                         selectedStyle === 'creative' ? 'artistic, imaginative, painterly style' :
-                         selectedStyle === 'academic' ? 'scholarly, formal, elegant composition' :
-                         selectedStyle === 'popular' ? 'modern, attractive, commercial appeal' : 
-                         'sophisticated, high-end design';
-        
-        // Template expert (comme demandé)
-        if (attemptNumber > 1) {
-          // Version améliorée pour retry
-          coverPrompt = `Expert AI book cover generation:
-Title: "${TITLE}"
-Summary: "${TEXT.substring(0, 300)}..."
-
-Instructions: Generate a VERTICAL book cover illustration (ebook/book format). 
-Style: ${styleHint}. 
-Composition: centered, professional layout.
-Palette: ${palette}, adapted to the mood.
-Key elements from summary: ${keyElements}.
-Ensure flags, symbols, and colors are historically/culturally accurate.
-Avoid: anatomical distortions, extra fingers, illegible text.
-Quality: masterpiece, award-winning, cinematic lighting, ultra-detailed, 8K resolution.
-Ready for 1600x2400 px print.
-NO TEXT OVERLAY, NO LETTERS, NO WORDS on the image.`;
-        } else {
-          // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE
-          coverPrompt = `Book cover: ${TITLE}. ${palette}. Professional, no text`;
-        }
+        // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE (toujours identique)
+        coverPrompt = `Book cover: ${TITLE}. ${palette}. Professional, no text`;
       }
       
       console.log(`🎨 Génération couverture (tentative ${attemptNumber}/2):`, coverPrompt);
