@@ -77,6 +77,7 @@ function getStyleInstructions(style: string): string {
     technical: "Sois précis et technique. Utilise le vocabulaire spécialisé approprié.",
     persuasive: "Sois convaincant et argumentatif. Structure ton propos pour persuader.",
     educational: "Explique de manière pédagogique et didactique. Rends le sujet facile à comprendre.",
+    training_guide: "Écris comme un guide de formation pratique. Structure en étapes claires et numérotées. Inclus des objectifs, des exercices pratiques, des exemples concrets et des points de vérification. Utilise un ton instructif mais encourageant. Format: Introduction → Objectifs → Étapes détaillées → Pratique → Résumé.",
     historical: "Adopte un style historique documenté. Contextualise les faits chronologiquement.",
     fantasy: "Écris dans un style merveilleux et épique. Crée un univers fantastique.",
     scifi: "Utilise un style science-fiction futuriste. Intègre des éléments technologiques.",

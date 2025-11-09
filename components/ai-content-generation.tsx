@@ -56,6 +56,7 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     { value: "technical", label: "🔧 Technique", description: "Style précis et spécialisé" },
     { value: "persuasive", label: "🎯 Persuasif", description: "Style convaincant et argumentatif" },
     { value: "educational", label: "🏫 Pédagogique", description: "Style didactique et clair" },
+    { value: "training_guide", label: "📚 Guide de Formation", description: "Style instructif pas à pas" },
     { value: "historical", label: "🏛️ Historique", description: "Style documenté et chronologique" },
     { value: "fantasy", label: "🧙 Fantaisie", description: "Style merveilleux et épique" },
     { value: "scifi", label: "🚀 Science-Fiction", description: "Style futuriste et technologique" },

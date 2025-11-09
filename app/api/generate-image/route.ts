@@ -35,8 +35,8 @@ async function generateWithOpenAI(prompt: string, size: '1024x1792' | '1792x1024
   }
 }
 
-// ✅ Timeout maximal Vercel pour génération d'images
-export const maxDuration = 300; // 5 minutes max
+// ✅ Timeout réduit pour génération d'images (sans OCR = plus rapide)
+export const maxDuration = 60; // 1 minute max (sans OCR)
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,46 +75,39 @@ export async function POST(request: NextRequest) {
 
     console.log(`🎨 Génération image (Pollinations tentative 1) : ${style} - ${prompt.substring(0, 80)}...`)
 
-    // Tenter de récupérer en base64 pour OCR
+    // ✅ OPTIMISATION: Retourner directement l'URL sans OCR (plus rapide)
+    // L'OCR prend 10-30s et ralentit beaucoup. On le désactive temporairement.
     try {
+      // Timeout rapide de 30 secondes pour Pollinations
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      
       const base64_1 = await fetchImageAsBase64(pollinationsUrl)
-      const ocr1 = await detectTextInImage(base64_1)
-      const charCount1 = (ocr1.text || '').replace(/\s+/g, '').length
-      console.log('🔍 OCR chars (try1):', charCount1, 'confidence:', ocr1.confidence)
-      if (charCount1 <= 0) {
-        return NextResponse.json({ success: true, provider: 'pollinations', imageBase64: base64_1, imageUrl: pollinationsUrl, prompt: pollinationsPrompt, meta: { ocrChars: charCount1 } })
-      }
-      console.warn('⚠️ Texte détecté sur image try1, on renforce le prompt et retente Pollinations')
-      const reinforced = pollinationsPrompt + ' STRICT: absolutely no typography, no letters, no watermark, no captions.'
-      const pollinationsUrl2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(reinforced)}?width=1600&height=2400&seed=${uniqueSeed+1}&nologo=true`
-      const base64_2 = await fetchImageAsBase64(pollinationsUrl2)
-      const ocr2 = await detectTextInImage(base64_2)
-      const charCount2 = (ocr2.text || '').replace(/\s+/g, '').length
-      console.log('🔍 OCR chars (try2):', charCount2)
-      if (charCount2 <= 0) {
-        return NextResponse.json({ success: true, provider: 'pollinations', imageBase64: base64_2, imageUrl: pollinationsUrl2, prompt: reinforced, meta: { ocrChars: charCount2 } })
-      }
-      console.warn('⚠️ Texte encore détecté, fallback vers OpenAI DALL·E')
+      clearTimeout(timeoutId);
+      
+      console.log('✅ Pollinations image fetched, returning without OCR for speed');
+      return NextResponse.json({ 
+        success: true, 
+        provider: 'pollinations', 
+        imageBase64: base64_1, 
+        imageUrl: pollinationsUrl, 
+        prompt: pollinationsPrompt 
+      })
     } catch (e) {
-      console.warn('Pollinations fetch/OCR failed, fallback to OpenAI:', e)
+      console.warn('⚠️ Pollinations failed or timeout (30s), trying fallback:', e)
     }
 
-    // Fallback: OpenAI Images
+    // Fallback: OpenAI Images (sans OCR pour vitesse)
+    console.log('🎨 Fallback: Trying OpenAI DALL-E...')
     const oai = await generateWithOpenAI(buildNoTextPrompt(fullPrompt))
     if (oai?.base64) {
-      const ocr = await detectTextInImage(oai.base64)
-      const charCount = (ocr.text || '').replace(/\s+/g, '').length
-      console.log('🔍 OCR chars (openai):', charCount)
-      if (charCount <= 0) {
-        return NextResponse.json({ success: true, provider: oai.provider, imageBase64: oai.base64, prompt: buildNoTextPrompt(fullPrompt), meta: { ocrChars: charCount } })
-      }
-      console.warn('⚠️ OpenAI image contains text per OCR, final attempt with harsher prompt')
-      const stricter = await generateWithOpenAI(buildNoTextPrompt(fullPrompt) + ' ULTRA: no overlays, no typography, no letters, no signs, no captions')
-      if (stricter?.base64) {
-        const ocrS = await detectTextInImage(stricter.base64)
-        const cS = (ocrS.text || '').replace(/\s+/g, '').length
-        return NextResponse.json({ success: cS <= 0, provider: stricter.provider, imageBase64: stricter.base64, prompt: buildNoTextPrompt(fullPrompt), meta: { ocrChars: cS } })
-      }
+      console.log('✅ OpenAI image generated, returning without OCR for speed');
+      return NextResponse.json({ 
+        success: true, 
+        provider: oai.provider, 
+        imageBase64: oai.base64, 
+        prompt: buildNoTextPrompt(fullPrompt) 
+      })
     }
 
     // Dernier recours: retourner URL Pollinations simple (non recommandé)
