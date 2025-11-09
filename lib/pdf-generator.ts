@@ -180,10 +180,11 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       console.log('✅ Image de couverture pleine page ajoutée')
       
       // Ajouter un overlay semi-transparent pour rendre le texte lisible
+      pdf.saveGraphicsState()
       pdf.setFillColor(0, 0, 0)
-      pdf.setGState(new pdf.GState({ opacity: 0.4 })) // 40% opacité
+      pdf.setGState({ opacity: 0.4 }) // 40% opacité
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      pdf.setGState(new pdf.GState({ opacity: 1 })) // Reset opacité
+      pdf.restoreGraphicsState() // Reset opacité et état graphique
       
       // Titre PAR-DESSUS l'image (en blanc pour contraste)
       pdf.setFont(selectedFont, 'bold')
