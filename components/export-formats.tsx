@@ -228,7 +228,9 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
           backgroundColor: coverData.colors.primary || '#ffffff',
           fontFamily: layoutSettings.typography.bodyFont || 'Georgia',
           hasWatermark: coverData.hasWatermark,
-          coverImage: coverData.imageUrl,
+          coverImage: coverData.imageUrl || coverData.imageBase64 
+            ? (coverData.imageBase64 ? `data:image/png;base64,${coverData.imageBase64}` : coverData.imageUrl)
+            : undefined,
           includeIllustrationInPDF: coverData.includeIllustrationInPDF ?? true,
           imagePosition: coverData.imagePosition || { x: 0, y: 0, scale: 1 }
         }
