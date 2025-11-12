@@ -10,9 +10,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 
 // Types
-export type AIProvider = 'gemini' | 'openai' | 'claude';
+export type AIProvider = 'gemini' | 'openai' | 'claude' | 'groq';
 export type AIAction = 'improve' | 'expand' | 'shorten' | 'simplify' | 'correct' | 'reformulate';
 
 interface AIConfig {
@@ -52,11 +53,18 @@ export function getAIConfig(): AIConfig {
         model: process.env.CLAUDE_MODEL || 'claude-3-sonnet-20240229'
       };
     
+    case 'groq':
+      return {
+        provider: 'groq',
+        apiKey: process.env.GROQ_API_KEY || '',
+        model: process.env.GROQ_MODEL || 'llama-3.1-70b-versatile'
+      };
+    
     default:
       return {
-        provider: 'gemini',
-        apiKey: process.env.GOOGLE_API_KEY || '',
-        model: 'gemini-2.5-flash'
+        provider: 'groq',
+        apiKey: process.env.GROQ_API_KEY || '',
+        model: process.env.GROQ_MODEL || 'llama-3.1-70b-versatile'
       };
   }
 }
@@ -333,6 +341,45 @@ async function callClaude(prompt: string, apiKey: string, model: string): Promis
 }
 
 /**
+ * Appeler Groq (Llama 3.1)
+ */
+async function callGroq(prompt: string, apiKey: string, model: string): Promise<string> {
+  const groq = new Groq({
+    apiKey: apiKey
+  });
+
+  try {
+    const completion = await groq.chat.completions.create({
+      model: model,
+      messages: [
+        {
+          role: 'system',
+          content: 'Tu es un écrivain professionnel expert en transformation de texte.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.8,
+      max_tokens: 8192,
+      top_p: 0.95,
+    });
+
+    return completion.choices[0]?.message?.content || '';
+  } catch (error: any) {
+    console.error('❌ Groq API Error:', error);
+    if (error.message?.includes('429')) {
+      throw new Error('Quota Groq dépassé (30 req/min). Attendez quelques secondes.');
+    }
+    if (error.message?.includes('401') || error.message?.includes('403')) {
+      throw new Error('Clé API Groq invalide. Vérifiez votre clé dans .env.local');
+    }
+    throw new Error(`Erreur Groq: ${error.message || 'Erreur inconnue'}`);
+  }
+}
+
+/**
  * Nettoyer la réponse de l'IA
  */
 function cleanAIResponse(text: string): string {
@@ -374,6 +421,10 @@ export async function generateWithAI(action: AIAction, text: string, style: stri
       processedText = await callClaude(prompt, config.apiKey, config.model!);
       break;
 
+    case 'groq':
+      processedText = await callGroq(prompt, config.apiKey, config.model!);
+      break;
+
     default:
       throw new Error(`Fournisseur IA non supporté: ${config.provider}`);
   }
@@ -390,7 +441,8 @@ export function getProviderName(): string {
   const names = {
     gemini: 'Google Gemini',
     openai: 'OpenAI GPT-4',
-    claude: 'Anthropic Claude'
+    claude: 'Anthropic Claude',
+    groq: 'Groq (Llama 3.1)'
   };
   return names[provider] || provider;
 }

@@ -22,6 +22,7 @@
     "cookie": "^1.0.2",
     "docx": "^8.5.0",
     "epub-gen-memory": "^1.0.2",
+    "groq-sdk": "^0.34.0",
     "html2canvas": "^1.4.1",
     "interactjs": "^1.10.27",
     "jose": "^5.9.6",
