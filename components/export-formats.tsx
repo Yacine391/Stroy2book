@@ -52,6 +52,7 @@ interface CoverData {
   subtitle: string
   author: string
   imageUrl: string
+  imageBase64?: string  // Image en base64 (optionnel)
   style: string
   layout: string
   colors: {

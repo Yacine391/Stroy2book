@@ -35,7 +35,7 @@ export function getAIConfig(): AIConfig {
       return {
         provider: 'gemini',
         apiKey: process.env.GOOGLE_API_KEY || '',
-        model: 'gemini-2.5-flash'
+        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' // Modèle par défaut changé pour plus de stabilité
       };
     
     case 'openai':
@@ -176,44 +176,109 @@ TEXTE REFORMULÉ (commence directement):`
 }
 
 /**
- * Appeler Google Gemini
+ * Liste des modèles Gemini disponibles (par ordre de préférence)
+ */
+const GEMINI_MODELS = [
+  'gemini-1.5-flash',      // Modèle stable et rapide
+  'gemini-1.5-pro',        // Modèle plus puissant
+  'gemini-pro',            // Modèle classique
+];
+
+/**
+ * Fonction helper pour attendre (sleep)
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Appeler Google Gemini avec retry automatique et fallback de modèles
  */
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  try {
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.8,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 16384, // ✅ Doublé pour permettre plus de contenu
-      },
-    });
-
-    const response = await result.response;
-    const text = response.text();
+  
+  // Tenter avec plusieurs modèles en cas d'échec
+  for (let modelIndex = 0; modelIndex < GEMINI_MODELS.length; modelIndex++) {
+    const modelName = GEMINI_MODELS[modelIndex];
+    const model = genAI.getGenerativeModel({ model: modelName });
     
-    if (!text || text.trim().length === 0) {
-      throw new Error('L\'API Gemini a retourné une réponse vide');
+    // Retry avec backoff exponentiel (3 tentatives par modèle)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`🤖 Tentative ${attempt}/3 avec modèle: ${modelName}`);
+        
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 16384,
+          },
+        });
+
+        const response = await result.response;
+        const text = response.text();
+        
+        if (!text || text.trim().length === 0) {
+          throw new Error('L\'API Gemini a retourné une réponse vide');
+        }
+        
+        console.log(`✅ Succès avec ${modelName} (tentative ${attempt})`);
+        return text;
+        
+      } catch (error: any) {
+        const isLastAttempt = attempt === 3;
+        const isLastModel = modelIndex === GEMINI_MODELS.length - 1;
+        const errorMsg = error.message || 'Erreur inconnue';
+        
+        console.error(`❌ Erreur ${modelName} (tentative ${attempt}/3):`, errorMsg);
+        
+        // Erreur 503 (Service Unavailable / Overloaded)
+        if (errorMsg.includes('503') || errorMsg.includes('overloaded')) {
+          if (isLastAttempt && isLastModel) {
+            throw new Error('Le service Google Gemini est temporairement surchargé. Veuillez réessayer dans 1-2 minutes ou basculer sur OpenAI/Claude dans les paramètres.');
+          }
+          
+          if (!isLastAttempt) {
+            // Attendre avant de réessayer (backoff exponentiel: 2s, 4s, 8s)
+            const waitTime = Math.pow(2, attempt) * 1000;
+            console.log(`⏳ Modèle surchargé, nouvelle tentative dans ${waitTime/1000}s...`);
+            await sleep(waitTime);
+            continue; // Réessayer avec le même modèle
+          } else {
+            // Passer au modèle suivant
+            console.log(`🔄 Passage au modèle suivant: ${GEMINI_MODELS[modelIndex + 1]}`);
+            break; // Sortir de la boucle de retry pour essayer le modèle suivant
+          }
+        }
+        
+        // Autres erreurs
+        if (errorMsg.includes('timeout')) {
+          throw new Error('Timeout: La génération a pris trop de temps. Essayez avec un texte plus court ou réessayez.');
+        }
+        if (errorMsg.includes('429')) {
+          throw new Error('Quota API dépassé. Attendez quelques minutes ou créez une nouvelle clé API.');
+        }
+        if (errorMsg.includes('403') || errorMsg.includes('401')) {
+          throw new Error('Clé API invalide ou expirée. Vérifiez votre clé dans .env.local');
+        }
+        
+        // Si dernière tentative du dernier modèle, propager l'erreur
+        if (isLastAttempt && isLastModel) {
+          throw new Error(`Erreur Gemini: ${errorMsg}`);
+        }
+        
+        // Attendre avant de réessayer
+        if (!isLastAttempt) {
+          const waitTime = Math.pow(2, attempt) * 1000;
+          await sleep(waitTime);
+        }
+      }
     }
-    
-    return text;
-  } catch (error: any) {
-    console.error('❌ Gemini API Error:', error);
-    if (error.message?.includes('timeout')) {
-      throw new Error('Timeout: La génération a pris trop de temps. Essayez avec un texte plus court ou réessayez.');
-    }
-    if (error.message?.includes('429')) {
-      throw new Error('Quota API dépassé. Attendez quelques minutes ou créez une nouvelle clé API.');
-    }
-    if (error.message?.includes('403') || error.message?.includes('401')) {
-      throw new Error('Clé API invalide ou expirée. Vérifiez votre clé dans .env.local');
-    }
-    throw new Error(`Erreur Gemini: ${error.message || 'Erreur inconnue'}`);
   }
+  
+  throw new Error('Tous les modèles Gemini ont échoué. Veuillez réessayer plus tard.');
 }
 
 /**

@@ -172,9 +172,15 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
       console.error('❌ Erreur AI processing:', error);
       console.error('Stack:', error.stack);
       
+      // Message d'erreur spécifique pour 503/overloaded
+      let errorMessage = error.message;
+      if (errorMessage.includes('503') || errorMessage.includes('overloaded') || errorMessage.includes('surchargé')) {
+        errorMessage = 'Le service IA est temporairement surchargé. Le système va réessayer automatiquement. Si le problème persiste après 3 tentatives, réessayez dans 1-2 minutes.';
+      }
+      
       // ✅ CORRECTION: Ne plus utiliser de fallback silencieux
       // Propager l'erreur pour que l'utilisateur sache qu'il y a un problème
-      throw new Error(`Erreur IA: ${error.message}. Vérifiez votre connexion et votre clé API Google Gemini.`);
+      throw new Error(`Erreur IA: ${errorMessage}. Vérifiez votre connexion et votre clé API Google Gemini.`);
     }
   }
 
