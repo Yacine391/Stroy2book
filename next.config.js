@@ -26,7 +26,12 @@ const nextConfig = {
   // Transpile packages for better compatibility
   transpilePackages: ['@radix-ui/react-progress'],
   
-  // Headers for security
+  // ✅ ID de build unique pour forcer le rechargement
+  generateBuildId: async () => {
+    return `build-${Date.now()}`
+  },
+  
+  // Headers for security + NO CACHE
   async headers() {
     return [
       {
@@ -43,6 +48,19 @@ const nextConfig = {
           {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
+          },
+          // ✅ DÉSACTIVER LE CACHE COMPLÈTEMENT
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
