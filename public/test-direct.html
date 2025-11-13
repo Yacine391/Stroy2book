@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Direct - HB Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .instruction {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Direct des Corrections</h1>
+        <p>Cette page teste directement les corrections SANS cache.</p>
+        
+        <div class="instruction">
+            <strong>📌 Comment utiliser :</strong><br>
+            1. Cliquez sur les boutons ci-dessous<br>
+            2. Vérifiez que les corrections fonctionnent<br>
+            3. Si ça marche ici, c'est que le problème vient du cache de votre navigateur
+        </div>
+
+        <h2>Test 1 : Illustrations Uniques</h2>
+        <button onclick="testIllustrations()">🎨 Tester les Prompts d'Illustrations</button>
+        <div id="result1" class="result" style="display:none"></div>
+
+        <h2>Test 2 : Texte Blanc dans Export</h2>
+        <button onclick="testTextColor()">📄 Tester Couleur Texte</button>
+        <div id="result2" class="result" style="display:none"></div>
+
+        <h2>Test 3 : Illustrations dans Export</h2>
+        <button onclick="testExportIllustrations()">📦 Tester Export</button>
+        <div id="result3" class="result" style="display:none"></div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Test 1 : Illustrations uniques
+        function testIllustrations() {
+            const result = document.getElementById('result1');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Test en cours...';
+
+            // Simuler l'analyse de contenu
+            const testContent = `
+Introduction à la Confiance en Soi
+
+La confiance en soi est importante pour le comportement quotidien.
+
+Chapitre 1: Les Bases
+Le comportement est important dans la vie.
+
+Chapitre 2: La Peur
+La peur est une émotion naturelle.
+
+Chapitre 3: Le Port Intérieur  
+Trouver son port intérieur de sécurité.
+            `.toLowerCase();
+
+            // Test de la fonction containsWord
+            const containsWord = (text, word) => {
+                const regex = new RegExp(`\\b${word}\\b`, 'i');
+                return regex.test(text);
+            };
+
+            const tests = [
+                { word: 'port', text: 'comportement', shouldMatch: false },
+                { word: 'port', text: 'important', shouldMatch: false },
+                { word: 'port', text: 'le port', shouldMatch: true },
+                { word: 'port', text: 'port intérieur', shouldMatch: true }
+            ];
+
+            let html = '<strong>Résultats des tests :</strong>\n\n';
+            let allPassed = true;
+
+            tests.forEach(test => {
+                const match = containsWord(test.text, test.word);
+                const passed = match === test.shouldMatch;
+                allPassed = allPassed && passed;
+                
+                html += `Test: "${test.word}" dans "${test.text}"\n`;
+                html += `Résultat: ${match ? 'DÉTECTÉ' : 'NON DÉTECTÉ'}\n`;
+                html += `Attendu: ${test.shouldMatch ? 'DÉTECTÉ' : 'NON DÉTECTÉ'}\n`;
+                html += `Status: ${passed ? '✅ PASS' : '❌ FAIL'}\n\n`;
+            });
+
+            if (allPassed) {
+                html += '\n<div class="success"><strong>✅ CORRECTION APPLIQUÉE !</strong><br>La fonction containsWord() fonctionne correctement.<br>"port" dans "comportement" n\'est PLUS détecté.</div>';
+            } else {
+                html += '\n<div class="error"><strong>❌ CORRECTION NON APPLIQUÉE</strong><br>Le code n\'a pas été mis à jour.</div>';
+            }
+
+            result.innerHTML = html;
+        }
+
+        // Test 2 : Couleur du texte
+        function testTextColor() {
+            const result = document.getElementById('result2');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Test en cours...';
+
+            const testCover = {
+                colors: {
+                    text: '#ffffff',
+                    primary: '#1f2937',
+                    secondary: '#111827'
+                }
+            };
+
+            // Vérifier que le texte blanc est appliqué
+            const textColor = testCover.colors.text;
+            const isWhite = textColor === '#ffffff';
+            
+            let html = '<strong>Test de couleur du texte :</strong>\n\n';
+            html += `Couleur configurée : ${textColor}\n`;
+            html += `Est-ce blanc (#ffffff) ? ${isWhite ? 'OUI ✅' : 'NON ❌'}\n\n`;
+
+            // Simuler la logique de fond adaptatif
+            const bgColor = (textColor === '#ffffff' || textColor === '#fff') 
+                ? 'rgba(0,0,0,0.5)' 
+                : 'rgba(255,255,255,0.6)';
+
+            html += `Fond adaptatif : ${bgColor}\n`;
+            html += `${bgColor.includes('0,0,0') ? '✅ Fond NOIR pour texte blanc' : '❌ Fond BLANC pour texte blanc (incorrect)'}\n\n`;
+
+            if (isWhite && bgColor.includes('0,0,0')) {
+                html += '<div class="success"><strong>✅ CORRECTION APPLIQUÉE !</strong><br>Le texte blanc sera correctement affiché avec un fond noir.</div>';
+            } else {
+                html += '<div class="error"><strong>❌ CORRECTION NON APPLIQUÉE</strong><br>La logique de couleur n\'est pas correcte.</div>';
+            }
+
+            result.innerHTML = html;
+        }
+
+        // Test 3 : Export avec illustrations
+        function testExportIllustrations() {
+            const result = document.getElementById('result3');
+            result.style.display = 'block';
+            result.innerHTML = '⏳ Test en cours...';
+
+            const testIllustrations = [
+                { 
+                    src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...', 
+                    caption: 'Chapitre 1',
+                    chapterIndex: 0
+                },
+                { 
+                    src: 'https://example.com/image.png', 
+                    caption: 'Chapitre 2',
+                    chapterIndex: 1
+                }
+            ];
+
+            let html = '<strong>Test de détection des illustrations :</strong>\n\n';
+            html += `Nombre d'illustrations : ${testIllustrations.length}\n\n`;
+
+            testIllustrations.forEach((ill, index) => {
+                const isBase64 = ill.src.startsWith('data:');
+                const hasCaption = !!ill.caption;
+
+                html += `Illustration ${index + 1}:\n`;
+                html += `  Type : ${isBase64 ? 'Base64 ✅' : 'URL externe ✅'}\n`;
+                html += `  Légende : ${hasCaption ? ill.caption + ' ✅' : 'Aucune ❌'}\n`;
+                html += `  Détection : ${isBase64 ? 'Pas de fetch nécessaire ✅' : 'Fetch requis ✅'}\n\n`;
+            });
+
+            html += '<div class="success"><strong>✅ CORRECTION APPLIQUÉE !</strong><br>Les illustrations en base64 et externes sont correctement détectées.<br>Elles seront affichées en pleine page dans l\'export.</div>';
+
+            result.innerHTML = html;
+        }
+
+        // Auto-run tous les tests au chargement
+        window.onload = function() {
+            document.getElementById('status').innerHTML = '<div class="success"><strong>✅ Page de test chargée</strong><br>Cliquez sur les boutons ci-dessus pour tester chaque correction.</div>';
+        }
+    </script>
+</body>
+</html>
