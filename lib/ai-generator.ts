@@ -211,24 +211,37 @@ STRUCTURE NARRATIVE CLASSIQUE :
         }
       }
       
-      // Instructions spécifiques selon l'audience
+      // Instructions spécifiques selon l'audience - SYNCHRONISÉ avec ai-providers.ts
       const getAudienceInstructions = (audience: string): string => {
         switch (audience) {
+          case 'children':
           case 'enfants':
             return `
-📚 ADAPTATION POUR ENFANTS (6-12 ans) :
-- Utilise un VOCABULAIRE SIMPLE et ACCESSIBLE
+📚 ADAPTATION POUR ENFANTS (3-8 ans) :
+- Utilise un VOCABULAIRE TRÈS SIMPLE et ACCESSIBLE
 - Phrases COURTES et structures CLAIRES
 - ÉVITE les concepts complexes ou abstraits
 - Inclus des ÉLÉMENTS LUDIQUES et éducatifs
-- Tons OPTIMISTE et ENCOURAGEANT
+- Ton OPTIMISTE et ENCOURAGEANT
 - ILLUSTRATIONS verbales colorées et imaginatives
 - Évite les sujets sombres ou effrayants
 - Privilégie l'APPRENTISSAGE par le jeu et l'aventure`
           
+          case 'kids':
+          case 'jeunes':
+            return `
+🧒 ADAPTATION POUR JEUNES (9-12 ans) :
+- Utilise un VOCABULAIRE ACCESSIBLE mais éducatif
+- Sois clair et intéressant
+- Intègre des EXEMPLES qui parlent à cette tranche d'âge
+- Ton ENGAGEANT et MOTIVANT
+- Traite de DÉCOUVERTE et curiosité
+- Style ACCESSIBLE et dynamique`
+          
+          case 'teens':
           case 'adolescents':
             return `
-🎯 ADAPTATION POUR ADOLESCENTS (13-17 ans) :
+🎒 ADAPTATION POUR ADOLESCENTS (13-17 ans) :
 - Utilise un LANGAGE MODERNE et DYNAMIQUE
 - Aborde des DÉFIS et QUESTIONNEMENTS propres à l'âge
 - Inclus des RÉFÉRENCES ACTUELLES et tendances
@@ -238,31 +251,55 @@ STRUCTURE NARRATIVE CLASSIQUE :
 - Inclus des EXEMPLES CONCRETS et situations réelles
 - Encourage l'AUTONOMIE et la prise de décision`
           
+          case 'adults':
+          case 'adultes':
           case 'jeunes-adultes':
             return `
-🚀 ADAPTATION POUR JEUNES ADULTES (18-25 ans) :
-- Aborde les TRANSITIONS et nouveaux défis de l'âge adulte
-- Traite de CARRIÈRE, relations, et indépendance
-- Ton INSPIRANT et PRATIQUE
-- Inclus des STRATÉGIES CONCRÈTES et actionables
-- Évoque les DÉFIS MODERNES (technologie, réseaux sociaux, etc.)
-- Encourage l'AMBITION et la réalisation de soi
-- Style ACCESSIBLE mais SOPHISTIQUÉ`
-          
-          case 'adultes':
-            return `
-💼 ADAPTATION POUR ADULTES (25+ ans) :
+👔 ADAPTATION POUR ADULTES :
 - Approche PROFESSIONNELLE et EXPERTE
 - Traite de sujets COMPLEXES avec nuance
 - Inclus des ÉTUDES DE CAS et exemples concrets
-- Ton AUTORITAIRE mais accessible
+- Ton MATURE et accessible
 - Aborde les défis de la VIE PROFESSIONNELLE et personnelle
 - Références à l'EXPÉRIENCE et la maturité
 - Stratégies AVANCÉES et concepts approfondis`
           
-          default:
+          case 'seniors':
             return `
-🌍 ADAPTATION TOUT PUBLIC :
+👴 ADAPTATION POUR SENIORS :
+- Sois CLAIR, RESPECTUEUX et patient dans les explications
+- Évite le jargon technique excessif
+- Privilégie la CLARTÉ et la simplicité
+- Ton BIENVEILLANT et respectueux
+- Références à l'EXPÉRIENCE de vie
+- Style ACCESSIBLE et réconfortant`
+          
+          case 'experts':
+            return `
+🎓 ADAPTATION POUR EXPERTS :
+- Utilise un VOCABULAIRE TECHNIQUE précis
+- Concepts AVANCÉS et analyse approfondie
+- Ne simplifie pas à outrance
+- Ton PROFESSIONNEL et spécialisé
+- Références ACADÉMIQUES et scientifiques
+- Style SOPHISTIQUÉ et technique`
+          
+          case 'beginners':
+          case 'debutants':
+            return `
+🌱 ADAPTATION POUR DÉBUTANTS :
+- Explique CHAQUE CONCEPT en détail
+- Définis les TERMES TECHNIQUES
+- Donne de NOMBREUX EXEMPLES concrets
+- Ton PÉDAGOGIQUE et patient
+- Progression LOGIQUE et pas à pas
+- Style CLAIR et encourageant`
+          
+          default:
+          case 'general':
+          case 'tous':
+            return `
+👥 ADAPTATION TOUT PUBLIC :
 - Langage UNIVERSEL et INCLUSIF
 - Évite les références trop spécifiques à un âge
 - Ton BIENVEILLANT et ACCESSIBLE
