@@ -107,85 +107,218 @@ export default function IllustrationGeneration({ textData, processedText, coverD
     }
   ]
 
-  // Extraire les chapitres du texte traité
+  // Extraire les chapitres avec leur contenu
   useEffect(() => {
-    const extractChapters = (text: string): string[] => {
+    const extractChaptersWithContent = (text: string): { title: string; content: string }[] => {
       // Rechercher les marqueurs de chapitres
-      const chapterRegex = /(?:^|\n)((?:Chapitre|Chapter|#)\s*\d+[^:\n]*:?[^\n]*)/gmi
+      const chapterRegex = /(?:^|\n)((?:Chapitre|Chapter|#|Introduction|Conclusion|Épilogue)\s*\d*[^:\n]*:?[^\n]*)/gmi
       const matches = Array.from(text.matchAll(chapterRegex))
       
       if (matches.length > 0) {
-        const chapterTitles = matches.map(match => match[1].trim())
-        return chapterTitles
+        const chaptersWithContent: { title: string; content: string }[] = []
+        
+        for (let i = 0; i < matches.length; i++) {
+          const match = matches[i]
+          const chapterTitle = match[1].trim()
+          const startPos = match.index! + match[0].length
+          const endPos = i < matches.length - 1 ? matches[i + 1].index! : text.length
+          const chapterContent = text.substring(startPos, endPos).trim().substring(0, 1500) // Limiter à 1500 caractères
+          
+          chaptersWithContent.push({
+            title: chapterTitle,
+            content: chapterContent
+          })
+        }
+        
+        return chaptersWithContent
       }
       
       // Si pas de chapitres détectés, créer des chapitres par défaut
       const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 50)
       const chaptersPerSection = Math.max(1, Math.floor(paragraphs.length / 5))
       
-      const defaultChapters: string[] = []
+      const defaultChapters: { title: string; content: string }[] = []
       for (let i = 0; i < Math.min(5, Math.ceil(paragraphs.length / chaptersPerSection)); i++) {
-        defaultChapters.push(`Chapitre ${i + 1}`)
+        const startIdx = i * chaptersPerSection
+        const endIdx = Math.min(startIdx + chaptersPerSection, paragraphs.length)
+        const content = paragraphs.slice(startIdx, endIdx).join('\n\n')
+        
+        defaultChapters.push({
+          title: `Chapitre ${i + 1}`,
+          content: content.substring(0, 1500)
+        })
       }
       
       return defaultChapters
     }
 
-    const extractedChapters = extractChapters(processedText.processedText)
-    setChapters(extractedChapters)
+    const extractedChapters = extractChaptersWithContent(processedText.processedText)
+    setChapters(extractedChapters.map(ch => ch.title))
+    
+    // ✅ PROPOSITION AUTOMATIQUE : Nombre d'illustrations = nombre de chapitres
+    setNumberOfIllustrations(Math.min(extractedChapters.length, maxIllustrations))
 
-    // Initialiser les illustrations
-    const initialIllustrations: GeneratedIllustration[] = extractedChapters.map((chapter, index) => ({
-      id: `ill_${index}`,
-      chapterIndex: index,
-      chapterTitle: chapter,
-      prompt: `Illustration pour ${chapter}`,
-      style: selectedStyle,
-      imageUrl: "", // Sera généré
-      isGenerating: false
-    }))
+    // Initialiser les illustrations avec prompts contextuels
+    const initialIllustrations: GeneratedIllustration[] = extractedChapters.map((chapter, index) => {
+      const contextualPrompt = generatePromptForChapter(chapter.title, chapter.content)
+      
+      return {
+        id: `ill_${index}`,
+        chapterIndex: index,
+        chapterTitle: chapter.title,
+        prompt: contextualPrompt,
+        style: selectedStyle,
+        imageUrl: "", // Sera généré
+        isGenerating: false
+      }
+    })
 
     setIllustrations(initialIllustrations)
   }, [processedText.processedText, selectedStyle])
 
-  // ✅ NOUVELLE FONCTION: Génération contextuelle comme les couvertures
+  // ✅ FONCTION AMÉLIORÉE: Génération contextuelle intelligente basée sur le contenu du chapitre
   const generatePromptForChapter = (chapterTitle: string, chapterContent: string): string => {
-    // Extraire le contexte COMPLET (titre + texte utilisateur)
-    const TITLE = coverData?.coverData?.title || textData?.chapters?.[0] || 'Mon Ebook'
-    const TEXT = textData?.text || processedText.processedText.substring(0, 1500)
+    // Analyser le contenu du chapitre pour extraire les éléments visuels clés
+    const contentToAnalyze = (chapterTitle + ' ' + chapterContent).toLowerCase()
     
-    // Analyser le contenu pour extraire les éléments visuels clés
-    const contentToAnalyze = (TITLE + ' ' + TEXT + ' ' + chapterContent).toLowerCase()
-    
-    // Extraction intelligente des éléments visuels (comme pour les couvertures)
+    // Extraction intelligente et approfondie des éléments visuels
     const extractVisualElements = (text: string): string[] => {
       const elements: string[] = []
       
-      // Lieux
-      const locations = ['algérie', 'france', 'paris', 'désert', 'montagne', 'mer', 'ville', 'campagne', 'forêt']
-      locations.forEach(loc => {
-        if (text.includes(loc)) elements.push(loc)
-      })
+      // 1. Lieux géographiques et décors
+      const locations: Record<string, string> = {
+        'algérie': 'algerian landscape',
+        'algeria': 'algerian landscape',
+        'france': 'french countryside',
+        'paris': 'paris cityscape',
+        'désert': 'desert landscape',
+        'sahara': 'sahara desert',
+        'montagne': 'mountain scenery',
+        'mer': 'ocean view',
+        'plage': 'beach scene',
+        'ville': 'urban cityscape',
+        'campagne': 'countryside landscape',
+        'forêt': 'forest scene',
+        'jardin': 'garden setting',
+        'maison': 'house interior',
+        'école': 'school building',
+        'marché': 'market scene',
+        'port': 'harbor view'
+      }
       
-      // Objets symboliques
-      const objects = ['drapeau', 'livre', 'arme', 'outil', 'monument', 'véhicule', 'bâtiment']
-      objects.forEach(obj => {
-        if (text.includes(obj)) elements.push(obj)
-      })
+      // 2. Événements historiques et thèmes
+      const themes: Record<string, string> = {
+        'indépendance': 'independence celebration with flags',
+        'guerre': 'historical battle scene',
+        'paix': 'peaceful gathering',
+        'révolution': 'revolution uprising',
+        'colonisation': 'colonial era scene',
+        'liberté': 'freedom symbols',
+        'résistance': 'resistance fighters',
+        'victoire': 'victory celebration',
+        'défaite': 'solemn defeat scene'
+      }
       
-      // Personnages/Actions
-      const actions = ['combat', 'célébration', 'réunion', 'voyage', 'découverte', 'rencontre']
-      actions.forEach(act => {
-        if (text.includes(act)) elements.push(act)
-      })
+      // 3. Objets et symboles
+      const objects: Record<string, string> = {
+        'drapeau': 'flag waving',
+        'livre': 'book',
+        'arme': 'weapon',
+        'monument': 'historical monument',
+        'véhicule': 'vehicle',
+        'train': 'train',
+        'bateau': 'boat',
+        'avion': 'airplane',
+        'lettre': 'letter',
+        'photo': 'photograph',
+        'carte': 'map'
+      }
       
-      return elements.slice(0, 3)
+      // 4. Personnages et actions
+      const actions: Record<string, string> = {
+        'combat': 'battle action',
+        'combattre': 'fighting scene',
+        'célébration': 'celebration gathering',
+        'fête': 'festive celebration',
+        'réunion': 'meeting scene',
+        'voyage': 'journey travel',
+        'découverte': 'discovery moment',
+        'rencontre': 'meeting encounter',
+        'départ': 'departure scene',
+        'arrivée': 'arrival scene',
+        'famille': 'family gathering',
+        'enfant': 'children',
+        'soldat': 'soldiers',
+        'peuple': 'crowd of people'
+      }
+      
+      // 5. Émotions et atmosphères
+      const moods: Record<string, string> = {
+        'tristesse': 'sad melancholic atmosphere',
+        'joie': 'joyful happy scene',
+        'peur': 'fearful tense atmosphere',
+        'espoir': 'hopeful optimistic scene',
+        'colère': 'angry intense mood',
+        'amour': 'romantic loving scene',
+        'nostalgie': 'nostalgic vintage mood'
+      }
+      
+      // Chercher correspondances dans chaque catégorie
+      for (const [key, value] of Object.entries(locations)) {
+        if (text.includes(key)) {
+          elements.push(value)
+          break // Une seule localisation principale
+        }
+      }
+      
+      for (const [key, value] of Object.entries(themes)) {
+        if (text.includes(key)) {
+          elements.push(value)
+        }
+      }
+      
+      for (const [key, value] of Object.entries(objects)) {
+        if (text.includes(key)) {
+          elements.push(value)
+        }
+      }
+      
+      for (const [key, value] of Object.entries(actions)) {
+        if (text.includes(key)) {
+          elements.push(value)
+        }
+      }
+      
+      for (const [key, value] of Object.entries(moods)) {
+        if (text.includes(key)) {
+          elements.push(value)
+          break // Une seule ambiance principale
+        }
+      }
+      
+      return elements.slice(0, 4) // Garder les 4 éléments les plus pertinents
     }
     
     const visualElements = extractVisualElements(contentToAnalyze)
     
-    // ✅ PROMPT ULTRA-COURT POUR GÉNÉRATION RAPIDE
-    return `${chapterTitle}, ${visualElements.slice(0,2).join(', ')}, ${selectedStyle} style`
+    // Si aucun élément n'a été détecté, utiliser le titre du chapitre
+    if (visualElements.length === 0) {
+      return `${chapterTitle}, book illustration, ${selectedStyle} art style`
+    }
+    
+    // ✅ PROMPT CONTEXTUEL ET DÉTAILLÉ
+    const styleDescriptor = {
+      realistic: 'photorealistic detailed',
+      cartoon: 'colorful cartoon style',
+      watercolor: 'watercolor painting',
+      fantasy: 'fantasy art magical',
+      minimalist: 'minimalist clean design',
+      vintage: 'vintage retro style',
+      digital_art: 'digital art modern',
+      sketch: 'pencil sketch drawing'
+    }[selectedStyle] || selectedStyle
+    
+    return `${visualElements.join(', ')}, ${styleDescriptor}, professional book illustration`
   }
 
   // Génération d'image avec IA (VRAIE API !)

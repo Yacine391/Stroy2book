@@ -986,11 +986,9 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                   height: '420px',
                   borderRadius: '12px',
                   boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-                  background: 'linear-gradient(135deg, #f7f8fb 0%, #e9eef7 100%)',
-                  backgroundImage: `
-                    linear-gradient(135deg, #f7f8fb 0%, #e9eef7 100%),
-                    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)
-                  `,
+                  background: (generatedCoverUrl || generatedCoverBase64 || customImage) 
+                    ? 'transparent'
+                    : `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`,
                   overflow: 'hidden'
                 }}
                 ref={previewRef}
@@ -1146,8 +1144,11 @@ export default function CoverCreation({ illustrations, textData, processedText, 
                         )}
                         {author && (
                           <div 
-                            className="text-sm mt-6 pt-4 border-t border-gray-300"
-                            style={{ color: textColor === '#ffffff' ? '#1f2937' : textColor }}
+                            className="text-sm mt-6 pt-4 border-t"
+                            style={{ 
+                              color: textColor,
+                              borderColor: textColor === '#ffffff' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'
+                            }}
                           >
                             {author}
                           </div>
