@@ -1,9 +1,9 @@
 # ✨ Nouvelles Fonctionnalités Ajoutées
 
-## 🎯 Sélecteur de Public Cible
+## 🎯 Sélecteur de Public Cible (PARTOUT)
 
 ### Description
-Vous pouvez maintenant choisir votre **public cible** lors de la génération de contenu IA. L'IA adaptera automatiquement :
+Vous pouvez maintenant choisir votre **public cible** lors de **TOUTE génération de contenu IA**. L'IA adaptera automatiquement :
 - Le vocabulaire utilisé
 - Le ton et le style d'écriture
 - La complexité des concepts
@@ -53,13 +53,19 @@ Vous pouvez maintenant choisir votre **public cible** lors de la génération de
 
 ### Comment l'utiliser ?
 
+Le sélecteur de public cible est disponible à **DEUX endroits** :
+
+#### 1. **Étape 2 : Génération IA du contenu** (Actions IA)
 1. Allez à **Étape 2 : Génération IA du contenu**
 2. Sélectionnez votre **Public cible** dans le menu déroulant
 3. Choisissez votre **Style d'écriture** (comme avant)
-4. Sélectionnez une **Action IA**
+4. Sélectionnez une **Action IA** (améliorer, développer, simplifier, etc.)
 5. Cliquez sur **Appliquer l'action IA**
 
-L'IA générera un contenu parfaitement adapté à votre public !
+#### 2. **Génération d'ebook complet** (Si vous utilisez l'autre méthode)
+Le système utilise également le public cible que vous avez spécifié lors de la génération initiale de votre ebook !
+
+L'IA générera un contenu parfaitement adapté à votre public dans **TOUS LES CAS** !
 
 ---
 
