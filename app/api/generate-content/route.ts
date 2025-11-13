@@ -7,9 +7,9 @@ export const maxDuration = 120; // 2 minutes max
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, text, style, desiredPages } = body;
+    const { action, text, style, audience, desiredPages } = body;
 
-    console.log('📥 Generate-content request:', { action, style: style || 'general', textLength: text?.length || 0, desiredPages: desiredPages || 'not specified' });
+    console.log('📥 Generate-content request:', { action, style: style || 'general', audience: audience || 'general', textLength: text?.length || 0, desiredPages: desiredPages || 'not specified' });
     console.log('🤖 AI Provider:', getProviderName());
 
     // Vérifier que l'IA est configurée
@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🤖 Calling AI for action:', action, 'with style:', style || 'general', 'desired pages:', desiredPages);
+    console.log('🤖 Calling AI for action:', action, 'with style:', style || 'general', 'for audience:', audience || 'general', 'desired pages:', desiredPages);
 
-    // ✅ Utiliser le système multi-IA avec le style et nombre de pages
-    let processedText = await generateWithAI(action, text, style || 'general', desiredPages);
+    // ✅ Utiliser le système multi-IA avec le style, public cible et nombre de pages
+    let processedText = await generateWithAI(action, text, style || 'general', audience || 'general', desiredPages);
 
     console.log('✅ AI response received, length:', processedText?.length || 0);
 

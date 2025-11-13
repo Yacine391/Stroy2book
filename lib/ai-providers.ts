@@ -98,26 +98,45 @@ function getStyleInstructions(style: string): string {
 }
 
 /**
- * Construire le prompt selon l'action demandée, le style et le nombre de pages
+ * Obtenir les instructions de public selon l'audience cible
  */
-export function buildPrompt(action: AIAction, text: string, style: string = 'general', desiredPages?: number): string {
+function getAudienceInstructions(audience: string): string {
+  const audienceMap: Record<string, string> = {
+    general: "Écris pour un public général, tous âges confondus.",
+    children: "Écris pour des enfants de 3 à 8 ans. Utilise un vocabulaire très simple, des phrases courtes, et un ton ludique et encourageant. Évite les concepts complexes et privilégie les exemples concrets et amusants.",
+    kids: "Écris pour des jeunes de 9 à 12 ans. Utilise un vocabulaire accessible mais éducatif. Sois clair et intéressant. Intègre des exemples qui parlent à cette tranche d'âge.",
+    teens: "Écris pour des adolescents de 13 à 17 ans. Adopte un ton dynamique et moderne. Utilise des références actuelles et un langage qui résonne avec cette génération.",
+    adults: "Écris pour des adultes. Utilise un vocabulaire mature et un ton professionnel. Le contenu peut être plus complexe et nuancé.",
+    seniors: "Écris pour un public senior. Sois clair, respectueux et patient dans les explications. Évite le jargon technique excessif et privilégie la clarté.",
+    experts: "Écris pour des experts du domaine. Utilise un vocabulaire technique précis, des concepts avancés et une analyse approfondie. Ne simplifie pas à outrance.",
+    beginners: "Écris pour des débutants complets. Explique chaque concept en détail, définis les termes techniques et donne de nombreux exemples concrets."
+  };
+  return audienceMap[audience] || audienceMap.general;
+}
+
+/**
+ * Construire le prompt selon l'action demandée, le style, le public cible et le nombre de pages
+ */
+export function buildPrompt(action: AIAction, text: string, style: string = 'general', audience: string = 'general', desiredPages?: number): string {
   const styleInstructions = getStyleInstructions(style);
+  const audienceInstructions = getAudienceInstructions(audience);
   const pageInstructions = desiredPages 
-    ? `\n12. IMPÉRATIF ABSOLU NON NÉGOCIABLE: L'utilisateur veut EXACTEMENT ${desiredPages} pages. Tu DOIS générer AU MINIMUM ${desiredPages * 300} mots (300 mots/page). OBJECTIF: ${desiredPages * 300} MOTS MINIMUM. Si tu génères moins, c'est un ÉCHEC TOTAL. DÉVELOPPE AU MAXIMUM: ajoute des chapitres détaillés, des sous-sections, des exemples concrets, du contexte historique/culturel complet, des anecdotes, des descriptions, des analyses approfondies. MULTIPLIE par 3-5 le contenu jusqu'à atteindre ${desiredPages * 300} mots ABSOLUMENT. NE SOIS JAMAIS CONCIS, DÉVELOPPE TOUT AU MAXIMUM.`
+    ? `\n13. IMPÉRATIF ABSOLU NON NÉGOCIABLE: L'utilisateur veut EXACTEMENT ${desiredPages} pages. Tu DOIS générer AU MINIMUM ${desiredPages * 300} mots (300 mots/page). OBJECTIF: ${desiredPages * 300} MOTS MINIMUM. Si tu génères moins, c'est un ÉCHEC TOTAL. DÉVELOPPE AU MAXIMUM: ajoute des chapitres détaillés, des sous-sections, des exemples concrets, du contexte historique/culturel complet, des anecdotes, des descriptions, des analyses approfondies. MULTIPLIE par 3-5 le contenu jusqu'à atteindre ${desiredPages * 300} mots ABSOLUMENT. NE SOIS JAMAIS CONCIS, DÉVELOPPE TOUT AU MAXIMUM.`
     : '';
   const langHint = `
 RÈGLES STRICTES - TU DOIS ABSOLUMENT LES SUIVRE:
 1. Conserve EXACTEMENT la langue d'origine du texte
 2. ${styleInstructions}
-3. GÉNÈRE LE CONTENU RÉEL ET COMPLET - PAS de méta-description comme "Je vais écrire..." ou "Voici ce que je vais faire..."
-4. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
-5. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..." ou "Je vais rédiger..."
-6. NE DIS PAS ce que tu vas faire, FAIS-LE directement
-7. INTERDICTION de décrire le processus ou le plan - GÉNÈRE le contenu final immédiatement
-8. Retourne DIRECTEMENT le texte transformé, rien d'autre
-9. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
-10. COMMENCE directement par le contenu transformé
-11. GÉNÈRE un contenu UNIQUE et ORIGINAL - Seed: ${Date.now() + Math.random()}${pageInstructions}
+3. ${audienceInstructions}
+4. GÉNÈRE LE CONTENU RÉEL ET COMPLET - PAS de méta-description comme "Je vais écrire..." ou "Voici ce que je vais faire..."
+5. Retourne UNIQUEMENT le texte transformé, SANS préambule, SANS explication, SANS balises, SANS commentaires
+6. Ne commence PAS par "Voici le texte..." ou "Le texte amélioré est..." ou "Je vais rédiger..."
+7. NE DIS PAS ce que tu vas faire, FAIS-LE directement
+8. INTERDICTION de décrire le processus ou le plan - GÉNÈRE le contenu final immédiatement
+9. Retourne DIRECTEMENT le texte transformé, rien d'autre
+10. INTERDICTION de mettre des balises HTML ou Markdown autour du texte
+11. COMMENCE directement par le contenu transformé
+12. GÉNÈRE un contenu UNIQUE et ORIGINAL - Seed: ${Date.now() + Math.random()}${pageInstructions}
 `;
 
   const prompts: Record<AIAction, string> = {
@@ -393,17 +412,17 @@ function cleanAIResponse(text: string): string {
 /**
  * FONCTION PRINCIPALE : Générer du contenu avec l'IA configurée
  */
-export async function generateWithAI(action: AIAction, text: string, style: string = 'general', desiredPages?: number): Promise<string> {
+export async function generateWithAI(action: AIAction, text: string, style: string = 'general', audience: string = 'general', desiredPages?: number): Promise<string> {
   const config = getAIConfig();
 
-  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model, '- Style:', style, '- Desired pages:', desiredPages || 'not specified');
+  console.log('🤖 Using AI provider:', config.provider, '- Model:', config.model, '- Style:', style, '- Audience:', audience, '- Desired pages:', desiredPages || 'not specified');
 
   if (!config.apiKey) {
     throw new Error(`Clé API manquante pour ${config.provider}. Configurez-la dans .env.local`);
   }
 
-  // Construire le prompt avec le style et le nombre de pages
-  const prompt = buildPrompt(action, text, style, desiredPages);
+  // Construire le prompt avec le style, le public cible et le nombre de pages
+  const prompt = buildPrompt(action, text, style, audience, desiredPages);
 
   let processedText: string;
 

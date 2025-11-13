@@ -35,6 +35,7 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   const [currentText, setCurrentText] = useState(textData.text)
   const [selectedAction, setSelectedAction] = useState("")
   const [selectedStyle, setSelectedStyle] = useState("general")
+  const [selectedAudience, setSelectedAudience] = useState("general")
   const [isProcessing, setIsProcessing] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [showHistory, setShowHistory] = useState(false)
@@ -42,6 +43,18 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   const [success, setSuccess] = useState("")
   const [lastAppliedAction, setLastAppliedAction] = useState<string>("")
   const [recommendation, setRecommendation] = useState<{msg: string; suggest?: string} | null>(null)
+
+  // Public cible disponibles
+  const audienceTypes = [
+    { value: "general", label: "👥 Tout public", description: "Pour tous les âges" },
+    { value: "children", label: "👶 Enfants (3-8 ans)", description: "Vocabulaire simple et ludique" },
+    { value: "kids", label: "🧒 Jeunes (9-12 ans)", description: "Accessible et éducatif" },
+    { value: "teens", label: "🎒 Adolescents (13-17 ans)", description: "Dynamique et moderne" },
+    { value: "adults", label: "👔 Adultes", description: "Mature et professionnel" },
+    { value: "seniors", label: "👴 Seniors", description: "Clair et respectueux" },
+    { value: "experts", label: "🎓 Experts", description: "Technique et approfondi" },
+    { value: "beginners", label: "🌱 Débutants", description: "Explications détaillées" },
+  ]
 
   // Styles d'écriture disponibles
   const writingStyles = [
@@ -119,14 +132,14 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
   }, [textData.text])
 
   // Fonction pour appeler l'IA (VRAIE API)
-  const processWithAI = async (action: string, text: string, style: string): Promise<string> => {
-    console.log('🚀 Calling AI API:', { action, style, textLength: text.length, desiredPages: textData.desiredPages });
+  const processWithAI = async (action: string, text: string, style: string, audience: string): Promise<string> => {
+    console.log('🚀 Calling AI API:', { action, style, audience, textLength: text.length, desiredPages: textData.desiredPages });
     
     try {
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, text, style, desiredPages: textData.desiredPages })
+        body: JSON.stringify({ action, text, style, audience, desiredPages: textData.desiredPages })
       });
 
       console.log('📡 API Response status:', response.status);
@@ -201,8 +214,8 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     setSuccess("")
 
     try {
-      console.log('🎯 Starting AI action:', selectedAction, 'with style:', selectedStyle);
-      const processedText = await processWithAI(selectedAction, currentText, selectedStyle)
+      console.log('🎯 Starting AI action:', selectedAction, 'with style:', selectedStyle, 'for audience:', selectedAudience);
+      const processedText = await processWithAI(selectedAction, currentText, selectedStyle, selectedAudience)
       
       console.log('✅ AI action completed, text length:', processedText.length);
       
@@ -288,7 +301,7 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
     if (selectedAction && selectedAction !== lastAppliedAction) {
       try {
         setIsProcessing(true)
-        const processedText = await processWithAI(selectedAction, currentText, selectedStyle)
+        const processedText = await processWithAI(selectedAction, currentText, selectedStyle, selectedAudience)
         finalText = processedText
         setCurrentText(processedText)
         setHistory(prev => [...prev, {
@@ -345,36 +358,75 @@ export default function AIContentGeneration({ textData, onNext, onBack }: AICont
         <div className="lg:col-span-2 space-y-6">
           {/* Actions IA */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Brain className="h-5 w-5" />
-                <span>Actions IA disponibles</span>
-              </CardTitle>
-              <CardDescription>
-                Sélectionnez une action pour transformer votre texte avec l'intelligence artificielle
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Style d'écriture</Label>
-                <Select value={selectedStyle} onValueChange={setSelectedStyle}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un style" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[300px]">
-                    {writingStyles.map((style) => (
-                      <SelectItem key={style.value} value={style.value}>
-                        <div className="flex items-center space-x-2">
-                          <div>
-                            <div className="font-medium">{style.label}</div>
-                            <div className="text-xs text-gray-500">{style.description}</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Brain className="h-5 w-5" />
+              <span>Actions IA disponibles</span>
+            </CardTitle>
+            <CardDescription>
+              Sélectionnez une action pour transformer votre texte avec l'intelligence artificielle
+            </CardDescription>
+            
+            {isProcessing && (
+              <div className="mt-4 p-4 bg-amber-50 border-2 border-amber-400 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Loader2 className="h-5 w-5 text-amber-600 animate-spin flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-amber-900 mb-1">
+                      ⚠️ Génération en cours...
+                    </p>
+                    <p className="text-sm text-amber-800">
+                      <strong>Attendez la fin de la génération avant de passer à l'étape suivante !</strong>
+                      <br />
+                      Cela peut prendre quelques secondes. Ne fermez pas cette page et ne cliquez pas sur "Suivant" tant que ce message est affiché.
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="audience">🎯 Public cible</Label>
+              <Select value={selectedAudience} onValueChange={setSelectedAudience}>
+                <SelectTrigger id="audience">
+                  <SelectValue placeholder="Choisir le public" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {audienceTypes.map((audience) => (
+                    <SelectItem key={audience.value} value={audience.value}>
+                      <div className="flex items-center space-x-2">
+                        <div>
+                          <div className="font-medium">{audience.label}</div>
+                          <div className="text-xs text-gray-500">{audience.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="style">✍️ Style d'écriture</Label>
+              <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+                <SelectTrigger id="style">
+                  <SelectValue placeholder="Sélectionner un style" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {writingStyles.map((style) => (
+                    <SelectItem key={style.value} value={style.value}>
+                      <div className="flex items-center space-x-2">
+                        <div>
+                          <div className="font-medium">{style.label}</div>
+                          <div className="text-xs text-gray-500">{style.description}</div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
               
               <div>
                 <Label>Choisir une action</Label>
