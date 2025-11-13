@@ -145,13 +145,23 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
   const callServerExport = async (format: 'pdf'|'docx'|'epub'): Promise<Blob> => {
     // ✅ NOUVEAU : Formatter les illustrations avec informations de positionnement
     const illustrationPayload = (illustrations || []).map((ill: any) => ({
-      src: ill?.imageUrl || ill?.url || '',
-      caption: ill?.chapterTitle || '',
+      src: ill?.imageUrl || ill?.url || ill?.src || '',
+      caption: ill?.chapterTitle || ill?.caption || '',
       // Informations de positionnement pour PDF
       chapterIndex: ill?.chapterIndex ?? 0,
       targetChapterIndex: ill?.targetChapterIndex ?? ill?.chapterIndex ?? 0,
       position: ill?.position || 'top'
     })).filter(x => x.src)
+    
+    console.log('📤 Export payload:', {
+      format,
+      illustrationsCount: illustrationPayload.length,
+      illustrations: illustrationPayload.map(i => ({
+        caption: i.caption,
+        srcType: i.src.startsWith('data:') ? 'base64' : 'url',
+        srcLength: i.src.length
+      }))
+    })
     
     // ✅ CORRECTION BUG: Vérification que le contenu n'est pas vide + Diagnostic complet
     console.log('📊 Export Debug - processedText received:', {

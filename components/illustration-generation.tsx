@@ -208,8 +208,8 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         'jardin': 'garden setting',
         'maison': 'house interior',
         'école': 'school building',
-        'marché': 'market scene',
-        'port': 'harbor view'
+        'marché': 'market scene'
+        // ❌ RETIRÉ 'port' : causait des faux positifs avec "comportement", "important"
       }
       
       // 2. Événements historiques et thèmes
@@ -269,34 +269,41 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         'nostalgie': 'nostalgic vintage mood'
       }
       
+      // ✅ CORRECTION : Recherche par mots entiers pour éviter faux positifs
+      const containsWord = (text: string, word: string): boolean => {
+        // Créer regex avec limites de mots pour éviter "port" dans "comportement"
+        const regex = new RegExp(`\\b${word}\\b`, 'i')
+        return regex.test(text)
+      }
+      
       // Chercher correspondances dans chaque catégorie
       for (const [key, value] of Object.entries(locations)) {
-        if (text.includes(key)) {
+        if (containsWord(text, key)) {
           elements.push(value)
           break // Une seule localisation principale
         }
       }
       
       for (const [key, value] of Object.entries(themes)) {
-        if (text.includes(key)) {
+        if (containsWord(text, key)) {
           elements.push(value)
         }
       }
       
       for (const [key, value] of Object.entries(objects)) {
-        if (text.includes(key)) {
+        if (containsWord(text, key)) {
           elements.push(value)
         }
       }
       
       for (const [key, value] of Object.entries(actions)) {
-        if (text.includes(key)) {
+        if (containsWord(text, key)) {
           elements.push(value)
         }
       }
       
       for (const [key, value] of Object.entries(moods)) {
-        if (text.includes(key)) {
+        if (containsWord(text, key)) {
           elements.push(value)
           break // Une seule ambiance principale
         }

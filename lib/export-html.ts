@@ -53,7 +53,9 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
   const author = cover.author || 'Auteur'
   const subtitle = cover.subtitle || ''
   const primary = cover.colors?.primary || '#ffffff'
+  // ✅ CORRECTION : Utiliser la vraie couleur du texte (blanc si spécifié)
   const textColor = cover.colors?.text || '#111827'
+  console.log('📝 Text color for export:', textColor)
   const includeImage = cover.includeIllustrationInPDF !== false
   const imgDataUrl = includeImage ? await inlineImage(cover) : undefined
   const pos = cover.imagePosition || { x: 0, y: 0, scale: 1 }
@@ -94,21 +96,48 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
 
   let illustrationsHtml = ''
   if (illustrations && illustrations.length) {
+    console.log('📸 Processing illustrations for export:', illustrations.length)
     const items: string[] = []
     for (const ill of illustrations) {
-      if (!ill?.src) continue
+      if (!ill?.src) {
+        console.warn('⚠️ Illustration without src:', ill)
+        continue
+      }
+      console.log('🔄 Fetching illustration:', ill.src.substring(0, 100))
       try {
-        const res = await fetch(ill.src)
-        if (!res.ok) continue
-        const buf = Buffer.from(await res.arrayBuffer())
-        const mime = ill.src.toLowerCase().includes('.jpg') || ill.src.toLowerCase().includes('.jpeg') ? 'image/jpeg' : 'image/png'
-        const dataUrl = `data:${mime};base64,${buf.toString('base64')}`
-        items.push(`<figure><img src="${dataUrl}" style="max-width:100%;height:auto"/>${ill.caption ? `<figcaption>${escapeHtml(ill.caption)}</figcaption>` : ''}</figure>`)
-      } catch {}
+        // ✅ CORRECTION : Les images en base64 ne nécessitent pas de fetch
+        let dataUrl = ill.src
+        if (!ill.src.startsWith('data:')) {
+          const res = await fetch(ill.src)
+          if (!res.ok) {
+            console.error('❌ Failed to fetch illustration:', res.status)
+            continue
+          }
+          const buf = Buffer.from(await res.arrayBuffer())
+          const mime = ill.src.toLowerCase().includes('.jpg') || ill.src.toLowerCase().includes('.jpeg') ? 'image/jpeg' : 'image/png'
+          dataUrl = `data:${mime};base64,${buf.toString('base64')}`
+        }
+        console.log('✅ Illustration ready:', ill.caption || 'no caption')
+        items.push(`
+          <div class="page" style="display: flex; align-items: center; justify-content: center; height: 100vh; page-break-after: always;">
+            <figure style="margin: 0; width: 100%; height: 100%;">
+              <img src="${dataUrl}" style="width: 100%; height: 100%; object-fit: contain;"/>
+              ${ill.caption ? `<figcaption style="text-align: center; padding: 12px; font-size: 14px; color: ${textColor};">${escapeHtml(ill.caption)}</figcaption>` : ''}
+            </figure>
+          </div>
+        `)
+      } catch (err) {
+        console.error('❌ Error processing illustration:', err)
+      }
     }
     if (items.length) {
-      illustrationsHtml = `<section class="page"><h1>Illustrations</h1>${items.join('\n')}</section>`
+      console.log('✅ Generated', items.length, 'illustration pages')
+      illustrationsHtml = items.join('\n')
+    } else {
+      console.warn('⚠️ No illustrations were successfully processed')
     }
+  } else {
+    console.log('ℹ️ No illustrations provided for export')
   }
 
   return `<!doctype html>
@@ -127,7 +156,14 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
       display: flex; align-items: center; justify-content: center;
       text-align: center;
     }
-    .cover .meta { position: relative; z-index: 2; padding: 24px; background: rgba(255,255,255,0.6); border-radius: 8px; }
+    .cover .meta { 
+      position: relative; 
+      z-index: 2; 
+      padding: 24px; 
+      background: ${textColor === '#ffffff' || textColor === '#fff' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)'}; 
+      border-radius: 8px; 
+      color: ${textColor};
+    }
     ${imageCss}
     .page { page-break-after: always; }
     h1 { font-size: 24px; margin: 16px 0; }
@@ -139,9 +175,9 @@ export async function buildExportHtml(cover: CoverData, contentMarkdown: string,
   <section class="cover page">
     ${imgDataUrl ? '<div class="cover-image"></div>' : ''}
     <div class="meta">
-      <h1>${safeTitle}</h1>
-      ${subtitle ? `<h2>${safeSubtitle}</h2>` : ''}
-      <p>par ${safeAuthor}</p>
+      <h1 style="color: ${textColor};">${safeTitle}</h1>
+      ${subtitle ? `<h2 style="color: ${textColor};">${safeSubtitle}</h2>` : ''}
+      <p style="color: ${textColor};">par ${safeAuthor}</p>
     </div>
   </section>
   <main>
