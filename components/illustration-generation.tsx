@@ -48,6 +48,7 @@ interface GeneratedIllustration {
 }
 
 export default function IllustrationGeneration({ textData, processedText, coverData, currentUser, onNext, onBack }: IllustrationGenerationProps) {
+  // ⚠️ FONCTIONNALITÉ TEMPORAIREMENT DÉSACTIVÉE
   const [numberOfIllustrations, setNumberOfIllustrations] = useState(5)
   const maxIllustrations = currentUser?.subscription?.max_illustrations || 10
   const [chapters, setChapters] = useState<string[]>([])
@@ -56,7 +57,7 @@ export default function IllustrationGeneration({ textData, processedText, coverD
   const [isGeneratingAll, setIsGeneratingAll] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [enableIllustrations, setEnableIllustrations] = useState(true)
+  const [enableIllustrations, setEnableIllustrations] = useState(false) // ⚠️ DÉSACTIVÉ PAR DÉFAUT
 
   // Styles d'illustration disponibles
   const illustrationStyles = [
@@ -543,26 +544,52 @@ export default function IllustrationGeneration({ textData, processedText, coverD
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Étape 5 : Génération d'illustrations</h2>
-        <p className="text-gray-600">Créez des illustrations uniques pour chaque chapitre avec l'IA. Personnalisez le style selon vos préférences.</p>
+        <h2 className="text-3xl font-bold text-gray-400 mb-2">Étape 5 : Génération d'illustrations</h2>
+        <p className="text-gray-500">Créez des illustrations uniques pour chaque chapitre avec l'IA. Personnalisez le style selon vos préférences.</p>
       </div>
 
-      <div className="space-y-6">
+      {/* ⚠️ MESSAGE TEMPORAIRE : FONCTIONNALITÉ DÉSACTIVÉE */}
+      <Card className="bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300 mb-6">
+        <CardContent className="pt-6">
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-300 mb-6">
+              <Image className="h-10 w-10 text-gray-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-700 mb-3">
+              🚧 Fonctionnalité en cours de maintenance
+            </h3>
+            <p className="text-gray-600 mb-4 max-w-2xl mx-auto">
+              La génération d'illustrations est temporairement désactivée pour améliorer la qualité et la performance.
+            </p>
+            <p className="text-lg font-semibold text-gray-700 mb-6">
+              📅 Disponible prochainement
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-xl mx-auto">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Astuce :</strong> Vous pouvez continuer la création de votre ebook sans illustrations. 
+                Vous pourrez toujours ajouter des images manuellement après l'export.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-6" style={{ opacity: 0.5, pointerEvents: 'none' }}>
         {/* Option pour activer/désactiver les illustrations */}
-        <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+        <Card className="bg-gradient-to-r from-gray-100 to-gray-200 border-gray-300">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
                 id="enableIllustrations"
-                checked={enableIllustrations}
-                onChange={(e) => setEnableIllustrations(e.target.checked)}
-                className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                checked={false}
+                disabled={true}
+                className="w-5 h-5 text-gray-400 border-gray-300 rounded"
               />
-              <label htmlFor="enableIllustrations" className="flex-1 cursor-pointer">
-                <div className="font-medium text-gray-900">Générer des illustrations pour cet ebook</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Décochez cette option si vous ne souhaitez pas d'illustrations dans votre livre
+              <label htmlFor="enableIllustrations" className="flex-1">
+                <div className="font-medium text-gray-500">Générer des illustrations pour cet ebook</div>
+                <div className="text-sm text-gray-400 mt-1">
+                  Fonctionnalité temporairement désactivée
                 </div>
               </label>
             </div>
@@ -880,9 +907,10 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         </Button>
         <Button 
           onClick={handleNext}
-          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
         >
-          Continuer vers l'export
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Continuer sans illustrations
         </Button>
       </div>
     </div>
