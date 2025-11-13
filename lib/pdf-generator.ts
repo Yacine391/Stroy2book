@@ -11,6 +11,15 @@ declare module 'jspdf' {
   }
 }
 
+interface IllustrationWithPosition {
+  id: string
+  chapterIndex: number
+  targetChapterIndex: number
+  position: 'top' | 'middle' | 'bottom'
+  imageUrl: string
+  chapterTitle: string
+}
+
 interface EbookData {
   title: string
   subtitle?: string
@@ -24,6 +33,8 @@ interface EbookData {
   imagePosition?: { x: number; y: number; scale: number }
   exactPages?: number
   length?: string
+  // ✅ NOUVEAU : Illustrations avec positionnement
+  illustrations?: IllustrationWithPosition[]
 }
 
 // Fonction de nettoyage du contenu
@@ -162,6 +173,33 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     
     // Restaurer la couleur de remplissage
     pdf.setFillColor(originalFillColor)
+  }
+
+  // ✅ NOUVELLE FONCTION : Ajouter une illustration pleine page
+  const addFullPageIllustration = (illustration: IllustrationWithPosition) => {
+    try {
+      console.log('📸 Ajout illustration pleine page:', illustration.chapterTitle)
+      
+      // Créer une nouvelle page dédiée à l'illustration
+      pdf.addPage()
+      
+      // Fond de la page
+      pdf.setFillColor(bgColor.r, bgColor.g, bgColor.b)
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
+      
+      // Ajouter l'illustration en pleine page
+      pdf.addImage(illustration.imageUrl, 'PNG', 0, 0, pageWidth, pageHeight)
+      
+      console.log('✅ Illustration pleine page ajoutée')
+      
+      // Réinitialiser currentY pour la page suivante
+      currentY = margin
+      
+      return true
+    } catch (err) {
+      console.error('❌ Erreur ajout illustration pleine page:', err)
+      return false
+    }
   }
 
   // Fonction pour diviser le texte en lignes
@@ -420,6 +458,22 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   const maxParagraphsPerPage = pagination.maxParagraphsPerPage
   let processedLines = 0 // Compteur pour debug
   
+  // ✅ NOUVEAU : Gestion des illustrations par chapitre
+  let currentChapterIndex = -1  // Chapitre actuel
+  const illustrationsByChapter = new Map<number, IllustrationWithPosition[]>()
+  
+  // Organiser les illustrations par chapitre cible
+  if (ebookData.illustrations && ebookData.illustrations.length > 0) {
+    ebookData.illustrations.forEach(ill => {
+      const targetChapter = ill.targetChapterIndex
+      if (!illustrationsByChapter.has(targetChapter)) {
+        illustrationsByChapter.set(targetChapter, [])
+      }
+      illustrationsByChapter.get(targetChapter)!.push(ill)
+    })
+    console.log('📚 Illustrations organisées par chapitre:', Object.fromEntries(illustrationsByChapter))
+  }
+  
   for (let i = 0; i < contentLines.length; i++) {
     const line = contentLines[i].trim()
     
@@ -451,6 +505,30 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
     lineCount++ // Incrémenter le compteur de lignes
 
           if (line.startsWith('# ')) {
+        // ✅ INSÉRER ILLUSTRATIONS EN POSITION 'BOTTOM' du chapitre précédent (avant nouveau chapitre)
+        if (currentChapterIndex >= 0) {
+          const prevChapIllustrations = illustrationsByChapter.get(currentChapterIndex) || []
+          const bottomIllustrations = prevChapIllustrations.filter(ill => ill.position === 'bottom')
+          
+          for (const ill of bottomIllustrations) {
+            console.log('📸 Insertion illustration BOTTOM fin chapitre', currentChapterIndex)
+            addFullPageIllustration(ill)
+          }
+        }
+        
+        // ✅ NOUVEAU : Détection de nouveau chapitre - Incrémenter le compteur
+        currentChapterIndex++
+        console.log('📖 Nouveau chapitre détecté, index:', currentChapterIndex)
+        
+        // ✅ INSÉRER ILLUSTRATIONS EN POSITION 'TOP' (avant le titre)
+        const chapIllustrations = illustrationsByChapter.get(currentChapterIndex) || []
+        const topIllustrations = chapIllustrations.filter(ill => ill.position === 'top')
+        
+        for (const ill of topIllustrations) {
+          console.log('📸 Insertion illustration TOP avant chapitre', currentChapterIndex)
+          addFullPageIllustration(ill)
+        }
+        
         // Titre principal (chapitre) - Plus d'espace et meilleure visibilité
         checkAndAddNewPageForChapter(40) // Augmenté de 30 à 40 pour plus d'espace
       lineCount = 0 // Réinitialiser le compteur pour nouveau chapitre
@@ -468,6 +546,14 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
       
       currentY += lines.length * 8 + 20 // AUGMENTÉ pour plus d'espace: 12 → 20
       console.log('Added chapter title, currentY now:', currentY)
+      
+      // ✅ INSÉRER ILLUSTRATIONS EN POSITION 'MIDDLE' (après le titre, avant le contenu)
+      const middleIllustrations = chapIllustrations.filter(ill => ill.position === 'middle')
+      
+      for (const ill of middleIllustrations) {
+        console.log('📸 Insertion illustration MIDDLE après titre chapitre', currentChapterIndex)
+        addFullPageIllustration(ill)
+      }
       
     } else if (line.startsWith('## ')) {
       // Sous-titre (section importante) - Amélioration espacement
@@ -591,6 +677,17 @@ export async function generatePDF(ebookData: EbookData): Promise<Blob> {
   }
 
   console.log('FINAL STATS: Total lines to process:', contentLines.length, 'Lines actually processed:', processedLines)
+  
+  // ✅ INSÉRER ILLUSTRATIONS EN POSITION 'BOTTOM' du dernier chapitre (à la fin)
+  if (currentChapterIndex >= 0) {
+    const lastChapIllustrations = illustrationsByChapter.get(currentChapterIndex) || []
+    const bottomIllustrations = lastChapIllustrations.filter(ill => ill.position === 'bottom')
+    
+    for (const ill of bottomIllustrations) {
+      console.log('📸 Insertion illustration BOTTOM fin dernier chapitre', currentChapterIndex)
+      addFullPageIllustration(ill)
+    }
+  }
   
   // VÉRIFICATION CRITIQUE RENFORCÉE: S'assurer que tout le contenu a été traité
   const missingLines = contentLines.length - processedLines

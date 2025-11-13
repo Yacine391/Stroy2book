@@ -42,6 +42,9 @@ interface GeneratedIllustration {
   style: string
   imageUrl: string
   isGenerating: boolean
+  // ✅ NOUVEAU : Positionnement personnalisé
+  targetChapterIndex?: number  // Chapitre cible (par défaut = chapterIndex)
+  position?: 'top' | 'middle' | 'bottom'  // Position dans le chapitre (par défaut = 'top')
 }
 
 export default function IllustrationGeneration({ textData, processedText, coverData, currentUser, onNext, onBack }: IllustrationGenerationProps) {
@@ -169,7 +172,10 @@ export default function IllustrationGeneration({ textData, processedText, coverD
         prompt: contextualPrompt,
         style: selectedStyle,
         imageUrl: "", // Sera généré
-        isGenerating: false
+        isGenerating: false,
+        // ✅ NOUVEAU : Positionnement par défaut
+        targetChapterIndex: index,  // Par défaut dans son propre chapitre
+        position: 'top'  // Par défaut au début
       }
     })
 
@@ -689,6 +695,93 @@ export default function IllustrationGeneration({ textData, processedText, coverD
                   <div><strong>Style :</strong> {getStyleInfo(illustration.style).label}</div>
                   <div><strong>Prompt :</strong> {illustration.prompt}</div>
                 </div>
+
+                {/* ✅ NOUVEAU : Sélecteur de positionnement */}
+                {illustration.imageUrl && (
+                  <div className="space-y-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="text-xs font-semibold text-blue-900 mb-2">📍 Positionnement dans l'ebook</div>
+                    
+                    {/* Sélecteur de chapitre cible */}
+                    <div>
+                      <Label htmlFor={`target-chapter-${illustration.id}`} className="text-xs">Placer dans le chapitre :</Label>
+                      <Select 
+                        value={(illustration.targetChapterIndex ?? illustration.chapterIndex).toString()}
+                        onValueChange={(value) => {
+                          const newTargetIndex = parseInt(value)
+                          setIllustrations(prev => 
+                            prev.map(ill => 
+                              ill.id === illustration.id 
+                                ? { ...ill, targetChapterIndex: newTargetIndex }
+                                : ill
+                            )
+                          )
+                        }}
+                      >
+                        <SelectTrigger id={`target-chapter-${illustration.id}`} className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {chapters.map((chapter, index) => (
+                            <SelectItem key={index} value={index.toString()}>
+                              <div className="text-xs">
+                                {index === illustration.chapterIndex ? '📌 ' : ''}{chapter}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Sélecteur de position */}
+                    <div>
+                      <Label htmlFor={`position-${illustration.id}`} className="text-xs">Position :</Label>
+                      <Select 
+                        value={illustration.position || 'top'}
+                        onValueChange={(value: 'top' | 'middle' | 'bottom') => {
+                          setIllustrations(prev => 
+                            prev.map(ill => 
+                              ill.id === illustration.id 
+                                ? { ...ill, position: value }
+                                : ill
+                            )
+                          )
+                        }}
+                      >
+                        <SelectTrigger id={`position-${illustration.id}`} className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="top">
+                            <div className="flex items-center space-x-2">
+                              <span>⬆️</span>
+                              <span className="text-xs">Début du chapitre</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="middle">
+                            <div className="flex items-center space-x-2">
+                              <span>➡️</span>
+                              <span className="text-xs">Milieu du chapitre</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="bottom">
+                            <div className="flex items-center space-x-2">
+                              <span>⬇️</span>
+                              <span className="text-xs">Fin du chapitre</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Indicateur si déplacé */}
+                    {illustration.targetChapterIndex !== undefined && 
+                     illustration.targetChapterIndex !== illustration.chapterIndex && (
+                      <div className="text-xs text-orange-700 bg-orange-100 p-2 rounded mt-1">
+                        🔀 Cette illustration sera déplacée vers "{chapters[illustration.targetChapterIndex]}"
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex space-x-2">

@@ -143,9 +143,14 @@ export default function ExportFormats({ layoutSettings, coverData, processedText
 
   // Fonction pour VRAIMENT exporter un format
   const callServerExport = async (format: 'pdf'|'docx'|'epub'): Promise<Blob> => {
+    // ✅ NOUVEAU : Formatter les illustrations avec informations de positionnement
     const illustrationPayload = (illustrations || []).map((ill: any) => ({
       src: ill?.imageUrl || ill?.url || '',
-      caption: ill?.chapterTitle || ''
+      caption: ill?.chapterTitle || '',
+      // Informations de positionnement pour PDF
+      chapterIndex: ill?.chapterIndex ?? 0,
+      targetChapterIndex: ill?.targetChapterIndex ?? ill?.chapterIndex ?? 0,
+      position: ill?.position || 'top'
     })).filter(x => x.src)
     
     // ✅ CORRECTION BUG: Vérification que le contenu n'est pas vide + Diagnostic complet
