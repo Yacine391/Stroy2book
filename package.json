@@ -28,7 +28,7 @@
     "jose": "^5.9.6",
     "jspdf": "^3.0.1",
     "lucide-react": "^0.294.0",
-    "next": "^15.4.3",
+    "next": "15.4.10",
     "puppeteer-core": "^23.7.1",
     "react": "^18",
     "react-dom": "^18",
